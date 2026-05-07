@@ -240,7 +240,8 @@ class UserService extends ChangeNotifier {
     debugPrint("LOGOUT CALLED => Clearing session only");
     final prefs = await SharedPreferences.getInstance();
 
-    // Clear session but NOT multi-user storage
+
+
     await prefs.remove(keyIsLoggedIn);
     await prefs.remove(keyUserId);
     await prefs.remove(keyName);

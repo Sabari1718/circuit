@@ -413,9 +413,6 @@ class _BusinessCreatedPageState extends State<BusinessCreatedPage> {
     );
   }
 
-  // _buildRegistrationTypeCard section removed to follow separate page requirement
-
-
   Widget _buildYourBusinessesHeader(String label, int count) {
     return Row(
       children: [
