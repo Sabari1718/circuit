@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'home_page.dart';
 import 'user_service.dart';
 import 'set_pin_page.dart';
+import 'secret_image_verification_page.dart';
 
 class PasswordPage extends StatefulWidget {
   final String phoneNumber;
@@ -77,95 +78,64 @@ class _PasswordPageState extends State<PasswordPage> {
             ? widget.phoneNumber.trim()
             : widget.email.trim());
 
-        // 🔥 FIRST: API login (DB based)
-        final loginResult = await _loginExistingUser(
-          identifier: identifier,
-          password: password,
-        );
+        // 🔥 SPEED OPTIMIZATION: Check local storage FIRST
+        final userData = await userService.getUserByInput(identifier);
+        
+        if (userData != null && userData['password'] == password) {
+          debugPrint("Local verification successful => Instant login");
+          
+          if (!mounted) return;
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SecretImageVerificationPage(
+                identifier: identifier,
+              ),
+            ),
+          );
+          return; // Exit early!
+        }
+
+        // 🔥 FALLBACK: If local check fails or user not found, try API
+        debugPrint("Local check failed/not found => Attempting API verification");
+        
+        _LoginResult? loginResult;
+        try {
+          loginResult = await _loginExistingUser(
+            identifier: identifier,
+            password: password,
+          );
+        } catch (e) {
+          debugPrint("API Login Exception: $e");
+        }
 
         if (!mounted) return;
 
-        if (loginResult.success) {
-          // 🔥 After API success, sync local storage too
-          await userService.saveRegisteredUser(
+        if (loginResult != null && loginResult.success) {
+          // Sync local storage in background
+          userService.saveRegisteredUser(
             mobile: identifier.contains('@') ? '' : identifier,
             email: identifier.contains('@') ? identifier : '',
             password: password,
             pin: '',
+            secretImage: '',
           );
 
-          await userService.saveUserData(
-            isLoggedIn: true,
-            phone: identifier.contains('@') ? '' : identifier,
-            email: identifier.contains('@') ? identifier : '',
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SecretImageVerificationPage(
+                identifier: identifier,
+              ),
+            ),
           );
-
-          final updatedUserData = await userService.getUserData();
-
+        } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(loginResult.message),
+              content: Text(loginResult?.message ?? 'Login failed. Please check your credentials or network.'),
               behavior: SnackBarBehavior.floating,
             ),
           );
-
-          await Future.delayed(const Duration(milliseconds: 300));
-
-          if (!mounted) return;
-
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(
-              builder: (context) => HomePage(
-                userName: updatedUserData['name'] ?? '',
-                email: updatedUserData['email'] ?? '',
-              ),
-            ),
-                (route) => false,
-          );
-        } else {
-          // 🔥 OPTIONAL fallback: local login if API fails
-          debugPrint("API verification failed => Attempting local verification");
-
-          bool localLoginSuccess = await userService.loginWithPassword(
-            input: identifier,
-            password: password,
-          );
-
-          if (!mounted) return;
-
-          if (localLoginSuccess) {
-            final updatedUserData = await userService.getUserData();
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Login successful (local fallback)'),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-
-            await Future.delayed(const Duration(milliseconds: 300));
-
-            if (!mounted) return;
-
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(
-                builder: (context) => HomePage(
-                  userName: updatedUserData['name'] ?? '',
-                  email: updatedUserData['email'] ?? '',
-                ),
-              ),
-                  (route) => false,
-            );
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(loginResult.message),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          }
         }
       } else {
         // ==========================================
@@ -233,7 +203,7 @@ class _PasswordPageState extends State<PasswordPage> {
         },
         body: body,
       )
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 5));
 
       debugPrint("API STATUS => ${response.statusCode}");
       debugPrint("API RESPONSE => ${response.body}");

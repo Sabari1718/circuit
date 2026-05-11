@@ -4,13 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'login_page.dart';
+import 're_login_selection_page.dart';
 
 class UserService extends ChangeNotifier {
   static final UserService _instance = UserService._internal();
   factory UserService() => _instance;
   UserService._internal();
 
-  // Session Keys (Current Login State)
+
   static const String keyName = 'user_name';
   static const String keyEmail = 'user_email';
   static const String keyPhone = 'user_phone';
@@ -19,11 +20,13 @@ class UserService extends ChangeNotifier {
   static const String keyUserId = 'user_id';
   static const String keyProfilePhoto = 'user_profile_photo_base64';
   static const String keyIsLoggedIn = 'is_logged_in';
+  static const String keyHasLoggedOut = 'has_logged_out';
+  static const String keyEmployeeId = 'employee_id';
 
-  // 🔥 MULTI-USER STORAGE KEY
+
   static const String keyRegisteredUsers = 'registered_users';
 
-  // XAMPP Backend URL
+
   static const String backendBaseUrl = 'http://192.168.1.35/smt_mail';
 
   Uint8List? _profilePhotoBytes;
@@ -37,12 +40,17 @@ class UserService extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ===========================================================================
-  // 🔥 MULTI-USER LOCAL STORAGE METHODS
-  // ===========================================================================
+
+
+  SharedPreferences? _prefs;
+
+  Future<SharedPreferences> get _getPrefs async {
+    _prefs ??= await SharedPreferences.getInstance();
+    return _prefs!;
+  }
 
   Future<Map<String, dynamic>> _getUsersMap() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs;
     final String? usersJson = prefs.getString(keyRegisteredUsers);
     if (usersJson == null || usersJson.isEmpty) return {};
     try {
@@ -53,11 +61,11 @@ class UserService extends ChangeNotifier {
   }
 
   Future<void> _saveUsersMap(Map<String, dynamic> users) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs;
     await prefs.setString(keyRegisteredUsers, jsonEncode(users));
   }
 
-  // 🔥 UPDATED: Checks both mobile and email
+
   Future<bool> checkUserExists(String input) async {
     final users = await _getUsersMap();
     return users.containsKey(input);
@@ -73,7 +81,7 @@ class UserService extends ChangeNotifier {
     return users.containsKey(email);
   }
 
-  // 🔥 UPDATED: Search by generic input (mobile or email)
+
   Future<Map<String, dynamic>?> getUserByInput(String input) async {
     final users = await _getUsersMap();
     if (users.containsKey(input)) {
@@ -103,6 +111,7 @@ class UserService extends ChangeNotifier {
     required String email,
     required String password,
     required String pin,
+    required String secretImage,
   }) async {
     final users = await _getUsersMap();
 
@@ -111,15 +120,15 @@ class UserService extends ChangeNotifier {
       'email': email,
       'password': password,
       'pin': pin,
+      'secretImage': secretImage,
       'isRegistered': true,
     };
 
-    // Store by both mobile and email for quick lookup
     if (mobile.isNotEmpty) users[mobile] = userData;
     if (email.isNotEmpty) users[email] = userData;
 
     await _saveUsersMap(users);
-    debugPrint("USER SAVED LOCALLY => Mobile: $mobile, Email: $email");
+    debugPrint("USER SAVED LOCALLY => Mobile: $mobile, Email: $email, SecretImage: $secretImage");
   }
 
   Future<bool> loginWithPassword({
@@ -153,7 +162,7 @@ class UserService extends ChangeNotifier {
     String? address,
     String? accountType,
     String? userId,
-    bool? isLoggedIn,
+    bool? isLoggedIn, String? secretImage,
   }) async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -237,29 +246,60 @@ class UserService extends ChangeNotifier {
   }
 
   Future<void> logout(BuildContext context) async {
-    debugPrint("LOGOUT CALLED => Clearing session only");
+    debugPrint("LOGOUT CALLED => Clearing session but keeping identifiers");
     final prefs = await SharedPreferences.getInstance();
 
+    // Set logged out flag
+    await prefs.setBool(keyHasLoggedOut, true);
 
-
+    // Clear session-only keys
     await prefs.remove(keyIsLoggedIn);
-    await prefs.remove(keyUserId);
     await prefs.remove(keyName);
-    await prefs.remove(keyEmail);
-    await prefs.remove(keyPhone);
     await prefs.remove(keyAddress);
     await prefs.remove(keyAccountType);
     await prefs.remove(keyProfilePhoto);
+
+    
 
     _profilePhotoBytes = null;
     notifyListeners();
 
     if (context.mounted) {
+      // Navigate to NEW ReLoginSelectionPage
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => const LoginPage()),
+        MaterialPageRoute(builder: (context) => const ReLoginSelectionPage()),
             (route) => false,
       );
     }
+  }
+
+  Future<bool> hasLoggedOut() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(keyHasLoggedOut) ?? false;
+  }
+
+  Future<void> setLoggedOut(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(keyHasLoggedOut, value);
+  }
+
+  /// Clears only the stored email and phone number identifiers.
+  Future<void> clearUserIdentifiers() async {
+    debugPrint("CLEARING USER IDENTIFIERS => Removing Email and Phone from Local Storage");
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(keyEmail);
+    await prefs.remove(keyPhone);
+    notifyListeners();
+  }
+
+  /// Completely wipes all application data from local storage.
+  /// Use this for a 'Factory Reset' of the app's local state.
+  Future<void> resetAllData() async {
+    debugPrint("RESETTING ALL DATA => Wiping SharedPreferences");
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    _profilePhotoBytes = null;
+    notifyListeners();
   }
 }

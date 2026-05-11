@@ -215,7 +215,110 @@ class _ProfilePageState extends State<ProfilePage> {
           _buildDetailItem(Icons.email_outlined, "Email Address", userData['email']!),
           _buildDetailItem(Icons.phone_iphone_rounded, "Phone Number", userData['phone']!),
           _buildDetailItem(Icons.verified_user_outlined, "Account Type", userData['accountType']!),
-          _buildDetailItem(Icons.location_on_outlined, "Residential Address", userData['address']!, isLast: true),
+          _buildDetailItem(Icons.location_on_outlined, "Residential Address", userData['address']!),
+          
+          const SizedBox(height: 12),
+          const Divider(height: 1),
+          const SizedBox(height: 24),
+          const Text("Privacy & Data", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+          const SizedBox(height: 16),
+          
+          _buildActionItem(
+            Icons.delete_outline_rounded, 
+            "Clear Remembered Identifiers", 
+            "Removes your phone and email from this device.",
+            onTap: () => _confirmClearIdentifiers(context),
+            color: Colors.orange,
+          ),
+          
+          _buildActionItem(
+            Icons.phonelink_erase_rounded, 
+            "Factory Reset App Data", 
+            "Wipes ALL local storage, including accounts and settings.",
+            onTap: () => _confirmResetAllData(context),
+            color: Colors.red,
+            isLast: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionItem(IconData icon, String title, String subtitle, {required VoidCallback onTap, Color color = Colors.blue, bool isLast = false}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: EdgeInsets.only(bottom: isLast ? 0 : 20),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon, size: 20, color: color),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(color: Color(0xFF1E293B), fontSize: 14, fontWeight: FontWeight.w800)),
+                  Text(subtitle, style: const TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w500)),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmClearIdentifiers(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Clear Identifiers?"),
+        content: const Text("This will remove your remembered email and phone number from this device. You will need to type them manually next time."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          ElevatedButton(
+            onPressed: () async {
+              await UserService().clearUserIdentifiers();
+              if (context.mounted) {
+                Navigator.pop(context);
+                _showSnackBar("Identifiers cleared successfully");
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white),
+            child: const Text("Clear"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmResetAllData(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Factory Reset?"),
+        content: const Text("CRITICAL: This will wipe EVERYTHING stored locally. You will be logged out and all accounts remembered on this device will be forgotten. This cannot be undone."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          ElevatedButton(
+            onPressed: () async {
+              await UserService().resetAllData();
+              if (context.mounted) {
+                Navigator.pop(context);
+                // UserService().resetAllData() clears everything, including login state.
+                // We should probably redirect to login.
+                Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            child: const Text("Reset Everything"),
+          ),
         ],
       ),
     );

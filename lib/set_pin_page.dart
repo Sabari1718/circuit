@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'home_page.dart';
 import 'user_service.dart';
 import 'app_lock_service.dart';
+import 'secret_image_setup_page.dart';
 
 class SetPinPage extends StatefulWidget {
   final String password;
@@ -57,25 +58,18 @@ class _SetPinPageState extends State<SetPinPage> {
       final String email = data['email'] ?? '';
       final String mobile = data['phone'] ?? '';
 
-      // 🔥 SAVE REGISTERED USER LOCALLY
-      await userService.saveRegisteredUser(
-        mobile: mobile,
-        email: email,
-        password: widget.password,
-        pin: pin,
-      );
-
       if (!mounted) return;
 
-      Navigator.pushAndRemoveUntil(
+      Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => HomePage(
-            userName: name,
+          builder: (context) => SecretImageSetupPage(
+            mobile: mobile,
             email: email,
+            password: widget.password,
+            pin: pin,
           ),
         ),
-            (route) => false,
       );
     } catch (e) {
       if (!mounted) return;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'login_page.dart';
+import 're_login_selection_page.dart';
 import 'home_page.dart';
 import 'user_service.dart';
 import 'theme/app_theme.dart';
@@ -48,8 +49,9 @@ void main() async {
   Widget home;
 
   if (!isLoggedIn) {
-
-    home = const LoginPage();
+    // If user has logged out once, show the selection screen instead of first login
+    final bool hasLoggedOut = await userService.hasLoggedOut();
+    home = hasLoggedOut ? const ReLoginSelectionPage() : const LoginPage();
 
   } else if (isAppLockEnabled) {
 

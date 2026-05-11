@@ -2,9 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class OtpService {
-  // 🔥 IMPORTANT:
-  // MessageCentral dashboard la NEW token generate panni inga paste pannu.
-  // OLD token exposed aagiduchu. Adha use panna koodadhu.
+
   static const String authToken = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJDLTgzNkRCNzBCNTU4NzQ5MyIsImlhdCI6MTc3MzA0NzU5OSwiZXhwIjoxOTMwNzI3NTk5fQ.pgnC_7IQgwfh3QGRuu4APflRX9VCpt_RQNR-QX1SP425KXn4PUmAohdQTWtEWhDx7Z9lOVfAevCVHCed4uemew";
 
 

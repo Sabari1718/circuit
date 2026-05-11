@@ -437,7 +437,7 @@ class _BusinessUpgradePageState extends State<BusinessUpgradePage> {
   String _maskAcc(String v) => v.length > 4 ? '****${v.substring(v.length - 4)}' : v;
 
   Widget _buildNavigationButtons(Color color) {
-    return Container(padding: const EdgeInsets.all(24), decoration: const BoxDecoration(color: Colors.white), child: Row(children: [Expanded(child: OutlinedButton(onPressed: _prevStep, child: const Text('Previous'))), const SizedBox(width: 16), Expanded(child: ElevatedButton(onPressed: _nextStep, style: ElevatedButton.styleFrom(backgroundColor: color), child: Text(_currentStep == 4 ? 'Create Business User' : 'Next', style: const TextStyle(color: Colors.white))))]));
+    return Container(padding: const EdgeInsets.all(24), decoration:  BoxDecoration(color: Colors.white), child: Row(children: [Expanded(child: OutlinedButton(onPressed: _prevStep, child: const Text('Previous'))), const SizedBox(width: 16), Expanded(child: ElevatedButton(onPressed: _nextStep, style: ElevatedButton.styleFrom(backgroundColor: color), child: Text(_currentStep == 4 ? 'Create Business User' : 'Next', style: const TextStyle(color: Colors.white))))]));
   }
 }
 
