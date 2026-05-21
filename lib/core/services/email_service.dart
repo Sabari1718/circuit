@@ -124,25 +124,27 @@ class EmailService {
       print("EMAIL RESEND OTP BODY: ${response.body}");
       print("====================================");
 
-      if (response.body.trim().isEmpty) {
-        return {
-          "success": false,
-          "message": "Empty response from email server",
-        };
-      }
-
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-
-      return {
-        "success": (data["success"] == true || data["status"] == true),
-        "message": data["message"] ?? "Failed to resend email OTP",
-      };
-    } catch (e) {
-      print("EMAIL RESEND OTP ERROR: $e");
-      return {
-        "success": false,
-        "message": "Resend email OTP error: $e",
-      };
-    }
-  }
+if (response.body.trim().isEmpty) {
+return {
+"success": false,
+"message": "Empty response from email server",
+};
 }
+
+final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+return {
+"success": (data["success"] == true || data["status"] == true),
+"message": data["message"] ?? "Failed to resend email OTP",
+};
+} catch (e) {
+print("EMAIL RESEND OTP ERROR: $e");
+return {
+"success": false,
+"message": "Resend email OTP error: $e",
+};
+}
+}
+}
+
+

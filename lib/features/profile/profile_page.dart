@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:circuit/core/services/user_service.dart';
 import 'package:circuit/widgets/common_dashboard_app_bar.dart';
+import 'package:circuit/bio_overview_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -170,12 +171,22 @@ class _ProfilePageState extends State<ProfilePage> {
           const SizedBox(height: 24),
           const Divider(height: 1),
           const SizedBox(height: 20),
-          _buildInfoRow(Icons.fingerprint_rounded, "User ID", userData['userId']!),
+          _buildInfoRow(Icons.fingerprint_rounded, "User ID", (userData['user_main_id'] != null && userData['user_main_id']!.isNotEmpty) ? userData['user_main_id']! : (userData['userId'] ?? '')),
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) => const BioOverviewPage(),
+                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                      return FadeTransition(opacity: animation, child: child);
+                    },
+                  ),
+                );
+              },
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),

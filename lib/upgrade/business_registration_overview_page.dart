@@ -1,10 +1,13 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'business_created_page.dart';
 import 'business_user_model.dart';
 import 'business_user_store.dart';
 import 'create_business_user_page.dart';
+import 'user_overview_page.dart';
+
 
 class BusinessRegistrationOverviewPage extends StatefulWidget {
   final BusinessUser business;
@@ -174,9 +177,14 @@ class _BusinessRegistrationOverviewPageState extends State<BusinessRegistrationO
         backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
         elevation: 0,
         centerTitle: false,
-        leading: !isDesktop
-            ? Builder(builder: (c) => IconButton(icon: const Icon(Icons.menu_rounded), onPressed: () => Scaffold.of(c).openDrawer()))
-            : IconButton(icon: Icon(Icons.arrow_back_ios_new_rounded, color: isDark ? Colors.white : Colors.black, size: 20), onPressed: () => Navigator.pop(context)),
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: isDark ? Colors.white : const Color(0xFF1E293B),
+            size: 20,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -425,9 +433,18 @@ class _BusinessRegistrationOverviewPageState extends State<BusinessRegistrationO
   Widget _buildFieldLabel(String label) => Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8), letterSpacing: 0.5)));
 
   Widget _buildEditableField(TextEditingController ctrl, String hint, bool isDark, {bool readonly = true}) {
+    final isPan = hint.toLowerCase() == 'pan' || ctrl == _panCtrl;
+    final isPhone = hint.toLowerCase() == 'phone' || ctrl == _phoneCtrl;
     return TextFormField(
       controller: ctrl, readOnly: readonly,
       style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF1E293B)),
+      textCapitalization: isPan ? TextCapitalization.characters : TextCapitalization.none,
+      keyboardType: isPhone ? TextInputType.number : TextInputType.text,
+      inputFormatters: isPan
+          ? [UpperCaseTextFormatter(), LengthLimitingTextInputFormatter(10)]
+          : isPhone
+              ? [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)]
+              : null,
       decoration: InputDecoration(hintText: hint, filled: true, fillColor: readonly ? (isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F5F9).withOpacity(0.5)) : (isDark ? const Color(0xFF0F172A) : Colors.white), contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: readonly ? Colors.transparent : (isDark ? Colors.white24 : const Color(0xFFCBD5E1))))),
     );
   }
@@ -446,32 +463,181 @@ class _BusinessRegistrationOverviewPageState extends State<BusinessRegistrationO
   }
 
   Widget _buildSidebar(BuildContext context, {required bool isDrawer}) {
+    final pinkColor = const Color(0xFFE11D48);
     return Container(
-      width: 250, height: double.infinity, color: const Color(0xFF1E293B),
-      child: Column(children: [Container(padding: EdgeInsets.only(top: isDrawer ? 40 : 48, left: 24, right: 24, bottom: 24), child: Row(children: [Container(width: 48, height: 28, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4)), child: const Center(child: Text("90×25", style: TextStyle(color: Colors.black, fontSize: 8, fontWeight: FontWeight.bold)))), const Spacer(), const Icon(Icons.grid_view_rounded, color: Color(0xFFE11D48), size: 20)])),
-        _sidebarItem(Icons.grid_view_rounded, "Dashboard", onTap: () => Navigator.pop(context)),
-        Theme(data: Theme.of(context).copyWith(dividerColor: Colors.transparent), child: ExpansionTile(
-            initiallyExpanded: true,
-            leading: const Icon(Icons.business_center_rounded, color: Colors.white, size: 20),
-            title: const Text("Business", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-            children: [
-              _sidebarSubItem("Register Overview", isSelected: true, onTap: () {
-                if (isDrawer) Navigator.pop(context);
-              }),
-              _sidebarSubItem("Add Business", onTap: () {
-                if (isDrawer) Navigator.pop(context);
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => BusinessCreatedPage(showSelection: true)),
-                      (route) => route.isFirst,
-                );
-              }),
-              _sidebarSubItem("Posted Jobs", onTap: () => Navigator.pop(context))
-            ])),
-        _sidebarItem(Icons.grid_view_rounded, "Switch Portal", onTap: () => Navigator.pop(context))]),
+      width: 250,
+      height: double.infinity,
+      color: const Color(0xFF1E293B),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: EdgeInsets.only(
+              top: isDrawer ? 40 : 48,
+              left: 24,
+              right: 24,
+              bottom: 24,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      "90×25",
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                const Icon(
+                  Icons.grid_view_rounded,
+                  color: Color(0xFFE11D48),
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          _sidebarItem(
+            Icons.home_outlined,
+            "Dashboard",
+            onTap: () => Navigator.pop(context),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            margin: const EdgeInsets.only(left: 12),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(24),
+                bottomLeft: Radius.circular(24),
+              ),
+            ),
+            child: ListTile(
+              leading: const Icon(
+                Icons.business_center_outlined,
+                color: Color(0xFF1E293B),
+                size: 20,
+              ),
+              title: const Text(
+                "Business",
+                style: TextStyle(
+                  color: Color(0xFF1E293B),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              trailing: const Padding(
+                padding: EdgeInsets.only(right: 8.0),
+                child: Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: Color(0xFF1E293B),
+                  size: 20,
+                ),
+              ),
+              dense: true,
+              onTap: () {},
+            ),
+          ),
+          const SizedBox(height: 8),
+          _sidebarSubItem(
+            "Business Overview",
+            onTap: () {
+              if (isDrawer) Navigator.pop(context);
+            },
+          ),
+          _sidebarSubItem(
+            "User Overview",
+            onTap: () {
+              if (isDrawer) Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const UserOverviewPage()),
+              );
+            },
+          ),
+          _sidebarSubItem(
+            "Add Business",
+            textColor: pinkColor,
+            onTap: () {
+              if (isDrawer) Navigator.pop(context);
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => BusinessCreatedPage(showSelection: true)),
+                (route) => route.isFirst,
+              );
+            },
+          ),
+          _sidebarSubItem(
+            "Posted Jobs",
+            onTap: () {
+              if (isDrawer) Navigator.pop(context);
+            },
+          ),
+          const SizedBox(height: 8),
+          _sidebarItem(
+            Icons.widgets_outlined,
+            "Switch Portal",
+            onTap: () {
+              if (isDrawer) Navigator.pop(context);
+            },
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _sidebarItem(IconData icon, String title, {VoidCallback? onTap}) => ListTile(leading: Icon(icon, color: Colors.white60, size: 20), title: Text(title, style: const TextStyle(color: Colors.white60, fontSize: 14)), onTap: onTap, dense: true);
-  Widget _sidebarSubItem(String title, {bool isSelected = false, VoidCallback? onTap}) => ListTile(contentPadding: const EdgeInsets.only(left: 64), title: Text("-  $title", style: TextStyle(color: isSelected ? const Color(0xFFE11D48) : Colors.white60, fontSize: 13, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)), onTap: onTap, dense: true);
+  Widget _sidebarItem(IconData icon, String title, {VoidCallback? onTap}) => ListTile(
+        leading: Icon(icon, color: Colors.white60, size: 20),
+        title: Text(title, style: const TextStyle(color: Colors.white60, fontSize: 14)),
+        onTap: onTap,
+        dense: true,
+      );
+
+  Widget _sidebarSubItem(String title, {Color? textColor, VoidCallback? onTap}) => ListTile(
+        contentPadding: const EdgeInsets.only(left: 54),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              "-",
+              style: TextStyle(color: Colors.white30, fontSize: 14, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              title,
+              style: TextStyle(
+                color: textColor ?? Colors.white60,
+                fontSize: 13,
+                fontWeight: FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+        onTap: onTap,
+        dense: true,
+      );
+}
+
+class UpperCaseTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue,
+      TextEditingValue newValue,
+      ) {
+    return TextEditingValue(
+      text: newValue.text.toUpperCase(),
+      selection: newValue.selection,
+    );
+  }
 }

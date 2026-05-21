@@ -6,8 +6,11 @@ import 'package:circuit/features/business/create_business_user_page.dart';
 import 'package:circuit/features/upgrade/select_registration_type_page.dart';
 import 'package:circuit/features/upgrade/create_partner_business_page.dart';
 import 'package:circuit/features/upgrade/create_supplier_business_page.dart';
+import 'package:circuit/features/business/user_overview_page.dart';
+
 import 'package:circuit/core/services/user_service.dart';
-import 'package:circuit/core/theme/app_theme.dart';
+import 'package:circuit/theme/theme_provider.dart';
+import 'package:provider/provider.dart';
 
 class BusinessCreatedPage extends StatefulWidget {
   final bool showSelection;
@@ -199,7 +202,7 @@ class _BusinessCreatedPageState extends State<BusinessCreatedPage> {
                 color: isDark ? Colors.amber : const Color(0xFF1E293B),
                 size: 20
             ),
-            onPressed: () => themeManager.toggleTheme(),
+            onPressed: () => Provider.of<ThemeProvider>(context, listen: false).toggleTheme(),
           ),
 
           const SizedBox(width: 12),
@@ -258,7 +261,35 @@ class _BusinessCreatedPageState extends State<BusinessCreatedPage> {
                               Text(biz?.id ?? "9508383027", style: const TextStyle(color: Color(0xFF3B82F6), fontSize: 13, fontWeight: FontWeight.w700)),
                               const SizedBox(width: 8),
                               GestureDetector(
-                                onTap: () { if (biz != null) _openDetails(context, biz); },
+                                onTap: () {
+                                  final activeBiz = biz ?? BusinessUser(
+                                    id: "9508383027",
+                                    registrationType: "Propagator",
+                                    businessName: "Sabari Voxo",
+                                    email: "sabari@voxo.com",
+                                    phone: "9508383027",
+                                    panNumber: "ABCDE1234F",
+                                    gstNumber: "22AAAAA1111A1Z5",
+                                    accountNumber: "1234567890",
+                                    bankDocType: "Bank Statement",
+                                    doorNumber: "123",
+                                    streetName: "Main Street",
+                                    area: "Central Area",
+                                    district: "Chennai",
+                                    pincode: "600001",
+                                    state: "Tamil Nadu",
+                                    country: "India",
+                                    businessTypes: ["IT", "Services"],
+                                    yearOfEstablishment: "2024",
+                                    employeeRange: "11-50",
+                                    createdDate: DateTime.now(),
+                                    status: "Active",
+                                  );
+                                  if (biz == null) {
+                                    BusinessUserStore().addBusiness(activeBiz);
+                                  }
+                                  _openDetails(context, activeBiz);
+                                },
                                 child: const Text("(View/Edit Registration)", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w500, decoration: TextDecoration.underline)),
                               ),
                             ],
@@ -534,11 +565,13 @@ class _BusinessCreatedPageState extends State<BusinessCreatedPage> {
   Widget _buildTypeChip(String label) => Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: const Color(0xFFF1F5F9).withOpacity(0.1), borderRadius: BorderRadius.circular(4)), child: Text(label, style: const TextStyle(color: Color(0xFF64748B), fontSize: 10, fontWeight: FontWeight.w700)));
 
   Widget _buildSidebar(BuildContext context, {required bool isDrawer}) {
+    final pinkColor = const Color(0xFFE11D48);
     return Container(
       width: 250,
       height: double.infinity,
       color: const Color(0xFF1E293B),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: EdgeInsets.only(top: isDrawer ? 40 : 48, left: 24, right: 24, bottom: 24),
@@ -550,29 +583,73 @@ class _BusinessCreatedPageState extends State<BusinessCreatedPage> {
               ],
             ),
           ),
-          _sidebarItem(Icons.grid_view_rounded, "Dashboard", onTap: () {
+          const SizedBox(height: 8),
+          _sidebarItem(Icons.home_outlined, "Dashboard", onTap: () {
             if (isDrawer) Navigator.pop(context);
             setState(() { _showRegTypeSelection = false; });
           }),
-          Theme(data: Theme.of(context).copyWith(dividerColor: Colors.transparent), child: ExpansionTile(
-              initiallyExpanded: true,
-              leading: const Icon(Icons.business_center_rounded, color: Colors.white, size: 20),
-              title: const Text("Business", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-              children: [
-                _sidebarSubItem("Register Overview", onTap: () {
-                  if (isDrawer) Navigator.pop(context);
-                  final businesses = BusinessUserStore().businesses;
-                  if (businesses.isNotEmpty) {
-                    _openDetails(context, businesses.first);
-                  }
-                }),
-                _sidebarSubItem("Add Business", isSelected: _showRegTypeSelection, onTap: () {
-                  if (isDrawer) Navigator.pop(context);
-                  setState(() { _showRegTypeSelection = true; });
-                }),
-                _sidebarSubItem("Posted Jobs", onTap: () { if (isDrawer) Navigator.pop(context); })
-              ])),
-          _sidebarItem(Icons.grid_view_rounded, "Switch Portal", onTap: () { if (isDrawer) Navigator.pop(context); }),
+          const SizedBox(height: 12),
+          Container(
+            margin: const EdgeInsets.only(left: 12),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(24),
+                bottomLeft: Radius.circular(24),
+              ),
+            ),
+            child: ListTile(
+              leading: const Icon(
+                Icons.business_center_outlined,
+                color: Color(0xFF1E293B),
+                size: 20,
+              ),
+              title: const Text(
+                "Business",
+                style: TextStyle(
+                  color: Color(0xFF1E293B),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              trailing: const Padding(
+                padding: EdgeInsets.only(right: 8.0),
+                child: Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: Color(0xFF1E293B),
+                  size: 20,
+                ),
+              ),
+              dense: true,
+              onTap: () {},
+            ),
+          ),
+          const SizedBox(height: 8),
+          _sidebarSubItem("Business Overview", onTap: () {
+            if (isDrawer) Navigator.pop(context);
+            final businesses = BusinessUserStore().businesses;
+            if (businesses.isNotEmpty) {
+              _openDetails(context, businesses.first);
+            }
+          }),
+          _sidebarSubItem("User Overview", onTap: () {
+            if (isDrawer) Navigator.pop(context);
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const UserOverviewPage()),
+            );
+          }),
+          _sidebarSubItem("Add Business", textColor: pinkColor, onTap: () {
+            if (isDrawer) Navigator.pop(context);
+            setState(() { _showRegTypeSelection = true; });
+          }),
+          _sidebarSubItem("Posted Jobs", onTap: () {
+            if (isDrawer) Navigator.pop(context);
+          }),
+          const SizedBox(height: 8),
+          _sidebarItem(Icons.widgets_outlined, "Switch Portal", onTap: () {
+            if (isDrawer) Navigator.pop(context);
+          }),
         ],
       ),
     );
@@ -585,9 +662,26 @@ class _BusinessCreatedPageState extends State<BusinessCreatedPage> {
       dense: true
   );
 
-  Widget _sidebarSubItem(String title, {bool isSelected = false, VoidCallback? onTap}) => ListTile(
-      contentPadding: const EdgeInsets.only(left: 64),
-      title: Text("-  $title", style: TextStyle(color: isSelected ? const Color(0xFFE11D48) : Colors.white60, fontSize: 13, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+  Widget _sidebarSubItem(String title, {Color? textColor, VoidCallback? onTap}) => ListTile(
+      contentPadding: const EdgeInsets.only(left: 54),
+      title: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            "-",
+            style: TextStyle(color: Colors.white30, fontSize: 14, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            title,
+            style: TextStyle(
+              color: textColor ?? Colors.white60,
+              fontSize: 13,
+              fontWeight: FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
       onTap: onTap,
       dense: true
   );

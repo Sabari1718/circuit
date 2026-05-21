@@ -6,9 +6,13 @@ import 'create_business_user_page.dart';
 import 'select_registration_type_page.dart';
 import 'create_partner_business_page.dart';
 import 'create_supplier_business_page.dart';
+import 'user_overview_page.dart';
+
 import '../user_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/theme_provider.dart';
+import 'package:provider/provider.dart';
 import 'posted_jobs_page.dart';
+
 
 class BusinessCreatedPage extends StatefulWidget {
   final bool showSelection;
@@ -337,7 +341,7 @@ class _BusinessCreatedPageState extends State<BusinessCreatedPage> {
                 color: isDark ? Colors.amber : const Color(0xFF1E293B),
                 size: 22,
               ),
-              onPressed: () => themeManager.toggleTheme(),
+              onPressed: () => Provider.of<ThemeProvider>(context, listen: false).toggleTheme(),
             ),
           ),
 
@@ -474,7 +478,33 @@ class _BusinessCreatedPageState extends State<BusinessCreatedPage> {
                             const SizedBox(width: 8),
                             GestureDetector(
                               onTap: () {
-                                if (biz != null) _openDetails(context, biz);
+                                final activeBiz = biz ?? BusinessUser(
+                                  id: "9508383027",
+                                  registrationType: "Propagator",
+                                  businessName: "Sabari Voxo",
+                                  email: "sabari@voxo.com",
+                                  phone: "9508383027",
+                                  panNumber: "ABCDE1234F",
+                                  gstNumber: "22AAAAA1111A1Z5",
+                                  accountNumber: "1234567890",
+                                  bankDocType: "Bank Statement",
+                                  doorNumber: "123",
+                                  streetName: "Main Street",
+                                  area: "Central Area",
+                                  district: "Chennai",
+                                  pincode: "600001",
+                                  state: "Tamil Nadu",
+                                  country: "India",
+                                  businessTypes: ["IT", "Services"],
+                                  yearOfEstablishment: "2024",
+                                  employeeRange: "11-50",
+                                  createdDate: DateTime.now(),
+                                  status: "Active",
+                                );
+                                if (biz == null) {
+                                  BusinessUserStore().addBusiness(activeBiz);
+                                }
+                                _openDetails(context, activeBiz);
                               },
                               child: const Text(
                                 "(View/Edit Registration)",
@@ -1011,11 +1041,13 @@ class _BusinessCreatedPageState extends State<BusinessCreatedPage> {
   );
 
   Widget _buildSidebar(BuildContext context, {required bool isDrawer}) {
+    final pinkColor = const Color(0xFFE11D48);
     return Container(
       width: 250,
       height: double.infinity,
       color: const Color(0xFF1E293B),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: EdgeInsets.only(
@@ -1053,8 +1085,9 @@ class _BusinessCreatedPageState extends State<BusinessCreatedPage> {
               ],
             ),
           ),
+          const SizedBox(height: 8),
           _sidebarItem(
-            Icons.grid_view_rounded,
+            Icons.home_outlined,
             "Dashboard",
             onTap: () {
               if (isDrawer) Navigator.pop(context);
@@ -1063,55 +1096,82 @@ class _BusinessCreatedPageState extends State<BusinessCreatedPage> {
               });
             },
           ),
-          Theme(
-            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-            child: ExpansionTile(
-              initiallyExpanded: true,
+          const SizedBox(height: 12),
+          Container(
+            margin: const EdgeInsets.only(left: 12),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(24),
+                bottomLeft: Radius.circular(24),
+              ),
+            ),
+            child: ListTile(
               leading: const Icon(
-                Icons.business_center_rounded,
-                color: Colors.white,
+                Icons.business_center_outlined,
+                color: Color(0xFF1E293B),
                 size: 20,
               ),
               title: const Text(
                 "Business",
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFF1E293B),
                   fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              children: [
-                _sidebarSubItem(
-                  "Register Overview",
-                  onTap: () {
-                    if (isDrawer) Navigator.pop(context);
-                    final businesses = BusinessUserStore().businesses;
-                    if (businesses.isNotEmpty) {
-                      _openDetails(context, businesses.first);
-                    }
-                  },
+              trailing: const Padding(
+                padding: EdgeInsets.only(right: 8.0),
+                child: Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: Color(0xFF1E293B),
+                  size: 20,
                 ),
-                _sidebarSubItem(
-                  "Add Business",
-                  isSelected: _showRegTypeSelection,
-                  onTap: () {
-                    if (isDrawer) Navigator.pop(context);
-                    setState(() {
-                      _showRegTypeSelection = true;
-                    });
-                  },
-                ),
-                _sidebarSubItem(
-                  "Posted Jobs",
-                  onTap: () {
-                    _openPostedJobs(context, isDrawer: isDrawer);
-                  },
-                ),
-              ],
+              ),
+              dense: true,
+              onTap: () {},
             ),
           ),
+          const SizedBox(height: 8),
+          _sidebarSubItem(
+            "Business Overview",
+            onTap: () {
+              if (isDrawer) Navigator.pop(context);
+              final businesses = BusinessUserStore().businesses;
+              if (businesses.isNotEmpty) {
+                _openDetails(context, businesses.first);
+              }
+            },
+          ),
+          _sidebarSubItem(
+            "User Overview",
+            onTap: () {
+              if (isDrawer) Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const UserOverviewPage()),
+              );
+            },
+          ),
+          _sidebarSubItem(
+            "Add Business",
+            textColor: pinkColor,
+            onTap: () {
+              if (isDrawer) Navigator.pop(context);
+              setState(() {
+                _showRegTypeSelection = true;
+              });
+            },
+          ),
+          _sidebarSubItem(
+            "Posted Jobs",
+            onTap: () {
+              _openPostedJobs(context, isDrawer: isDrawer);
+            },
+          ),
+          const SizedBox(height: 8),
           _sidebarItem(
-            Icons.grid_view_rounded,
+            Icons.widgets_outlined,
             "Switch Portal",
             onTap: () {
               if (isDrawer) Navigator.pop(context);
@@ -1122,35 +1182,32 @@ class _BusinessCreatedPageState extends State<BusinessCreatedPage> {
     );
   }
 
-  Widget _sidebarItem(
-      IconData icon,
-      String title, {
-        VoidCallback? onTap,
-      }) =>
-      ListTile(
+  Widget _sidebarItem(IconData icon, String title, {VoidCallback? onTap}) => ListTile(
         leading: Icon(icon, color: Colors.white60, size: 20),
-        title: Text(
-          title,
-          style: const TextStyle(color: Colors.white60, fontSize: 14),
-        ),
+        title: Text(title, style: const TextStyle(color: Colors.white60, fontSize: 14)),
         onTap: onTap,
         dense: true,
       );
 
-  Widget _sidebarSubItem(
-      String title, {
-        bool isSelected = false,
-        VoidCallback? onTap,
-      }) =>
-      ListTile(
-        contentPadding: const EdgeInsets.only(left: 64),
-        title: Text(
-          "-  $title",
-          style: TextStyle(
-            color: isSelected ? const Color(0xFFE11D48) : Colors.white60,
-            fontSize: 13,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
+  Widget _sidebarSubItem(String title, {Color? textColor, VoidCallback? onTap}) => ListTile(
+        contentPadding: const EdgeInsets.only(left: 54),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              "-",
+              style: TextStyle(color: Colors.white30, fontSize: 14, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              title,
+              style: TextStyle(
+                color: textColor ?? Colors.white60,
+                fontSize: 13,
+                fontWeight: FontWeight.normal,
+              ),
+            ),
+          ],
         ),
         onTap: onTap,
         dense: true,

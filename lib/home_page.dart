@@ -57,8 +57,9 @@ class _HomePageState extends State<HomePage> {
   String _selectedBusinessScale = "Small Scale";
   DashboardSection _selectedSection = DashboardSection.activities;
 
-  // State to store the order of activity cards
+  final TextEditingController _searchController = TextEditingController();
   late List<ActivityCardData> _activities;
+  List<ActivityCardData> _filteredActivities = [];
 
   @override
   void initState() {
@@ -67,10 +68,27 @@ class _HomePageState extends State<HomePage> {
     _accountType = widget.accountType;
     _loadUserSession();
     _initializeActivities();
+    _filteredActivities = List.from(_activities);
   }
 
   void _initializeActivities() {
     _activities = [
+      ActivityCardData(
+        id: "job_career",
+        title: "JOB",
+        subtitle: "CAREER",
+        description: "Employee access to business features",
+        icon: "📝",
+        color: const Color(0xFFF97316),
+      ),
+      ActivityCardData(
+        id: "business_career",
+        title: "BUSINESS",
+        subtitle: "CAREER",
+        description: "Access to business analytics & team management",
+        icon: "💼",
+        color: const Color(0xFF64748B),
+      ),
       ActivityCardData(
         id: "business",
         title: "MY BUSINESS",
@@ -138,6 +156,24 @@ class _HomePageState extends State<HomePage> {
     ];
   }
 
+  void _filterActivities(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredActivities = List.from(_activities);
+      } else {
+        _filteredActivities = _activities.where((activity) {
+          final title = activity.title.toLowerCase();
+          final subtitle = activity.subtitle.toLowerCase();
+          final description = activity.description.toLowerCase();
+          final searchLower = query.toLowerCase();
+          return title.contains(searchLower) ||
+                 subtitle.contains(searchLower) ||
+                 description.contains(searchLower);
+        }).toList();
+      }
+    });
+  }
+
   Future<void> _loadUserSession() async {
     await UserService().loadSession();
     final data = await UserService().getUserData();
@@ -158,6 +194,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   bool _checkCompletion(String moduleId) {
+    if (moduleId == "job_career" || moduleId == "business_career") {
+      return true;
+    }
     if (moduleId == "business") {
       return BusinessUserStore().businesses.isNotEmpty;
     }
@@ -171,7 +210,7 @@ class _HomePageState extends State<HomePage> {
     final isCompleted = _checkCompletion(moduleId);
     
     if (isCompleted) {
-      if (moduleId == "business") {
+      if (moduleId == "business" || moduleId == "business_career") {
         openBusinessViewPage(context);
       } else if (moduleId == "employee") {
         final data = EmployeeUserStore().employees.first;
@@ -237,7 +276,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: CommonDashboardAppBar(
         onSectionChanged: (section) {
           setState(() {
@@ -249,17 +288,77 @@ class _HomePageState extends State<HomePage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
+            // Modern Search Bar
+            _buildSearchBar(),
+            
             // Section Header
             _buildSectionHeader(),
             
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: _selectedSection == DashboardSection.activities
-                  ? _buildActivitiesGrid()
-                  : _buildPrivilegeGrid(),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 400),
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0, 0.05),
+                        end: Offset.zero,
+                      ).animate(animation),
+                      child: child,
+                    ),
+                  );
+                },
+                child: _selectedSection == DashboardSection.activities
+                    ? (_filteredActivities.isEmpty 
+                        ? _buildEmptyState() 
+                        : _buildActivitiesGrid())
+                    : _buildPrivilegeGrid(),
+              ),
             ),
             const SizedBox(height: 24),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+      child: Container(
+        height: 55,
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: TextField(
+          controller: _searchController,
+          onChanged: _filterActivities,
+          decoration: InputDecoration(
+            hintText: "Search activities...",
+            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+            prefixIcon: Icon(Icons.search_rounded, color: Colors.grey.shade400),
+            suffixIcon: _searchController.text.isNotEmpty 
+              ? IconButton(
+                  icon: const Icon(Icons.clear_rounded, size: 20, color: Colors.grey),
+                  onPressed: () {
+                    _searchController.clear();
+                    _filterActivities("");
+                  },
+                )
+              : null,
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(vertical: 15),
+          ),
         ),
       ),
     );
@@ -306,8 +405,39 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _buildEmptyState() {
+    return Container(
+      key: const ValueKey('empty_state'),
+      padding: const EdgeInsets.symmetric(vertical: 60),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.search_off_rounded, size: 80, color: Colors.grey.shade300),
+          const SizedBox(height: 16),
+          const Text(
+            "No activities found",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1E293B),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "Try a different search term",
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildActivitiesGrid() {
     return ReorderableGridView.count(
+      key: const ValueKey('activities_grid'),
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: 2,
@@ -316,11 +446,11 @@ class _HomePageState extends State<HomePage> {
       childAspectRatio: 0.75,
       onReorder: (oldIndex, newIndex) {
         setState(() {
-          final element = _activities.removeAt(oldIndex);
-          _activities.insert(newIndex, element);
+          final element = _filteredActivities.removeAt(oldIndex);
+          _filteredActivities.insert(newIndex, element);
         });
       },
-      children: _activities.map((card) => _buildActivityCard(card)).toList(),
+      children: _filteredActivities.map((card) => _buildActivityCard(card)).toList(),
     );
   }
 

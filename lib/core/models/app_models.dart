@@ -71,6 +71,10 @@ class BusinessUser {
   final String employeeRange;
   final int partnerCount;
   final List<PartnerModel>? partners;
+  final String? sectorTitle;
+  final String? sector;
+  final String? subSector;
+  final List<String>? categories;
   final DateTime createdDate;
   final String status;
 
@@ -112,6 +116,10 @@ class BusinessUser {
     this.partners,
     required this.createdDate,
     required this.status,
+    this.sectorTitle,
+    this.sector,
+    this.subSector,
+    this.categories,
   });
 }
 

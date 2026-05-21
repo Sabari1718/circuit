@@ -223,6 +223,11 @@ class _PasswordPageState extends State<PasswordPage> {
         bool success = data['status'] == true || data['success'] == true;
 
         if (success) {
+          if (data != null && data['user_main_id'] != null) {
+            await UserService().saveUserData(
+              userMainId: data['user_main_id'].toString(),
+            );
+          }
           return _LoginResult(
             success: true,
             message: data['message']?.toString() ?? 'Login successful',
