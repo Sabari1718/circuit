@@ -7,6 +7,7 @@ import 'login_page.dart';
 import 'email_page.dart';
 import 'otp_page.dart';
 import 'otp_service.dart';
+import 'auth_service.dart';
 
 class ReLoginSelectionPage extends StatefulWidget {
   const ReLoginSelectionPage({super.key});
@@ -49,7 +50,17 @@ class _ReLoginSelectionPageState extends State<ReLoginSelectionPage> {
 
     try {
       // 1. Check if account already exists
-      final bool exists = await userService.checkUserExists(input);
+      bool exists = false;
+      if (isMobileInput(input)) {
+        final apiExists = await AuthService().checkUserExists(input);
+        if (apiExists != null) {
+          exists = apiExists;
+        } else {
+          exists = await userService.checkUserExists(input);
+        }
+      } else {
+        exists = await userService.checkUserExists(input);
+      }
 
       if (!mounted) return;
 

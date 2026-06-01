@@ -5,6 +5,7 @@ import 'user_service.dart';
 import 'otp_service.dart';
 import 'password_page.dart';
 import 'email_page.dart';
+import 'auth_service.dart';
 
 class AppColors {
   static const Color primary = Color(0xFF6366F1);
@@ -70,9 +71,22 @@ class _LoginPageState extends State<LoginPage> {
       final userService = Provider.of<UserService>(context, listen: false);
 
       // ======================================================
-      // 🔥 1. CHECK LOCAL STORAGE FOR EXISTING USER
+      // 🔥 1. CHECK FOR EXISTING USER (API + LOCAL FALLBACK)
       // ======================================================
-      final bool userExists = await userService.checkUserExists(input);
+      bool userExists = false;
+
+      if (isMobileInput(input)) {
+        final apiExists = await AuthService().checkUserExists(input);
+        if (apiExists != null) {
+          userExists = apiExists;
+        } else {
+          // Fallback to local if API fails/timeouts
+          userExists = await userService.checkUserExists(input);
+        }
+      } else {
+        // Email input fallback to local storage
+        userExists = await userService.checkUserExists(input);
+      }
 
       if (userExists) {
         debugPrint("EXISTING USER DETECTED LOCALLY => Redirecting to Password Page");

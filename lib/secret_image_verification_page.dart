@@ -21,7 +21,7 @@ class _SecretImageVerificationPageState
 
   final List<String> _images = List.generate(
     15,
-    (index) => 'https://picsum.photos/id/${index + 10}/200/200',
+    (index) => 'https://robohash.org/secret_${index + 10}.png?size=200x200',
   );
 
   Future<void> _verify() async {

@@ -180,7 +180,7 @@ class UserService extends ChangeNotifier {
   Future<void> saveFromApiUser(Map<String, dynamic> user) async {
     final prefs = await SharedPreferences.getInstance();
 
-    String? apiName = user['name']?.toString() ?? user['fullName']?.toString();
+    String? apiName = user['name']?.toString() ?? user['fullName']?.toString() ?? user['user_name']?.toString();
     String name = (apiName != null && apiName.isNotEmpty)
         ? apiName
         : (prefs.getString(keyName) ?? 'User');
@@ -188,7 +188,7 @@ class UserService extends ChangeNotifier {
     String email =
         user['email']?.toString() ?? user['emailId']?.toString() ?? '';
     String phone =
-        user['phone']?.toString() ?? user['mobile']?.toString() ?? '';
+        user['phone']?.toString() ?? user['mobile']?.toString() ?? user['phone_number']?.toString() ?? '';
 
     String? apiAddress = user['address']?.toString();
     String address = (apiAddress != null && apiAddress.isNotEmpty)
@@ -213,6 +213,26 @@ class UserService extends ChangeNotifier {
       isLoggedIn: true,
       userMainId: user['user_main_id']?.toString(),
     );
+  }
+
+  Future<void> fetchAndUpdateProfileFromApi() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? userMainId = prefs.getString(keyUserMainId);
+    
+    if (userMainId != null && userMainId.isNotEmpty) {
+      try {
+        final response = await http.get(Uri.parse('https://user.jobes24x7.com/api/login/$userMainId')).timeout(const Duration(seconds: 10));
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          final apiData = jsonDecode(response.body);
+          if (apiData['data'] != null && apiData['data']['data'] != null) {
+            final userDetails = apiData['data']['data'];
+            await saveFromApiUser(userDetails);
+          }
+        }
+      } catch (e) {
+        debugPrint("Error fetching profile from API: $e");
+      }
+    }
   }
 
   Future<void> updateProfilePhoto(Uint8List bytes) async {

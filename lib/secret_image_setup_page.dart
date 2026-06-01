@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'home_page.dart';
 import 'user_service.dart';
+import 'auth_service.dart';
 
 class SecretImageSetupPage extends StatefulWidget {
   final String mobile;
@@ -28,7 +29,7 @@ class _SecretImageSetupPageState extends State<SecretImageSetupPage> {
 
   final List<String> _images = List.generate(
     15,
-    (index) => 'https://picsum.photos/id/${index + 10}/200/200',
+    (index) => 'https://robohash.org/secret_${index + 10}.png?size=200x200',
   );
 
   Future<void> _submit() async {
@@ -43,6 +44,24 @@ class _SecretImageSetupPageState extends State<SecretImageSetupPage> {
 
     try {
       final userService = Provider.of<UserService>(context, listen: false);
+
+      // Fetch temporary user data for name and address
+      final userDataMap = await userService.getUserData();
+      final String userName = userDataMap['name'] ?? 'User';
+      final String address = userDataMap['address'] ?? 'N/A';
+
+      // Call API to create user in backend
+      try {
+        await AuthService().register(
+          phoneNumber: widget.mobile,
+          email: widget.email,
+          password: widget.password,
+          address: address,
+          userName: userName,
+        );
+      } catch (e) {
+        throw Exception('Backend registration failed: $e');
+      }
 
       // Save user with the secret image
       await userService.saveRegisteredUser(

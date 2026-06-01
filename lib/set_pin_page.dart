@@ -5,6 +5,7 @@ import 'home_page.dart';
 import 'user_service.dart';
 import 'app_lock_service.dart';
 import 'secret_image_setup_page.dart';
+import 'auth_service.dart';
 
 class SetPinPage extends StatefulWidget {
   final String password;
@@ -54,22 +55,52 @@ class _SetPinPageState extends State<SetPinPage> {
       );
 
       final data = await userService.getUserData();
-      final String name = data['name'] ?? '';
+      final String name = data['name'] ?? 'User';
       final String email = data['email'] ?? '';
       final String mobile = data['phone'] ?? '';
+      final String address = data['address'] ?? 'N/A';
+
+      // Call API to create user in backend
+      try {
+        await AuthService().register(
+          phoneNumber: mobile,
+          email: email,
+          password: widget.password,
+          address: address,
+          userName: name,
+        );
+      } catch (e) {
+        throw Exception('Backend registration failed: $e');
+      }
+
+      // Save user locally (bypassing secret image)
+      await userService.saveRegisteredUser(
+        mobile: mobile,
+        email: email,
+        password: widget.password,
+        pin: pin,
+        secretImage: 'bypassed',
+      );
+
+      // Set user as logged in with the session data
+      await userService.saveUserData(
+        phone: mobile,
+        email: email,
+        secretImage: 'bypassed',
+        isLoggedIn: true,
+      );
 
       if (!mounted) return;
 
-      Navigator.push(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
-          builder: (context) => SecretImageSetupPage(
-            mobile: mobile,
+          builder: (context) => HomePage(
+            userName: name,
             email: email,
-            password: widget.password,
-            pin: pin,
           ),
         ),
+        (route) => false,
       );
     } catch (e) {
       if (!mounted) return;

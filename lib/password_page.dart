@@ -79,36 +79,44 @@ class _PasswordPageState extends State<PasswordPage> {
                   ? widget.phoneNumber.trim()
                   : widget.email.trim());
 
-        // 🔥 SPEED OPTIMIZATION: Check local storage FIRST
-        final userData = await userService.getUserByInput(identifier);
-
-        debugPrint("LOCAL PASSWORD => ${userData?['password']}");
         debugPrint("ENTERED PASSWORD => $password");
 
-        if (userData != null && userData['password'] == password) {
-          await AuthService().login(identifier: identifier, password: password);
+        try {
+          final response = await AuthService().login(identifier: identifier, password: password);
 
           if (!mounted) return;
 
-          Navigator.push(
+          // Bypassing SecretImageVerificationPage
+          final userData = response['data']?['data'];
+          final String userName = userData?['user_name'] ?? 'User';
+          final String email = userData?['email'] ?? '';
+
+          if (userData != null) {
+            await Provider.of<UserService>(context, listen: false).saveFromApiUser(userData);
+          }
+
+          Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  SecretImageVerificationPage(identifier: identifier),
+              builder: (context) => HomePage(
+                userName: userName,
+                email: email,
+              ),
+            ),
+            (route) => false,
+          );
+          return;
+        } catch (e) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(e.toString().replaceAll('Exception: ', '').replaceAll('AuthException: ', '')),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Colors.redAccent,
             ),
           );
           return;
         }
-
-        // 🔥 FALLBACK: If local check fails or user not found, try API
-        // Local password mismatch
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Invalid credentials'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        return;
       } else {
         // ==========================================
         // NEW USER FLOW

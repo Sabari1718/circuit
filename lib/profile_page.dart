@@ -25,6 +25,10 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _loadProfile() async {
     await UserService().loadSession();
+    
+    // Fetch latest details from backend API
+    await UserService().fetchAndUpdateProfileFromApi();
+    
     final data = await UserService().getUserData();
     if (mounted) {
       setState(() {
@@ -137,7 +141,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 backgroundColor: const Color(0xFFF59E0B),
                 backgroundImage: photoBytes != null ? MemoryImage(photoBytes) : null,
                 child: photoBytes == null
-                    ? Text(_getInitials(userData['name']!), style: const TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.w900))
+                    ? Text(_getInitials(userData['name'] ?? ''), style: const TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.w900))
                     : null,
               ),
               Positioned(
@@ -159,14 +163,14 @@ class _ProfilePageState extends State<ProfilePage> {
             ],
           ),
           const SizedBox(height: 24),
-          Text(userData['name']!, textAlign: TextAlign.center, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+          Text(userData['name'] ?? '', textAlign: TextAlign.center, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
           const SizedBox(height: 6),
-          Text(userData['email']!, textAlign: TextAlign.center, style: const TextStyle(fontSize: 14, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+          Text(userData['email'] ?? '', textAlign: TextAlign.center, style: const TextStyle(fontSize: 14, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
           const SizedBox(height: 20),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(color: const Color(0xFFE11D48).withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
-            child: Text(userData['accountType']!, style: const TextStyle(color: Color(0xFFE11D48), fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+            child: Text(userData['accountType'] ?? '', style: const TextStyle(color: Color(0xFFE11D48), fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
           ),
           const SizedBox(height: 24),
           const Divider(height: 1),
@@ -222,11 +226,11 @@ class _ProfilePageState extends State<ProfilePage> {
           const SizedBox(height: 12),
           const Divider(height: 1),
           const SizedBox(height: 24),
-          _buildDetailItem(Icons.person_outline_rounded, "Full Name", userData['name']!),
-          _buildDetailItem(Icons.email_outlined, "Email Address", userData['email']!),
-          _buildDetailItem(Icons.phone_iphone_rounded, "Phone Number", userData['phone']!),
-          _buildDetailItem(Icons.verified_user_outlined, "Account Type", userData['accountType']!),
-          _buildDetailItem(Icons.location_on_outlined, "Residential Address", userData['address']!),
+          _buildDetailItem(Icons.person_outline_rounded, "Full Name", userData['name'] ?? ''),
+          _buildDetailItem(Icons.email_outlined, "Email Address", userData['email'] ?? ''),
+          _buildDetailItem(Icons.phone_iphone_rounded, "Phone Number", userData['phone'] ?? ''),
+          _buildDetailItem(Icons.verified_user_outlined, "Account Type", userData['accountType'] ?? ''),
+          _buildDetailItem(Icons.location_on_outlined, "Residential Address", userData['address'] ?? ''),
           
           const SizedBox(height: 12),
           const Divider(height: 1),

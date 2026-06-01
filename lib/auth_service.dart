@@ -267,6 +267,90 @@ class AuthService {
   }
 
   // ──────────────────────────────────────────────
+  // Check User Exists (Phone Only)
+  // ──────────────────────────────────────────────
+
+  Future<bool?> checkUserExists(String phoneNumber) async {
+    final String url = 'https://user.jobes24x7.com/api/login/check-phone/$phoneNumber';
+    debugPrint('[AuthService] CHECK USER → $url');
+    try {
+      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        if (data['data'] != null && data['data']['exists'] == true) {
+          return true;
+        }
+        return false;
+      }
+      return null; // Return null if API fails so we can fallback
+    } catch (e) {
+      debugPrint('[AuthService] checkUserExists error: $e');
+      return null;
+    }
+  }
+
+  // ──────────────────────────────────────────────
+  // Register (New User)
+  // ──────────────────────────────────────────────
+
+  Future<Map<String, dynamic>> register({
+    required String phoneNumber,
+    required String email,
+    required String password,
+    required String address,
+    required String userName,
+  }) async {
+    const String registerUrl = 'https://user.jobes24x7.com/api/login/create';
+
+    final Map<String, dynamic> body = {
+      'phone_number': phoneNumber.isNotEmpty ? phoneNumber : '',
+      'email': email.isNotEmpty ? email : '',
+      'password': password,
+      'address': address.isNotEmpty ? address : 'N/A',
+      'user_name': userName.isNotEmpty ? userName : 'User',
+      'created_by': userName.isNotEmpty ? userName : 'User',
+      'attempt_count': 2,
+      'email_otp': email.isNotEmpty ? true : false,
+      'mobile_otp': phoneNumber.isNotEmpty ? true : false,
+      'is_verified': 1,
+      'last_attempt': 9,
+      'otp': 4449,
+      'status': 1,
+      'user_main_id': null,
+      'user_type': 'guest',
+    };
+
+    debugPrint('[AuthService] REGISTER → $registerUrl  body: $body');
+
+    final response = await http
+        .post(
+          Uri.parse(registerUrl),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: jsonEncode(body),
+        )
+        .timeout(const Duration(seconds: 15));
+
+    debugPrint('[AuthService] Register status : ${response.statusCode}');
+    debugPrint('[AuthService] Register body   : ${response.body}');
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final bool success = data['status'] == true || data['success'] == true || data['code'] == 200;
+
+      if (success) {
+        return data;
+      } else {
+        throw AuthException(data['message']?.toString() ?? 'Registration failed.');
+      }
+    } else {
+      throw AuthException('Server error: ${response.statusCode}');
+    }
+  }
+
+  // ──────────────────────────────────────────────
   // Logout
   // ──────────────────────────────────────────────
 
