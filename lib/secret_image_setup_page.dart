@@ -43,7 +43,7 @@ class _SecretImageSetupPageState extends State<SecretImageSetupPage> {
 
     try {
       final userService = Provider.of<UserService>(context, listen: false);
-      
+
       // Save user with the secret image
       await userService.saveRegisteredUser(
         mobile: widget.mobile,
@@ -77,9 +77,9 @@ class _SecretImageSetupPageState extends State<SecretImageSetupPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Setup failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Setup failed: $e')));
       setState(() => _isSaving = false);
     }
   }
@@ -98,7 +98,10 @@ class _SecretImageSetupPageState extends State<SecretImageSetupPage> {
             child: Container(
               width: 300,
               height: 300,
-              decoration: BoxDecoration(color: themeColor.withOpacity(0.12), shape: BoxShape.circle),
+              decoration: BoxDecoration(
+                color: themeColor.withOpacity(0.12),
+                shape: BoxShape.circle,
+              ),
             ),
           ),
           SafeArea(
@@ -111,13 +114,21 @@ class _SecretImageSetupPageState extends State<SecretImageSetupPage> {
                     children: [
                       Text(
                         'Security Image',
-                        style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Color(0xFF1E293B)),
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF1E293B),
+                        ),
                       ),
                       SizedBox(height: 12),
                       Text(
                         'Select one secret image for your account. You will need to select this same image during future logins.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 15, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Color(0xFF64748B),
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
@@ -131,16 +142,21 @@ class _SecretImageSetupPageState extends State<SecretImageSetupPage> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(32),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 10))
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
                       ],
                     ),
                     child: GridView.builder(
                       itemCount: _images.length,
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                          ),
                       itemBuilder: (context, index) {
                         final img = _images[index];
                         final isSelected = _selectedImage == img;
@@ -151,12 +167,20 @@ class _SecretImageSetupPageState extends State<SecretImageSetupPage> {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: isSelected ? themeColor : Colors.transparent,
+                                color: isSelected
+                                    ? themeColor
+                                    : Colors.transparent,
                                 width: 3,
                               ),
-                              boxShadow: isSelected ? [
-                                BoxShadow(color: themeColor.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))
-                              ] : null,
+                              boxShadow: isSelected
+                                  ? [
+                                      BoxShadow(
+                                        color: themeColor.withOpacity(0.3),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ]
+                                  : null,
                             ),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(13),
@@ -182,9 +206,15 @@ class _SecretImageSetupPageState extends State<SecretImageSetupPage> {
                     height: 60,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20),
-                      gradient: const LinearGradient(colors: [themeColor, Color(0xFF4F46E5)]),
+                      gradient: const LinearGradient(
+                        colors: [themeColor, Color(0xFF4F46E5)],
+                      ),
                       boxShadow: [
-                        BoxShadow(color: themeColor.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))
+                        BoxShadow(
+                          color: themeColor.withOpacity(0.3),
+                          blurRadius: 15,
+                          offset: const Offset(0, 8),
+                        ),
                       ],
                     ),
                     child: ElevatedButton(
@@ -192,13 +222,19 @@ class _SecretImageSetupPageState extends State<SecretImageSetupPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.transparent,
                         shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
                       ),
                       child: _isSaving
                           ? const CircularProgressIndicator(color: Colors.white)
                           : const Text(
                               'Complete Setup',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                     ),
                   ),

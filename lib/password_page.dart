@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'auth_service.dart';
 import 'home_page.dart';
 import 'user_service.dart';
 import 'set_pin_page.dart';
@@ -29,7 +30,7 @@ class PasswordPage extends StatefulWidget {
 class _PasswordPageState extends State<PasswordPage> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
-  TextEditingController();
+      TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   bool _obscurePassword = true;
@@ -75,68 +76,39 @@ class _PasswordPageState extends State<PasswordPage> {
         final String identifier = widget.passedIdentifier.isNotEmpty
             ? widget.passedIdentifier.trim()
             : (widget.phoneNumber.isNotEmpty
-            ? widget.phoneNumber.trim()
-            : widget.email.trim());
+                  ? widget.phoneNumber.trim()
+                  : widget.email.trim());
 
         // 🔥 SPEED OPTIMIZATION: Check local storage FIRST
         final userData = await userService.getUserByInput(identifier);
-        
+
+        debugPrint("LOCAL PASSWORD => ${userData?['password']}");
+        debugPrint("ENTERED PASSWORD => $password");
+
         if (userData != null && userData['password'] == password) {
-          debugPrint("Local verification successful => Instant login");
-          
+          await AuthService().login(identifier: identifier, password: password);
+
           if (!mounted) return;
+
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => SecretImageVerificationPage(
-                identifier: identifier,
-              ),
+              builder: (context) =>
+                  SecretImageVerificationPage(identifier: identifier),
             ),
           );
-          return; // Exit early!
+          return;
         }
 
         // 🔥 FALLBACK: If local check fails or user not found, try API
-        debugPrint("Local check failed/not found => Attempting API verification");
-        
-        _LoginResult? loginResult;
-        try {
-          loginResult = await _loginExistingUser(
-            identifier: identifier,
-            password: password,
-          );
-        } catch (e) {
-          debugPrint("API Login Exception: $e");
-        }
-
-        if (!mounted) return;
-
-        if (loginResult != null && loginResult.success) {
-          // Sync local storage in background
-          userService.saveRegisteredUser(
-            mobile: identifier.contains('@') ? '' : identifier,
-            email: identifier.contains('@') ? identifier : '',
-            password: password,
-            pin: '',
-            secretImage: '',
-          );
-
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => SecretImageVerificationPage(
-                identifier: identifier,
-              ),
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(loginResult?.message ?? 'Login failed. Please check your credentials or network.'),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
+        // Local password mismatch
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Invalid credentials'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
       } else {
         // ==========================================
         // NEW USER FLOW
@@ -152,17 +124,16 @@ class _PasswordPageState extends State<PasswordPage> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => SetPinPage(
-              password: passwordController.text.trim(),
-            ),
+            builder: (context) =>
+                SetPinPage(password: passwordController.text.trim()),
           ),
         );
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Something went wrong: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Something went wrong: $e')));
     } finally {
       if (mounted) {
         setState(() {
@@ -181,9 +152,7 @@ class _PasswordPageState extends State<PasswordPage> {
     const String apiUrl = "http://10.0.2.2/login_api/login_or_register.php";
 
     try {
-      final Map<String, String> body = {
-        'password': password,
-      };
+      final Map<String, String> body = {'password': password};
 
       // mobile ah? email ah?
       if (identifier.contains('@')) {
@@ -197,12 +166,10 @@ class _PasswordPageState extends State<PasswordPage> {
 
       final response = await http
           .post(
-        Uri.parse(apiUrl),
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: body,
-      )
+            Uri.parse(apiUrl),
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: body,
+          )
           .timeout(const Duration(seconds: 5));
 
       debugPrint("API STATUS => ${response.statusCode}");
@@ -245,10 +212,7 @@ class _PasswordPageState extends State<PasswordPage> {
         );
       }
     } catch (e) {
-      return _LoginResult(
-        success: false,
-        message: 'Login request failed: $e',
-      );
+      return _LoginResult(success: false, message: 'Login request failed: $e');
     }
   }
 
@@ -308,20 +272,21 @@ class _PasswordPageState extends State<PasswordPage> {
                                 color: Colors.black.withOpacity(0.05),
                                 blurRadius: 30,
                                 offset: const Offset(0, 15),
-                              )
+                              ),
                             ],
                           ),
                           child: Column(
                             children: [
                               Container(
                                 width: double.infinity,
-                                padding:
-                                const EdgeInsets.symmetric(vertical: 40),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 40,
+                                ),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
                                       themeColor.withOpacity(0.05),
-                                      themeColor.withOpacity(0.01)
+                                      themeColor.withOpacity(0.01),
                                     ],
                                     begin: Alignment.topCenter,
                                     end: Alignment.bottomCenter,
@@ -336,16 +301,15 @@ class _PasswordPageState extends State<PasswordPage> {
                                         gradient: const LinearGradient(
                                           colors: [
                                             themeColor,
-                                            Color(0xFF7C3AED)
+                                            Color(0xFF7C3AED),
                                           ],
                                         ),
                                         boxShadow: [
                                           BoxShadow(
-                                            color:
-                                            themeColor.withOpacity(0.3),
+                                            color: themeColor.withOpacity(0.3),
                                             blurRadius: 20,
                                             offset: const Offset(0, 10),
-                                          )
+                                          ),
                                         ],
                                       ),
                                       child: Icon(
@@ -388,7 +352,7 @@ class _PasswordPageState extends State<PasswordPage> {
                                   key: _formKey,
                                   child: Column(
                                     crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                        CrossAxisAlignment.start,
                                     children: [
                                       if (widget.isExistingUser) ...[
                                         Container(
@@ -399,15 +363,16 @@ class _PasswordPageState extends State<PasswordPage> {
                                           ),
                                           decoration: BoxDecoration(
                                             color: const Color(0xFFF8FAFC),
-                                            borderRadius:
-                                            BorderRadius.circular(14),
+                                            borderRadius: BorderRadius.circular(
+                                              14,
+                                            ),
                                           ),
                                           child: Text(
                                             widget.passedIdentifier.isNotEmpty
                                                 ? widget.passedIdentifier
                                                 : (widget.phoneNumber.isNotEmpty
-                                                ? widget.phoneNumber
-                                                : widget.email),
+                                                      ? widget.phoneNumber
+                                                      : widget.email),
                                             style: const TextStyle(
                                               fontSize: 13,
                                               fontWeight: FontWeight.w600,
@@ -444,12 +409,13 @@ class _PasswordPageState extends State<PasswordPage> {
                                             icon: Icon(
                                               _obscurePassword
                                                   ? Icons.visibility_outlined
-                                                  : Icons.visibility_off_outlined,
+                                                  : Icons
+                                                        .visibility_off_outlined,
                                               size: 20,
                                             ),
                                             onPressed: () => setState(
-                                                  () => _obscurePassword =
-                                              !_obscurePassword,
+                                              () => _obscurePassword =
+                                                  !_obscurePassword,
                                             ),
                                           ),
                                         ),
@@ -474,17 +440,18 @@ class _PasswordPageState extends State<PasswordPage> {
                                                 value: _strength,
                                                 backgroundColor: Colors.black12,
                                                 valueColor:
-                                                AlwaysStoppedAnimation<
-                                                    Color>(
-                                                  _strength < 0.4
-                                                      ? Colors.red
-                                                      : (_strength < 0.7
-                                                      ? Colors.orange
-                                                      : themeColor),
-                                                ),
+                                                    AlwaysStoppedAnimation<
+                                                      Color
+                                                    >(
+                                                      _strength < 0.4
+                                                          ? Colors.red
+                                                          : (_strength < 0.7
+                                                                ? Colors.orange
+                                                                : themeColor),
+                                                    ),
                                                 minHeight: 4,
                                                 borderRadius:
-                                                BorderRadius.circular(2),
+                                                    BorderRadius.circular(2),
                                               ),
                                             ),
                                             const SizedBox(width: 12),
@@ -492,16 +459,16 @@ class _PasswordPageState extends State<PasswordPage> {
                                               _strength < 0.4
                                                   ? 'Weak'
                                                   : (_strength < 0.7
-                                                  ? 'Fair'
-                                                  : 'Strong'),
+                                                        ? 'Fair'
+                                                        : 'Strong'),
                                               style: TextStyle(
                                                 fontSize: 11,
                                                 fontWeight: FontWeight.w800,
                                                 color: _strength < 0.4
                                                     ? Colors.red
                                                     : (_strength < 0.7
-                                                    ? Colors.orange
-                                                    : themeColor),
+                                                          ? Colors.orange
+                                                          : themeColor),
                                               ),
                                             ),
                                           ],
@@ -517,10 +484,8 @@ class _PasswordPageState extends State<PasswordPage> {
                                         ),
                                         const SizedBox(height: 12),
                                         TextFormField(
-                                          controller:
-                                          confirmPasswordController,
-                                          obscureText:
-                                          _obscureConfirmPassword,
+                                          controller: confirmPasswordController,
+                                          obscureText: _obscureConfirmPassword,
                                           decoration: _inputDecoration(
                                             'Repeat your password',
                                             Icons.lock_reset_rounded,
@@ -529,13 +494,13 @@ class _PasswordPageState extends State<PasswordPage> {
                                               icon: Icon(
                                                 _obscureConfirmPassword
                                                     ? Icons.visibility_outlined
-                                                    : Icons.visibility_off_outlined,
+                                                    : Icons
+                                                          .visibility_off_outlined,
                                                 size: 20,
                                               ),
                                               onPressed: () => setState(
-                                                    () =>
-                                                _obscureConfirmPassword =
-                                                !_obscureConfirmPassword,
+                                                () => _obscureConfirmPassword =
+                                                    !_obscureConfirmPassword,
                                               ),
                                             ),
                                           ),
@@ -544,7 +509,8 @@ class _PasswordPageState extends State<PasswordPage> {
                                                 val.trim().isEmpty) {
                                               return 'Confirm password required';
                                             }
-                                            if (val != passwordController.text) {
+                                            if (val !=
+                                                passwordController.text) {
                                               return 'Passwords do not match';
                                             }
                                             return null;
@@ -556,14 +522,15 @@ class _PasswordPageState extends State<PasswordPage> {
                                         text: _isSubmitting
                                             ? 'Please wait...'
                                             : (widget.isExistingUser
-                                            ? 'Login'
-                                            : 'Finalize Account'),
+                                                  ? 'Login'
+                                                  : 'Finalize Account'),
                                         colors: const [
                                           themeColor,
-                                          Color(0xFF7C3AED)
+                                          Color(0xFF7C3AED),
                                         ],
-                                        onPressed:
-                                        _isSubmitting ? null : _submit,
+                                        onPressed: _isSubmitting
+                                            ? null
+                                            : _submit,
                                         isLoading: _isSubmitting,
                                       ),
                                     ],
@@ -586,19 +553,18 @@ class _PasswordPageState extends State<PasswordPage> {
   }
 
   InputDecoration _inputDecoration(
-      String hint,
-      IconData icon,
-      Color color, {
-        Widget? suffix,
-      }) {
+    String hint,
+    IconData icon,
+    Color color, {
+    Widget? suffix,
+  }) {
     return InputDecoration(
       hintText: hint,
       prefixIcon: Icon(icon, size: 20),
       suffixIcon: suffix,
       filled: true,
       fillColor: const Color(0xFFF1F5F9),
-      contentPadding:
-      const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(20),
         borderSide: BorderSide.none,
@@ -618,10 +584,7 @@ class _PasswordPageState extends State<PasswordPage> {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 
@@ -642,7 +605,7 @@ class _PasswordPageState extends State<PasswordPage> {
             color: colors[0].withOpacity(0.3),
             blurRadius: 15,
             offset: const Offset(0, 8),
-          )
+          ),
         ],
       ),
       child: ElevatedButton(
@@ -658,23 +621,22 @@ class _PasswordPageState extends State<PasswordPage> {
         ),
         child: isLoading
             ? const SizedBox(
-          width: 22,
-          height: 22,
-          child: CircularProgressIndicator(
-            strokeWidth: 2.5,
-            valueColor:
-            AlwaysStoppedAnimation<Color>(Colors.white),
-          ),
-        )
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
             : Text(
-          text,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            letterSpacing: 0.5,
-          ),
-        ),
+                text,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                ),
+              ),
       ),
     );
   }
@@ -694,7 +656,7 @@ class _PasswordPageState extends State<PasswordPage> {
     return Container(
       width: 20,
       height: 2,
-      color: active ? color.withOpacity(0.3) : Colors.black12,
+      color: active ? color. withOpacity(0.3) : Colors.black12,
     );
   }
 }
@@ -703,8 +665,5 @@ class _LoginResult {
   final bool success;
   final String message;
 
-  const _LoginResult({
-    required this.success,
-    required this.message,
-  });
+  const _LoginResult({required this.success, required this.message});
 }

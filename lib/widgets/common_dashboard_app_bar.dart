@@ -8,7 +8,8 @@ import '../home_page.dart';
 import '../settings_page.dart';
 import '../profile_dropdown.dart';
 
-class CommonDashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
+class CommonDashboardAppBar extends StatelessWidget
+    implements PreferredSizeWidget {
   final String? title;
   final bool automaticallyImplyLeading;
   final DashboardSection? selectedSection;
@@ -37,29 +38,51 @@ class CommonDashboardAppBar extends StatelessWidget implements PreferredSizeWidg
   Future<void> _pickAndChangePhoto(BuildContext context) async {
     final ImagePicker picker = ImagePicker();
     try {
-      final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
       if (image != null) {
         final bytes = await image.readAsBytes();
         await UserService().updateProfilePhoto(bytes);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Profile photo updated successfully"), backgroundColor: Color(0xFF10B981), behavior: SnackBarBehavior.floating),
+          const SnackBar(
+            content: Text("Profile photo updated successfully"),
+            backgroundColor: Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error updating photo: $e"), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating),
+        SnackBar(
+          content: Text("Error updating photo: $e"),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     }
   }
 
-  void _showProfileMenu(BuildContext context, BuildContext buttonContext, Map<String, String> userData) {
+  void _showProfileMenu(
+    BuildContext context,
+    BuildContext buttonContext,
+    Map<String, String> userData,
+  ) {
     final RenderBox button = buttonContext.findRenderObject() as RenderBox;
-    final RenderBox overlay = Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
+    final RenderBox overlay =
+        Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
 
     final RelativeRect position = RelativeRect.fromRect(
       Rect.fromPoints(
-        button.localToGlobal(Offset(button.size.width - 8, button.size.height), ancestor: overlay),
-        button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlay),
+        button.localToGlobal(
+          Offset(button.size.width - 8, button.size.height),
+          ancestor: overlay,
+        ),
+        button.localToGlobal(
+          button.size.bottomRight(Offset.zero),
+          ancestor: overlay,
+        ),
       ),
       Offset.zero & overlay.size,
     );
@@ -70,8 +93,8 @@ class CommonDashboardAppBar extends StatelessWidget implements PreferredSizeWidg
       useRootNavigator: true,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       elevation: 20,
-      color: Theme.of(context).brightness == Brightness.dark 
-          ? const Color(0xFF1E293B).withOpacity(0.95) 
+      color: Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFF1E293B).withOpacity(0.95)
           : Colors.white.withOpacity(0.95),
       constraints: const BoxConstraints(minWidth: 280),
       items: <PopupMenuEntry<String>>[
@@ -85,9 +108,11 @@ class CommonDashboardAppBar extends StatelessWidget implements PreferredSizeWidg
               return Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                  color: Theme.of(context).brightness == Brightness.dark 
-                      ? Colors.white.withOpacity(0.05) 
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(20),
+                  ),
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white.withOpacity(0.05)
                       : Colors.grey.withOpacity(0.05),
                 ),
                 child: Column(
@@ -98,10 +123,19 @@ class CommonDashboardAppBar extends StatelessWidget implements PreferredSizeWidg
                         CircleAvatar(
                           radius: 28,
                           backgroundColor: const Color(0xFFF59E0B),
-                          backgroundImage: photoBytes != null ? MemoryImage(photoBytes) : null,
-                          child: photoBytes == null 
-                            ? Text(_getInitials(userData['name']!), style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)) 
-                            : null,
+                          backgroundImage: photoBytes != null
+                              ? MemoryImage(photoBytes)
+                              : null,
+                          child: photoBytes == null
+                              ? Text(
+                                  _getInitials(userData['name']!),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                )
+                              : null,
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -109,28 +143,43 @@ class CommonDashboardAppBar extends StatelessWidget implements PreferredSizeWidg
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                userData['name']!, 
-                                maxLines: 1, 
-                                overflow: TextOverflow.ellipsis, 
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)
+                                userData['name']!,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                userData['email']!, 
-                                maxLines: 1, 
-                                overflow: TextOverflow.ellipsis, 
-                                style: TextStyle(color: Colors.grey.shade500, fontSize: 12)
+                                userData['email']!,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Colors.grey.shade500,
+                                  fontSize: 12,
+                                ),
                               ),
                               const SizedBox(height: 6),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF10B981).withOpacity(0.1),
+                                  color: const Color(
+                                    0xFF10B981,
+                                  ).withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
-                                  "ID: ${(userData['user_main_id'] != null && userData['user_main_id']!.isNotEmpty) ? userData['user_main_id']! : (userData['userId'] ?? '')}", 
-                                  style: const TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.bold)
+                                  "ID: ${(userData['user_main_id'] != null && userData['user_main_id']!.isNotEmpty) ? userData['user_main_id']! : (userData['userId'] ?? '')}",
+                                  style: const TextStyle(
+                                    color: Color(0xFF10B981),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ],
@@ -145,11 +194,36 @@ class CommonDashboardAppBar extends StatelessWidget implements PreferredSizeWidg
           ),
         ),
         const PopupMenuDivider(height: 1),
-        _buildPopupItem(context, value: 'profile', icon: Icons.person_outline_rounded, title: "View Profile", subtitle: "See your public profile"),
-        _buildPopupItem(context, value: 'settings', icon: Icons.settings_outlined, title: "Account Settings", subtitle: "Manage your account"),
-        _buildPopupItem(context, value: 'photo', icon: Icons.photo_camera_outlined, title: "Change Photo", subtitle: "Update profile picture"),
+        _buildPopupItem(
+          context,
+          value: 'profile',
+          icon: Icons.person_outline_rounded,
+          title: "View Profile",
+          subtitle: "See your public profile",
+        ),
+        _buildPopupItem(
+          context,
+          value: 'settings',
+          icon: Icons.settings_outlined,
+          title: "Account Settings",
+          subtitle: "Manage your account",
+        ),
+        _buildPopupItem(
+          context,
+          value: 'photo',
+          icon: Icons.photo_camera_outlined,
+          title: "Change Photo",
+          subtitle: "Update profile picture",
+        ),
         const PopupMenuDivider(height: 1),
-        _buildPopupItem(context, value: 'logout', icon: Icons.logout_rounded, title: "Logout", subtitle: "Sign out of your account", isLogout: true),
+        _buildPopupItem(
+          context,
+          value: 'logout',
+          icon: Icons.logout_rounded,
+          title: "Logout",
+          subtitle: "Sign out of your account",
+          isLogout: true,
+        ),
       ],
     ).then((selectedValue) {
       if (selectedValue == null) return;
@@ -157,9 +231,22 @@ class CommonDashboardAppBar extends StatelessWidget implements PreferredSizeWidg
     });
   }
 
-  PopupMenuItem<String> _buildPopupItem(BuildContext context, {required String value, required IconData icon, required String title, required String subtitle, bool isLogout = false}) {
-    final Color iconColor = isLogout ? const Color(0xFFE11D48) : Theme.of(context).primaryColor;
-    final Color titleColor = isLogout ? const Color(0xFFE11D48) : (Theme.of(context).brightness == Brightness.dark ? Colors.white : const Color(0xFF1E293B));
+  PopupMenuItem<String> _buildPopupItem(
+    BuildContext context, {
+    required String value,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    bool isLogout = false,
+  }) {
+    final Color iconColor = isLogout
+        ? const Color(0xFFE11D48)
+        : Theme.of(context).primaryColor;
+    final Color titleColor = isLogout
+        ? const Color(0xFFE11D48)
+        : (Theme.of(context).brightness == Brightness.dark
+              ? Colors.white
+              : const Color(0xFF1E293B));
 
     return PopupMenuItem<String>(
       value: value,
@@ -167,12 +254,12 @@ class CommonDashboardAppBar extends StatelessWidget implements PreferredSizeWidg
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10), 
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1), 
-              borderRadius: BorderRadius.circular(12)
-            ), 
-            child: Icon(icon, color: iconColor, size: 22)
+              color: iconColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: iconColor, size: 22),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -180,9 +267,19 @@ class CommonDashboardAppBar extends StatelessWidget implements PreferredSizeWidg
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: TextStyle(color: titleColor, fontWeight: FontWeight.bold, fontSize: 14)),
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: titleColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(subtitle, style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
+                Text(
+                  subtitle,
+                  style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+                ),
               ],
             ),
           ),
@@ -194,10 +291,16 @@ class CommonDashboardAppBar extends StatelessWidget implements PreferredSizeWidg
   Future<void> _handleMenuAction(BuildContext context, String action) async {
     switch (action) {
       case 'profile':
-        Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage()));
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ProfilePage()),
+        );
         break;
       case 'settings':
-        Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsPage()));
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const SettingsPage()),
+        );
         break;
       case 'photo':
         await _pickAndChangePhoto(context);
@@ -213,12 +316,14 @@ class CommonDashboardAppBar extends StatelessWidget implements PreferredSizeWidg
     return FutureBuilder<Map<String, String>>(
       future: UserService().getUserData(),
       builder: (context, snapshot) {
-        final userData = snapshot.data ?? {
-          'name': 'User',
-          'email': 'user@example.com',
-          'userId': '0000000000',
-          'accountType': 'GUEST'
-        };
+        final userData =
+            snapshot.data ??
+            {
+              'name': 'User',
+              'email': 'user@example.com',
+              'userId': '0000000000',
+              'accountType': 'GUEST',
+            };
 
         return AppBar(
           backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
@@ -228,8 +333,13 @@ class CommonDashboardAppBar extends StatelessWidget implements PreferredSizeWidg
           titleSpacing: automaticallyImplyLeading ? 0 : 20,
           iconTheme: const IconThemeData(color: Colors.white),
           title: Text(
-            title ?? "UserPortal", 
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20, letterSpacing: 0.5),
+            title ?? "UserPortal",
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+              letterSpacing: 0.5,
+            ),
             overflow: TextOverflow.ellipsis,
             maxLines: 1,
             softWrap: false,
@@ -238,9 +348,16 @@ class CommonDashboardAppBar extends StatelessWidget implements PreferredSizeWidg
             // Settings Icon
             IconButton(
               onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsPage()));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SettingsPage()),
+                );
               },
-              icon: const Icon(Icons.settings_outlined, color: Colors.white70, size: 24),
+              icon: const Icon(
+                Icons.settings_outlined,
+                color: Colors.white70,
+                size: 24,
+              ),
               tooltip: 'Settings',
             ),
             const SizedBox(width: 4),
@@ -260,23 +377,35 @@ class CommonDashboardAppBar extends StatelessWidget implements PreferredSizeWidg
                           CircleAvatar(
                             radius: 18,
                             backgroundColor: const Color(0xFFF59E0B),
-                            backgroundImage: photoBytes != null ? MemoryImage(photoBytes) : null,
-                            child: photoBytes == null 
-                              ? Text(_getInitials(userData['name']!), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)) 
-                              : null,
+                            backgroundImage: photoBytes != null
+                                ? MemoryImage(photoBytes)
+                                : null,
+                            child: photoBytes == null
+                                ? Text(
+                                    _getInitials(userData['name']!),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  )
+                                : null,
                           ),
                           Positioned(
-                            right: 0, 
-                            bottom: 0, 
+                            right: 0,
+                            bottom: 0,
                             child: Container(
-                              width: 10, 
-                              height: 10, 
+                              width: 10,
+                              height: 10,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF10B981), 
-                                shape: BoxShape.circle, 
-                                border: Border.all(color: const Color(0xFF1E293B), width: 2)
-                              )
-                            )
+                                color: const Color(0xFF10B981),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: const Color(0xFF1E293B),
+                                  width: 2,
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       );
@@ -287,51 +416,69 @@ class CommonDashboardAppBar extends StatelessWidget implements PreferredSizeWidg
                   Builder(
                     builder: (buttonContext) {
                       return GestureDetector(
-                        onTap: () => ProfileDropdown.show(context, buttonContext, userData),
+                        onTap: () => ProfileDropdown.show(
+                          context,
+                          buttonContext,
+                          userData,
+                        ),
                         child: const Icon(
                           Icons.keyboard_arrow_down_rounded,
                           color: Colors.white70,
                           size: 18,
                         ),
                       );
-                    }
+                    },
                   ),
                 ],
               ),
             ),
           ],
-          bottom: selectedSection != null ? PreferredSize(
-            preferredSize: const Size.fromHeight(52),
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildTabButton(
-                    context, 
-                    title: "Activities", 
-                    icon: Icons.bolt, 
-                    isSelected: selectedSection == DashboardSection.activities,
-                    onTap: () => onSectionChanged?.call(DashboardSection.activities),
+          bottom: selectedSection != null
+              ? PreferredSize(
+                  preferredSize: const Size.fromHeight(52),
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildTabButton(
+                          context,
+                          title: "Activities",
+                          icon: Icons.bolt,
+                          isSelected:
+                              selectedSection == DashboardSection.activities,
+                          onTap: () => onSectionChanged?.call(
+                            DashboardSection.activities,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        _buildTabButton(
+                          context,
+                          title: "User Privilege",
+                          icon: Icons.shield_outlined,
+                          isSelected:
+                              selectedSection == DashboardSection.privilege,
+                          onTap: () => onSectionChanged?.call(
+                            DashboardSection.privilege,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(width: 12),
-                  _buildTabButton(
-                    context, 
-                    title: "User Privilege", 
-                    icon: Icons.shield_outlined, 
-                    isSelected: selectedSection == DashboardSection.privilege,
-                    onTap: () => onSectionChanged?.call(DashboardSection.privilege),
-                  ),
-                ],
-              ),
-            ),
-          ) : null,
+                )
+              : null,
         );
       },
     );
   }
 
-  Widget _buildTabButton(BuildContext context, {required String title, required IconData icon, required bool isSelected, required VoidCallback onTap}) {
+  Widget _buildTabButton(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -339,12 +486,18 @@ class CommonDashboardAppBar extends StatelessWidget implements PreferredSizeWidg
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF334155) : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
-          border: isSelected ? Border.all(color: Colors.white.withOpacity(0.1), width: 1) : null,
+          border: isSelected
+              ? Border.all(color: Colors.white.withOpacity(0.1), width: 1)
+              : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: isSelected ? Colors.white : Colors.white54, size: 16),
+            Icon(
+              icon,
+              color: isSelected ? Colors.white : Colors.white54,
+              size: 16,
+            ),
             const SizedBox(width: 6),
             Text(
               title,

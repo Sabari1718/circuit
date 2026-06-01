@@ -52,43 +52,52 @@ class UserService extends ChangeNotifier {
   }
 
   Future<void> saveFromApiUser(Map<String, dynamic> user) async {
-    String name =
+    final prefs = await SharedPreferences.getInstance();
+
+    String? apiName =
         user['name']?.toString() ??
-            user['fullName']?.toString() ??
-            user['username']?.toString() ??
-            user['user_name']?.toString() ??
-            'User';
+        user['fullName']?.toString() ??
+        user['username']?.toString() ??
+        user['user_name']?.toString();
+    String name = (apiName != null && apiName.isNotEmpty)
+        ? apiName
+        : (prefs.getString(keyName) ?? 'User');
 
     String email =
         user['email']?.toString() ??
-            user['emailId']?.toString() ??
-            user['mail']?.toString() ??
-            'user@example.com';
+        user['emailId']?.toString() ??
+        user['mail']?.toString() ??
+        'user@example.com';
 
     String phone =
         user['phone']?.toString() ??
-            user['mobile']?.toString() ??
-            user['mobileNumber']?.toString() ??
-            user['phoneNumber']?.toString() ??
-            'Not provided';
+        user['mobile']?.toString() ??
+        user['mobileNumber']?.toString() ??
+        user['phoneNumber']?.toString() ??
+        'Not provided';
 
-    String address =
+    String? apiAddress =
         user['address']?.toString() ??
-            user['location']?.toString() ??
-            user['city']?.toString() ??
-            'Not provided';
+        user['location']?.toString() ??
+        user['city']?.toString();
+    String address = (apiAddress != null && apiAddress.isNotEmpty)
+        ? apiAddress
+        : (prefs.getString(keyAddress) ?? 'Not provided');
 
-    String accountType =
+    String? apiAccountType =
         user['accountType']?.toString() ??
-            user['userType']?.toString() ??
-            user['role']?.toString() ??
-            'GUEST';
+        user['userType']?.toString() ??
+        user['user_type']?.toString() ??
+        user['role']?.toString();
+    String accountType = (apiAccountType != null && apiAccountType.isNotEmpty)
+        ? apiAccountType
+        : (prefs.getString(keyAccountType) ?? 'GUEST');
 
     String userId =
         user['id']?.toString() ??
-            user['userId']?.toString() ??
-            user['userid']?.toString() ??
-            '9508383027';
+        user['userId']?.toString() ??
+        user['userid']?.toString() ??
+        '9508383027';
 
     await saveUserData(
       name: name,
@@ -163,8 +172,9 @@ class UserService extends ChangeNotifier {
   }
 
   String _generateDeterministicId(String phone) {
-    if (phone == '8012107626') return '9508383027'; // Match the user's example perfectly!
-    
+    if (phone == '8012107626')
+      return '9508383027'; // Match the user's example perfectly!
+
     // Hash phone digits deterministically
     int hash = 0;
     for (int i = 0; i < phone.length; i++) {
@@ -179,9 +189,13 @@ class UserService extends ChangeNotifier {
     _isFetchingUserMainId = true;
     try {
       // 1. Try to fetch from external API first
-      final response = await http.get(
-        Uri.parse('https://user.jobes24x7.com/api/business-reg/user/$phone'),
-      ).timeout(const Duration(seconds: 5));
+      final response = await http
+          .get(
+            Uri.parse(
+              'https://user.jobes24x7.com/api/business-reg/user/$phone',
+            ),
+          )
+          .timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -194,7 +208,9 @@ class UserService extends ChangeNotifier {
         }
       }
     } catch (e) {
-      debugPrint("API error or timeout, falling back to local database/generator: $e");
+      debugPrint(
+        "API error or timeout, falling back to local database/generator: $e",
+      );
     }
 
     // 2. Fallback: check or generate local database ID
@@ -239,7 +255,9 @@ class UserService extends ChangeNotifier {
     final String? userMainId = prefs.getString(keyUserMainId);
     final String phone = prefs.getString(keyPhone) ?? '';
 
-    if ((userMainId == null || userMainId.isEmpty) && phone.isNotEmpty && phone != 'Not provided') {
+    if ((userMainId == null || userMainId.isEmpty) &&
+        phone.isNotEmpty &&
+        phone != 'Not provided') {
       _fetchAndStoreUserMainId(phone);
     }
 
@@ -257,7 +275,16 @@ class UserService extends ChangeNotifier {
   Future<void> logout(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
 
+    String? savedName = prefs.getString(keyName);
+    String? savedAddress = prefs.getString(keyAddress);
+    String? savedAccountType = prefs.getString(keyAccountType);
+
     await prefs.clear();
+
+    if (savedName != null) await prefs.setString(keyName, savedName);
+    if (savedAddress != null) await prefs.setString(keyAddress, savedAddress);
+    if (savedAccountType != null)
+      await prefs.setString(keyAccountType, savedAccountType);
     _profilePhotoBytes = null;
     notifyListeners();
 
@@ -265,9 +292,8 @@ class UserService extends ChangeNotifier {
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const LoginPage()),
-            (route) => false,
+        (route) => false,
       );
     }
   }
 }
-

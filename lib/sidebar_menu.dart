@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'bio_overview_page.dart';
 import 'grid_card_page.dart';
 import 'grid_verification_page.dart';
+import 's_tab_auth_page.dart';
 
 class SidebarMenu extends StatefulWidget {
   final String activeItem;
@@ -60,7 +61,9 @@ class _SidebarMenuState extends State<SidebarMenu> with SingleTickerProviderStat
 
     if (isMobile) {
       Widget targetPage;
-      if (item == 'bio_overview' || item == 'authentication' || item == 's_tab' || item == 'verify') {
+      if (item == 's_tab') {
+        targetPage = const STabAuthPage();
+      } else if (item == 'bio_overview' || item == 'authentication' || item == 'verify') {
         targetPage = BioOverviewPage(initialSection: item, showMenuOnlyOnMobile: false);
       } else if (item == 'grid_card') {
         targetPage = const GridCardPage();

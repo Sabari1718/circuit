@@ -7,6 +7,7 @@ import 'upgrade/employee_upgrade_page.dart';
 import 'upgrade/business_user_store.dart';
 import 'upgrade/employee_user_store.dart';
 import 'upgrade/employee_application_preview_page.dart';
+import 'upgrade/job_categories_page.dart';
 import 'user_service.dart';
 import 'widgets/common_dashboard_app_bar.dart';
 import 'widgets/account_type_card.dart';
@@ -59,7 +60,9 @@ class _HomePageState extends State<HomePage> {
 
   final TextEditingController _searchController = TextEditingController();
   late List<ActivityCardData> _activities;
+  late List<ActivityCardData> _careerChildActivities;
   List<ActivityCardData> _filteredActivities = [];
+  bool _isCareerExpanded = false;
 
   @override
   void initState() {
@@ -74,12 +77,71 @@ class _HomePageState extends State<HomePage> {
   void _initializeActivities() {
     _activities = [
       ActivityCardData(
+        id: "social",
+        title: "SOCIAL",
+        subtitle: "Media",
+        description: "Social networking & community tools",
+        icon: "👥",
+        color: const Color(0xFF3B82F6),
+      ),
+      ActivityCardData(
+        id: "real_estate",
+        title: "REAL ESTATE",
+        subtitle: "Property",
+        description: "Property listings & management tools",
+        icon: "🏠",
+        color: const Color(0xFF10B981),
+      ),
+      ActivityCardData(
+        id: "voluntary",
+        title: "VOLUNTARY",
+        subtitle: "Service",
+        description: "Join volunteer drives, community service & social impact",
+        icon: "🤝",
+        color: const Color(0xFFF59E0B),
+      ),
+      ActivityCardData(
+        id: "kovil",
+        title: "KOVIL",
+        subtitle: "Temple",
+        description: "Manage temple activities & donations",
+        icon: "🛕",
+        color: const Color(0xFF7C3AED),
+      ),
+      ActivityCardData(
+        id: "jobs",
+        title: "CAREER",
+        subtitle: "PORTAL",
+        description: "Showcase your career, skills & professional achievements",
+        icon: "👨‍💻",
+        color: const Color(0xFF6366F1),
+      ),
+      ActivityCardData(
+        id: "trust",
+        title: "TRUST",
+        subtitle: "Organization",
+        description: "Manage trust funds, charity & non-profit organizations",
+        icon: "🏛️",
+        color: const Color(0xFF94A3B8),
+      ),
+    ];
+
+    _careerChildActivities = [
+      ActivityCardData(
         id: "job_career",
         title: "JOB",
         subtitle: "CAREER",
         description: "Employee access to business features",
         icon: "📝",
         color: const Color(0xFFF97316),
+      ),
+      ActivityCardData(
+        id: "employee",
+        title: "EMPLOYEE",
+        subtitle: "CAREER",
+        description: "Employee management & payroll features",
+        icon: "📋",
+        color: const Color(0xFF64748B),
       ),
       ActivityCardData(
         id: "business_career",
@@ -92,68 +154,27 @@ class _HomePageState extends State<HomePage> {
       ActivityCardData(
         id: "business",
         title: "MY BUSINESS",
-        subtitle: "Enterprise",
+        subtitle: "ENTERPRISE",
         description: "Analytics & Team tools for businesses",
         icon: "💼",
         color: const Color(0xFF8B5CF6),
       ),
-      ActivityCardData(
-        id: "employee",
-        title: "EMPLOYEE",
-        subtitle: "User",
-        description: "Employee management & payroll features",
-        icon: "📋",
-        color: const Color(0xFF64748B),
-      ),
-      ActivityCardData(
-        id: "kovil",
-        title: "KOVIL",
-        subtitle: "Temple",
-        description: "Manage temple activities & donations",
-        icon: "🛕",
-        color: const Color(0xFF7C3AED),
-      ),
-      ActivityCardData(
-        id: "real_estate",
-        title: "REAL ESTATE",
-        subtitle: "Property",
-        description: "Property listings & management tools",
-        icon: "🏠",
-        color: const Color(0xFF10B981),
-      ),
-      ActivityCardData(
-        id: "social",
-        title: "SOCIAL",
-        subtitle: "Media",
-        description: "Social networking & community tools",
-        icon: "👥",
-        color: const Color(0xFF3B82F6),
-      ),
-      ActivityCardData(
-        id: "trust",
-        title: "TRUST",
-        subtitle: "Organization",
-        description: "Manage trust funds, charity & non-profit organizations",
-        icon: "🏛️",
-        color: const Color(0xFF94A3B8),
-      ),
-      ActivityCardData(
-        id: "voluntary",
-        title: "VOLUNTARY",
-        subtitle: "Service",
-        description: "Join volunteer drives, community service & social impact",
-        icon: "🤝",
-        color: const Color(0xFFF59E0B),
-      ),
-      ActivityCardData(
-        id: "jobs",
-        title: "MY JOBS",
-        subtitle: "Portal",
-        description: "Showcase your career, skills & professional achievements",
-        icon: "👨‍💻",
-        color: const Color(0xFF6366F1),
-      ),
     ];
+  }
+
+  void _toggleCareerExpanded() {
+    setState(() {
+      _isCareerExpanded = !_isCareerExpanded;
+      if (_isCareerExpanded) {
+        int idx = _activities.indexWhere((c) => c.id == 'jobs');
+        if (idx != -1) {
+          _activities.insertAll(idx + 1, _careerChildActivities);
+        }
+      } else {
+        _activities.removeWhere((c) => _careerChildActivities.any((child) => child.id == c.id));
+      }
+      _filterActivities(_searchController.text);
+    });
   }
 
   void _filterActivities(String query) {
@@ -194,7 +215,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   bool _checkCompletion(String moduleId) {
-    if (moduleId == "job_career" || moduleId == "business_career") {
+    if (moduleId == "business_career") {
       return true;
     }
     if (moduleId == "business") {
@@ -265,6 +286,11 @@ class _HomePageState extends State<HomePage> {
           context,
           MaterialPageRoute(builder: (context) => const EmployeeUpgradePage()),
         ).then((_) => setState(() {}));
+      } else if (moduleId == "job_career") {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const JobCategoriesPage()),
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("$title Upgrade coming soon!")),
@@ -448,6 +474,11 @@ class _HomePageState extends State<HomePage> {
         setState(() {
           final element = _filteredActivities.removeAt(oldIndex);
           _filteredActivities.insert(newIndex, element);
+          
+          if (_searchController.text.isEmpty) {
+            final aElement = _activities.removeAt(oldIndex);
+            _activities.insert(newIndex, aElement);
+          }
         });
       },
       children: _filteredActivities.map((card) => _buildActivityCard(card)).toList(),
@@ -462,6 +493,25 @@ class _HomePageState extends State<HomePage> {
         builder: (context, _) {
           final isCompleted = _checkCompletion(card.id);
           
+          Widget? topRightAction;
+          if (card.id == "jobs") {
+            topRightAction = GestureDetector(
+              onTap: _toggleCareerExpanded,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  _isCareerExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                  size: 16,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+            );
+          }
+
           return AccountTypeCard(
             title: card.title,
             subtitle: card.subtitle,
@@ -473,6 +523,7 @@ class _HomePageState extends State<HomePage> {
             customDescriptionWidget: (card.id == "business" && isCompleted) ? _buildBusinessDropdown(context) : null,
             // REMOVED: hidePrimaryButton so that VIEW button appears for Business
             hidePrimaryButton: false,
+            topRightAction: topRightAction,
             onPrimaryTap: () => _handleNavigation(card.id, card.title),
             onReadMoreTap: () => _showReadMore(card.title),
           );

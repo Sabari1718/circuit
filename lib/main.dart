@@ -9,6 +9,7 @@ import 'theme/theme_provider.dart';
 import 'app_lock_service.dart';
 import 'app_lock_page.dart';
 import 'app_security_service.dart';
+import 'auth_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,8 +30,15 @@ void main() async {
 
   final UserService userService = UserService();
   final AppLockService appLockService = AppLockService();
+  final AuthService authService = AuthService();
 
-  final bool isLoggedIn = await userService.isUserLoggedIn();
+  // CHECK TOKEN VALIDITY
+  final String authResult = await authService.checkAuthOnStartup();
+
+  final bool isLoggedIn =
+      authResult == AuthService.resultDashboard &&
+          await userService.isUserLoggedIn();
+
   final bool isAppLockEnabled = await appLockService.isAppLockEnabled();
   final userData = await userService.getUserData();
 

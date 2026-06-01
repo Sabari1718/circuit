@@ -18,8 +18,9 @@ class UserOverviewPage extends StatefulWidget {
 }
 
 class _UserOverviewPageState extends State<UserOverviewPage> {
-  int _currentPageIndex = 0; // 0: Overview (Page 1), 1: Upgrade Account (Page 2), 2: Identify Verification (Page 3)
-  
+  int _currentPageIndex =
+      0; // 0: Overview (Page 1), 1: Upgrade Account (Page 2), 2: Identify Verification (Page 3)
+
   // Data retrieved from SharedPreferences
   String _userMainId = "9508383027";
   String _panNumber = "";
@@ -66,7 +67,12 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
     });
   }
 
-  Future<void> _saveVerificationData(String pan, String gender, String photoName, Uint8List photoBytes) async {
+  Future<void> _saveVerificationData(
+    String pan,
+    String gender,
+    String photoName,
+    Uint8List photoBytes,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('user_pan', pan);
     await prefs.setString('user_gender', gender);
@@ -89,7 +95,10 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
       if (file.bytes != null) {
         if (file.size > 5 * 1024 * 1024) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("File size must be less than 5MB"), backgroundColor: Colors.red),
+            const SnackBar(
+              content: Text("File size must be less than 5MB"),
+              backgroundColor: Colors.red,
+            ),
           );
           return;
         }
@@ -104,27 +113,54 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
   void _submitVerification() async {
     final pan = _panController.text.trim().toUpperCase();
     if (pan.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please enter PAN number"), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please enter PAN number"),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
     final panRegex = RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]$');
     if (!panRegex.hasMatch(pan)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Enter valid PAN (e.g. ABCDE1234F)"), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Enter valid PAN (e.g. ABCDE1234F)"),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
     if (_selectedGender.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please select Gender"), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please select Gender"),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
     if (_uploadFileBytes == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please upload PAN Card Photo (Front)"), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please upload PAN Card Photo (Front)"),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
 
     setState(() => _isSubmitting = true);
-    await Future.delayed(const Duration(milliseconds: 1500)); // Simulate API response
-    await _saveVerificationData(pan, _selectedGender, _uploadFileName ?? "PAN Card", _uploadFileBytes!);
-    
+    await Future.delayed(
+      const Duration(milliseconds: 1500),
+    ); // Simulate API response
+    await _saveVerificationData(
+      pan,
+      _selectedGender,
+      _uploadFileName ?? "PAN Card",
+      _uploadFileBytes!,
+    );
+
     if (mounted) {
       setState(() {
         _isSubmitting = false;
@@ -132,7 +168,10 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("SUCCESSFULLY VERIFIED / ACCOUNT UPGRADED SUCCESS MESSAGE", style: TextStyle(fontWeight: FontWeight.bold)),
+          content: Text(
+            "SUCCESSFULLY VERIFIED / ACCOUNT UPGRADED SUCCESS MESSAGE",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           backgroundColor: Color(0xFF10B981),
           behavior: SnackBarBehavior.floating,
         ),
@@ -147,13 +186,19 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
-      drawer: !isDesktop ? Drawer(elevation: 0, child: _buildSidebar(context, isDrawer: true)) : null,
+      backgroundColor: isDark
+          ? const Color(0xFF0F172A)
+          : const Color(0xFFF1F5F9),
+      drawer: !isDesktop
+          ? Drawer(elevation: 0, child: _buildSidebar(context, isDrawer: true))
+          : null,
       appBar: AppBar(
         title: Text(
           _currentPageIndex == 0
               ? "Account Verification Overview"
-              : (_currentPageIndex == 1 ? "Upgrade Account" : "Identify Verification"),
+              : (_currentPageIndex == 1
+                    ? "Upgrade Account"
+                    : "Identify Verification"),
           style: TextStyle(
             color: isDark ? Colors.white : const Color(0xFF1E293B),
             fontWeight: FontWeight.w900,
@@ -167,12 +212,19 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
           builder: (context) {
             if (!isDesktop) {
               return IconButton(
-                icon: Icon(Icons.menu_rounded, color: isDark ? Colors.white : const Color(0xFF1E293B)),
+                icon: Icon(
+                  Icons.menu_rounded,
+                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                ),
                 onPressed: () => Scaffold.of(context).openDrawer(),
               );
             } else {
               return IconButton(
-                icon: Icon(Icons.arrow_back_ios_new_rounded, color: isDark ? Colors.white : const Color(0xFF1E293B), size: 20),
+                icon: Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                  size: 20,
+                ),
                 onPressed: () => Navigator.pop(context),
               );
             }
@@ -234,10 +286,19 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
               style: OutlinedButton.styleFrom(
-                side: BorderSide(color: isDark ? Colors.white30 : Colors.grey[300]!),
-                foregroundColor: isDark ? Colors.white : const Color(0xFF1E293B),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                side: BorderSide(
+                  color: isDark ? Colors.white30 : Colors.grey[300]!,
+                ),
+                foregroundColor: isDark
+                    ? Colors.white
+                    : const Color(0xFF1E293B),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
           ],
@@ -368,10 +429,7 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
                   const SizedBox(width: 8),
                   const Text(
                     "Identification Details",
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w900,
-                    ),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
                   ),
                 ],
               ),
@@ -384,9 +442,15 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
                   final Widget leftColumn = Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildDetailItem("PAN NUMBER", _panNumber.isNotEmpty ? _panNumber : "-"),
+                      _buildDetailItem(
+                        "PAN NUMBER",
+                        _panNumber.isNotEmpty ? _panNumber : "-",
+                      ),
                       const SizedBox(height: 20),
-                      _buildDetailItem("GENDER", _gender.isNotEmpty ? _gender : "-"),
+                      _buildDetailItem(
+                        "GENDER",
+                        _gender.isNotEmpty ? _gender : "-",
+                      ),
                       const SizedBox(height: 20),
                       _buildDetailItem("ACCOUNT TYPE", "Registered"),
                     ],
@@ -410,17 +474,23 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.white.withOpacity(0.03) : const Color(0xFFF8FAFC),
+                          color: isDark
+                              ? Colors.white.withOpacity(0.03)
+                              : const Color(0xFFF8FAFC),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+                            color: isDark
+                                ? Colors.white10
+                                : const Color(0xFFE2E8F0),
                           ),
                         ),
                         child: Row(
                           children: [
                             Icon(
                               Icons.description_outlined,
-                              color: isDark ? Colors.white30 : const Color(0xFF94A3B8),
+                              color: isDark
+                                  ? Colors.white30
+                                  : const Color(0xFF94A3B8),
                               size: 24,
                             ),
                             const SizedBox(width: 12),
@@ -430,14 +500,18 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 13,
-                                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                                  color: isDark
+                                      ? Colors.white
+                                      : const Color(0xFF1E293B),
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             Icon(
                               Icons.search,
-                              color: isDark ? Colors.white30 : const Color(0xFF94A3B8),
+                              color: isDark
+                                  ? Colors.white30
+                                  : const Color(0xFF94A3B8),
                               size: 16,
                             ),
                             const SizedBox(width: 4),
@@ -446,7 +520,9 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
-                                color: isDark ? Colors.white30 : const Color(0xFF94A3B8),
+                                color: isDark
+                                    ? Colors.white30
+                                    : const Color(0xFF94A3B8),
                               ),
                             ),
                           ],
@@ -484,11 +560,7 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
         // Processing message
         Row(
           children: [
-            const Icon(
-              Icons.check_circle,
-              color: Color(0xFF10B981),
-              size: 16,
-            ),
+            const Icon(Icons.check_circle, color: Color(0xFF10B981), size: 16),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -522,10 +594,7 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
         const SizedBox(height: 6),
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
         ),
       ],
     );
@@ -574,10 +643,7 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
             // Title
             const Text(
               "Upgrade Account",
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-              ),
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 16),
 
@@ -636,11 +702,7 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: const [
-                Icon(
-                  Icons.lock_outline,
-                  size: 14,
-                  color: Color(0xFF94A3B8),
-                ),
+                Icon(Icons.lock_outline, size: 14, color: Color(0xFF94A3B8)),
                 SizedBox(width: 8),
                 Text(
                   "All information is encrypted and securely stored",
@@ -708,10 +770,7 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
             const Center(
               child: Text(
                 "Identify Verification",
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                ),
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
               ),
             ),
             const SizedBox(height: 8),
@@ -750,15 +809,24 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
                         hintStyle: TextStyle(color: Colors.grey[400]),
                         prefixIcon: const Icon(Icons.badge_outlined, size: 20),
                         filled: true,
-                        fillColor: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F5F9),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        fillColor: isDark
+                            ? Colors.white.withOpacity(0.05)
+                            : const Color(0xFFF1F5F9),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.grey[300]!),
+                          borderSide: BorderSide(
+                            color: isDark ? Colors.white10 : Colors.grey[300]!,
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.grey[200]!),
+                          borderSide: BorderSide(
+                            color: isDark ? Colors.white10 : Colors.grey[200]!,
+                          ),
                         ),
                       ),
                       textCapitalization: TextCapitalization.characters,
@@ -834,7 +902,9 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
                 height: 160,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withOpacity(0.02) : const Color(0xFFF8FAFC),
+                  color: isDark
+                      ? Colors.white.withOpacity(0.02)
+                      : const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: const Color(0xFF6366F1).withOpacity(0.3),
@@ -975,10 +1045,7 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
         ),
         Text(
           g,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
         ),
       ],
     );
@@ -994,115 +1061,186 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: EdgeInsets.only(top: isDrawer ? 40 : 48, left: 24, right: 24, bottom: 24),
+            padding: EdgeInsets.only(
+              top: isDrawer ? 40 : 48,
+              left: 24,
+              right: 24,
+              bottom: 24,
+            ),
             child: Row(
               children: [
                 Container(
                   width: 48,
                   height: 28,
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4)),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                   child: const Center(
                     child: Text(
                       "90×25",
-                      style: TextStyle(color: Colors.black, fontSize: 8, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
                 const Spacer(),
-                const Icon(Icons.grid_view_rounded, color: Color(0xFFE11D48), size: 20),
+                const Icon(
+                  Icons.grid_view_rounded,
+                  color: Color(0xFFE11D48),
+                  size: 20,
+                ),
               ],
             ),
           ),
           const SizedBox(height: 8),
-          _sidebarItem(Icons.home_outlined, "Dashboard", onTap: () {
-            if (isDrawer) Navigator.pop(context);
-            Navigator.popUntil(context, (route) => route.isFirst);
-          }),
+          _sidebarItem(
+            Icons.home_outlined,
+            "Dashboard",
+            onTap: () {
+              if (isDrawer) Navigator.pop(context);
+              Navigator.popUntil(context, (route) => route.isFirst);
+            },
+          ),
           const SizedBox(height: 12),
           Container(
             margin: const EdgeInsets.only(left: 12),
             decoration: const BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.only(topLeft: Radius.circular(24), bottomLeft: Radius.circular(24)),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(24),
+                bottomLeft: Radius.circular(24),
+              ),
             ),
             child: ListTile(
-              leading: const Icon(Icons.business_center_outlined, color: Color(0xFF1E293B), size: 20),
-              title: const Text("Business", style: TextStyle(color: Color(0xFF1E293B), fontSize: 14, fontWeight: FontWeight.bold)),
+              leading: const Icon(
+                Icons.business_center_outlined,
+                color: Color(0xFF1E293B),
+                size: 20,
+              ),
+              title: const Text(
+                "Business",
+                style: TextStyle(
+                  color: Color(0xFF1E293B),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               trailing: const Padding(
                 padding: EdgeInsets.only(right: 8.0),
-                child: Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF1E293B), size: 20),
+                child: Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: Color(0xFF1E293B),
+                  size: 20,
+                ),
               ),
               dense: true,
               onTap: () {},
             ),
           ),
           const SizedBox(height: 8),
-          _sidebarSubItem("Business Overview", onTap: () {
-            if (isDrawer) Navigator.pop(context);
-            final businesses = BusinessUserStore().businesses;
-            if (businesses.isNotEmpty) {
+          _sidebarSubItem(
+            "Business Overview",
+            onTap: () {
+              if (isDrawer) Navigator.pop(context);
+              final businesses = BusinessUserStore().businesses;
+              if (businesses.isNotEmpty) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => BusinessRegistrationOverviewPage(
+                      business: businesses.first,
+                    ),
+                  ),
+                );
+              }
+            },
+          ),
+          _sidebarSubItem(
+            "User Overview",
+            textColor: Colors.white,
+            onTap: () {
+              if (isDrawer) Navigator.pop(context);
+            },
+          ),
+          _sidebarSubItem(
+            "Add Business",
+            textColor: pinkColor,
+            onTap: () {
+              if (isDrawer) Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => BusinessRegistrationOverviewPage(business: businesses.first),
+                  builder: (context) =>
+                      const BusinessCreatedPage(showSelection: true),
                 ),
               );
-            }
-          }),
-          _sidebarSubItem("User Overview", textColor: Colors.white, onTap: () {
-            if (isDrawer) Navigator.pop(context);
-          }),
-          _sidebarSubItem("Add Business", textColor: pinkColor, onTap: () {
-            if (isDrawer) Navigator.pop(context);
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const BusinessCreatedPage(showSelection: true),
-              ),
-            );
-          }),
-          _sidebarSubItem("Posted Jobs", onTap: () {
-            if (isDrawer) Navigator.pop(context);
-          }),
+            },
+          ),
+          _sidebarSubItem(
+            "Posted Jobs",
+            onTap: () {
+              if (isDrawer) Navigator.pop(context);
+            },
+          ),
           const SizedBox(height: 8),
-          _sidebarItem(Icons.widgets_outlined, "Switch Portal", onTap: () {
-            if (isDrawer) Navigator.pop(context);
-          }),
+          _sidebarItem(
+            Icons.widgets_outlined,
+            "Switch Portal",
+            onTap: () {
+              if (isDrawer) Navigator.pop(context);
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget _sidebarItem(IconData icon, String title, {VoidCallback? onTap}) => ListTile(
+  Widget _sidebarItem(IconData icon, String title, {VoidCallback? onTap}) =>
+      ListTile(
         leading: Icon(icon, color: Colors.white60, size: 20),
-        title: Text(title, style: const TextStyle(color: Colors.white60, fontSize: 14)),
-        onTap: onTap,
-        dense: true,
-      );
-
-  Widget _sidebarSubItem(String title, {Color? textColor, VoidCallback? onTap}) => ListTile(
-        contentPadding: const EdgeInsets.only(left: 54),
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              "-",
-              style: TextStyle(color: Colors.white30, fontSize: 14, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              title,
-              style: TextStyle(
-                color: textColor ?? Colors.white60,
-                fontSize: 13,
-                fontWeight: FontWeight.normal,
-              ),
-            ),
-          ],
+        title: Text(
+          title,
+          style: const TextStyle(color: Colors.white60, fontSize: 14),
         ),
         onTap: onTap,
         dense: true,
       );
+
+  Widget _sidebarSubItem(
+    String title, {
+    Color? textColor,
+    VoidCallback? onTap,
+  }) => ListTile(
+    contentPadding: const EdgeInsets.only(left: 54),
+    title: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text(
+          "-",
+          style: TextStyle(
+            color: Colors.white30,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: TextStyle(
+            color: textColor ?? Colors.white60,
+            fontSize: 13,
+            fontWeight: FontWeight.normal,
+          ),
+        ),
+      ],
+    ),
+    onTap: onTap,
+    dense: true,
+  );
 }
 
 class _UpperCaseTextFormatter extends TextInputFormatter {

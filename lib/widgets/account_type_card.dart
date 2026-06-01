@@ -11,6 +11,7 @@ class AccountTypeCard extends StatelessWidget {
   final Widget? customDescriptionWidget; // New property to replace description box
   final bool hidePrimaryButton; // New property to hide primary button area
   final String? primaryButtonText; // New property for custom button text
+  final Widget? topRightAction; // New property for top right action (e.g., expand arrow)
   final VoidCallback onPrimaryTap;
   final VoidCallback onReadMoreTap;
 
@@ -26,6 +27,7 @@ class AccountTypeCard extends StatelessWidget {
     this.customDescriptionWidget,
     this.hidePrimaryButton = false,
     this.primaryButtonText,
+    this.topRightAction,
     required this.onPrimaryTap,
     required this.onReadMoreTap,
   });
@@ -200,6 +202,12 @@ class AccountTypeCard extends StatelessWidget {
                   size: 14,
                 ),
               ),
+            ),
+          if (topRightAction != null)
+            Positioned(
+              top: 10,
+              right: 10,
+              child: topRightAction!,
             ),
         ],
       ),

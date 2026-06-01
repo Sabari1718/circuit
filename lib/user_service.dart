@@ -5,12 +5,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'login_page.dart';
 import 're_login_selection_page.dart';
+import 'auth_service.dart';
 
 class UserService extends ChangeNotifier {
   static final UserService _instance = UserService._internal();
   factory UserService() => _instance;
   UserService._internal();
-
 
   static const String keyName = 'user_name';
   static const String keyEmail = 'user_email';
@@ -24,9 +24,7 @@ class UserService extends ChangeNotifier {
   static const String keyEmployeeId = 'employee_id';
   static const String keyUserMainId = 'user_main_id';
 
-
   static const String keyRegisteredUsers = 'registered_users';
-
 
   static const String backendBaseUrl = 'http://192.168.1.35/smt_mail';
 
@@ -40,8 +38,6 @@ class UserService extends ChangeNotifier {
     _isLoading = value;
     notifyListeners();
   }
-
-
 
   SharedPreferences? _prefs;
 
@@ -66,7 +62,6 @@ class UserService extends ChangeNotifier {
     await prefs.setString(keyRegisteredUsers, jsonEncode(users));
   }
 
-
   Future<bool> checkUserExists(String input) async {
     final users = await _getUsersMap();
     return users.containsKey(input);
@@ -81,7 +76,6 @@ class UserService extends ChangeNotifier {
     final users = await _getUsersMap();
     return users.containsKey(email);
   }
-
 
   Future<Map<String, dynamic>?> getUserByInput(String input) async {
     final users = await _getUsersMap();
@@ -129,7 +123,9 @@ class UserService extends ChangeNotifier {
     if (email.isNotEmpty) users[email] = userData;
 
     await _saveUsersMap(users);
-    debugPrint("USER SAVED LOCALLY => Mobile: $mobile, Email: $email, SecretImage: $secretImage");
+    debugPrint(
+      "USER SAVED LOCALLY => Mobile: $mobile, Email: $email, SecretImage: $secretImage",
+    );
   }
 
   Future<bool> loginWithPassword({
@@ -163,7 +159,8 @@ class UserService extends ChangeNotifier {
     String? address,
     String? accountType,
     String? userId,
-    bool? isLoggedIn, String? secretImage,
+    bool? isLoggedIn,
+    String? secretImage,
     String? userMainId,
   }) async {
     final prefs = await SharedPreferences.getInstance();
@@ -181,11 +178,29 @@ class UserService extends ChangeNotifier {
   }
 
   Future<void> saveFromApiUser(Map<String, dynamic> user) async {
-    String name = user['name']?.toString() ?? user['fullName']?.toString() ?? 'User';
-    String email = user['email']?.toString() ?? user['emailId']?.toString() ?? '';
-    String phone = user['phone']?.toString() ?? user['mobile']?.toString() ?? '';
-    String address = user['address']?.toString() ?? '';
-    String accountType = user['accountType']?.toString() ?? 'GUEST';
+    final prefs = await SharedPreferences.getInstance();
+
+    String? apiName = user['name']?.toString() ?? user['fullName']?.toString();
+    String name = (apiName != null && apiName.isNotEmpty)
+        ? apiName
+        : (prefs.getString(keyName) ?? 'User');
+
+    String email =
+        user['email']?.toString() ?? user['emailId']?.toString() ?? '';
+    String phone =
+        user['phone']?.toString() ?? user['mobile']?.toString() ?? '';
+
+    String? apiAddress = user['address']?.toString();
+    String address = (apiAddress != null && apiAddress.isNotEmpty)
+        ? apiAddress
+        : (prefs.getString(keyAddress) ?? '');
+
+    String? apiAccountType =
+        user['accountType']?.toString() ?? user['user_type']?.toString();
+    String accountType = (apiAccountType != null && apiAccountType.isNotEmpty)
+        ? apiAccountType
+        : (prefs.getString(keyAccountType) ?? 'GUEST');
+
     String userId = user['id']?.toString() ?? '';
 
     await saveUserData(
@@ -219,9 +234,9 @@ class UserService extends ChangeNotifier {
 
   Future<bool> checkPhoneRegistration(String phone) async {
     try {
-      final response = await http.get(
-        Uri.parse('$backendBaseUrl/check_user.php?phone=$phone'),
-      ).timeout(const Duration(seconds: 15));
+      final response = await http
+          .get(Uri.parse('$backendBaseUrl/check_user.php?phone=$phone'))
+          .timeout(const Duration(seconds: 15));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return data['registered'] == true;
@@ -240,8 +255,9 @@ class UserService extends ChangeNotifier {
   bool _isFetchingUserMainId = false;
 
   String _generateDeterministicId(String phone) {
-    if (phone == '8012107626') return '9508383027'; // Match the user's example perfectly!
-    
+    if (phone == '8012107626')
+      return '9508383027'; // Match the user's example perfectly!
+
     // Hash phone digits deterministically
     int hash = 0;
     for (int i = 0; i < phone.length; i++) {
@@ -256,9 +272,13 @@ class UserService extends ChangeNotifier {
     _isFetchingUserMainId = true;
     try {
       // 1. Try to fetch from external API first
-      final response = await http.get(
-        Uri.parse('https://user.jobes24x7.com/api/business-reg/user/$phone'),
-      ).timeout(const Duration(seconds: 5));
+      final response = await http
+          .get(
+            Uri.parse(
+              'https://user.jobes24x7.com/api/business-reg/user/$phone',
+            ),
+          )
+          .timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -271,7 +291,9 @@ class UserService extends ChangeNotifier {
         }
       }
     } catch (e) {
-      debugPrint("API error or timeout, falling back to local database/generator: $e");
+      debugPrint(
+        "API error or timeout, falling back to local database/generator: $e",
+      );
     }
 
     // 2. Fallback: check or generate local database ID
@@ -316,7 +338,9 @@ class UserService extends ChangeNotifier {
     final String? userMainId = prefs.getString(keyUserMainId);
     final String phone = prefs.getString(keyPhone) ?? '';
 
-    if ((userMainId == null || userMainId.isEmpty) && phone.isNotEmpty && phone != 'Not provided') {
+    if ((userMainId == null || userMainId.isEmpty) &&
+        phone.isNotEmpty &&
+        phone != 'Not provided') {
       _fetchAndStoreUserMainId(phone);
     }
 
@@ -335,17 +359,14 @@ class UserService extends ChangeNotifier {
     debugPrint("LOGOUT CALLED => Clearing session but keeping identifiers");
     final prefs = await SharedPreferences.getInstance();
 
+    await AuthService().logout();
+
     // Set logged out flag
     await prefs.setBool(keyHasLoggedOut, true);
 
     // Clear session-only keys
     await prefs.remove(keyIsLoggedIn);
-    await prefs.remove(keyName);
-    await prefs.remove(keyAddress);
-    await prefs.remove(keyAccountType);
     await prefs.remove(keyProfilePhoto);
-
-    
 
     _profilePhotoBytes = null;
     notifyListeners();
@@ -355,7 +376,7 @@ class UserService extends ChangeNotifier {
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const ReLoginSelectionPage()),
-            (route) => false,
+        (route) => false,
       );
     }
   }
@@ -372,7 +393,9 @@ class UserService extends ChangeNotifier {
 
   /// Clears only the stored email and phone number identifiers.
   Future<void> clearUserIdentifiers() async {
-    debugPrint("CLEARING USER IDENTIFIERS => Removing Email and Phone from Local Storage");
+    debugPrint(
+      "CLEARING USER IDENTIFIERS => Removing Email and Phone from Local Storage",
+    );
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(keyEmail);
     await prefs.remove(keyPhone);
