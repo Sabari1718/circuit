@@ -3,13 +3,11 @@ import 'package:provider/provider.dart';
 
 import 'login_page.dart';
 import 're_login_selection_page.dart';
-import 'home_page.dart';
 import 'user_service.dart';
 import 'theme/theme_provider.dart';
-import 'app_lock_service.dart';
-import 'app_lock_page.dart';
 import 'app_security_service.dart';
 import 'auth_service.dart';
+import 'biometric_pin_gate_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,7 +27,6 @@ void main() async {
   }
 
   final UserService userService = UserService();
-  final AppLockService appLockService = AppLockService();
   final AuthService authService = AuthService();
 
   // CHECK TOKEN VALIDITY
@@ -39,7 +36,6 @@ void main() async {
       authResult == AuthService.resultDashboard &&
           await userService.isUserLoggedIn();
 
-  final bool isAppLockEnabled = await appLockService.isAppLockEnabled();
   final userData = await userService.getUserData();
 
   Widget home;
@@ -47,15 +43,12 @@ void main() async {
   if (!isLoggedIn) {
     final bool hasLoggedOut = await userService.hasLoggedOut();
     home = hasLoggedOut ? const ReLoginSelectionPage() : const LoginPage();
-  } else if (isAppLockEnabled) {
-    home = AppLockPage(
-      userName: userData['name'] ?? '',
-      email: userData['email'] ?? '',
-    );
   } else {
-    home = HomePage(
+    // ── Always require biometric / PIN verification on reopen ──────────────
+    home = BiometricPinGatePage(
       userName: userData['name'] ?? '',
       email: userData['email'] ?? '',
+      phone: userData['phone'] ?? '',
     );
   }
 
