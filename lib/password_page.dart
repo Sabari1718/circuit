@@ -82,7 +82,10 @@ class _PasswordPageState extends State<PasswordPage> {
         debugPrint("ENTERED PASSWORD => $password");
 
         try {
-          final response = await AuthService().login(identifier: identifier, password: password);
+          final response = await AuthService().login(
+            identifier: identifier,
+            password: password,
+          );
 
           if (!mounted) return;
 
@@ -92,16 +95,16 @@ class _PasswordPageState extends State<PasswordPage> {
           final String email = userData?['email'] ?? '';
 
           if (userData != null) {
-            await Provider.of<UserService>(context, listen: false).saveFromApiUser(userData);
+            await Provider.of<UserService>(
+              context,
+              listen: false,
+            ).saveFromApiUser(userData);
           }
 
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
-              builder: (context) => HomePage(
-                userName: userName,
-                email: email,
-              ),
+              builder: (context) => HomePage(userName: userName, email: email),
             ),
             (route) => false,
           );
@@ -110,7 +113,12 @@ class _PasswordPageState extends State<PasswordPage> {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(e.toString().replaceAll('Exception: ', '').replaceAll('AuthException: ', '')),
+              content: Text(
+                e
+                    .toString()
+                    .replaceAll('Exception: ', '')
+                    .replaceAll('AuthException: ', ''),
+              ),
               behavior: SnackBarBehavior.floating,
               backgroundColor: Colors.redAccent,
             ),
@@ -664,7 +672,7 @@ class _PasswordPageState extends State<PasswordPage> {
     return Container(
       width: 20,
       height: 2,
-      color: active ? color. withOpacity(0.3) : Colors.black12,
+      color: active ? color.withOpacity(0.3) : Colors.black12,
     );
   }
 }

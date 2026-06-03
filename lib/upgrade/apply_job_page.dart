@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'job_list_page.dart';
+import 'applied_list_page.dart';
 
 class PastExperience {
   final TextEditingController companyController = TextEditingController();
@@ -23,6 +25,8 @@ class ApplyJobPage extends StatefulWidget {
 }
 
 class _ApplyJobPageState extends State<ApplyJobPage> {
+  bool _isApplyJobExpanded = true;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _nameController = TextEditingController(text: "Sabari");
   final TextEditingController _emailController = TextEditingController(text: "sabarishwaran1718@gmail.com");
   final TextEditingController _phoneController = TextEditingController(text: "8012107626");
@@ -133,7 +137,15 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: const Color(0xFFF8FAFC),
+      onDrawerChanged: (isOpened) {
+        if (isOpened) {
+          debugPrint("Drawer opened");
+        } else {
+          debugPrint("Drawer closed");
+        }
+      },
       drawer: !isDesktop ? Drawer(elevation: 0, child: _buildSidebar(context, isDrawer: true)) : null,
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -191,92 +203,84 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
   }
 
   Widget _buildTopBar(BuildContext context, bool isDesktop) {
-    return Container(
-      height: 70,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
-      ),
-      child: Row(
-        children: [
-          if (!isDesktop)
-            IconButton(
-              icon: const Icon(Icons.menu_rounded, color: Color(0xFF1E293B)),
-              onPressed: () => Scaffold.of(context).openDrawer(),
-            ),
+    return SafeArea(
+      bottom: false,
+      child: Container(
+        height: isDesktop ? 70 : 60,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+        ),
+        child: Row(
+          children: [
+            if (!isDesktop)
+              IconButton(
+                icon: const Icon(Icons.menu_rounded, color: Color(0xFF1E293B)),
+                onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+              ),
           Expanded(
-            child: Container(
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const TextField(
-                decoration: InputDecoration(
-                  hintText: "Search Voxo ..",
-                  hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
-                  prefixIcon: Icon(Icons.search, color: Color(0xFF94A3B8), size: 20),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Container(
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              const Icon(Icons.notifications_none_rounded, color: Color(0xFF64748B), size: 24),
-              Positioned(
-                top: -2,
-                right: -2,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFEF4444),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Text(
-                    "4",
-                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                child: const TextField(
+                  decoration: InputDecoration(
+                    hintText: "Search Voxo ..",
+                    hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+                    prefixIcon: Icon(Icons.search, color: Color(0xFF94A3B8), size: 20),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(width: 16),
-          const Icon(Icons.dark_mode_outlined, color: Color(0xFF64748B), size: 22),
-          const SizedBox(width: 16),
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(20),
             ),
-            child: const Row(
+            const SizedBox(width: 12),
+            Stack(
+              clipBehavior: Clip.none,
               children: [
-                CircleAvatar(
-                  radius: 14,
-                  backgroundColor: Color(0xFFE2E8F0),
-                  child: Icon(Icons.person, color: Color(0xFF94A3B8), size: 18),
-                ),
-                SizedBox(width: 8),
-                Text(
-                  "Admin",
-                  style: TextStyle(
-                    color: Color(0xFF1E293B),
-                    fontWeight: FontWeight.w500,
-                    fontSize: 13,
+                const Icon(Icons.notifications_none_rounded, color: Color(0xFF64748B), size: 24),
+                Positioned(
+                  top: -2, right: -2,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
+                    child: const Text('4',
+                        style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                   ),
                 ),
-                SizedBox(width: 4),
-                Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B), size: 16),
-                SizedBox(width: 4),
               ],
             ),
-          ),
-        ],
+            const SizedBox(width: 12),
+            const Icon(Icons.dark_mode_outlined, color: Color(0xFF64748B), size: 22),
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(20)),
+              child: const Row(
+                children: [
+                  CircleAvatar(
+                    radius: 14,
+                    backgroundColor: Color(0xFFE2E8F0),
+                    child: Icon(Icons.person, color: Color(0xFF94A3B8), size: 18),
+                  ),
+                  SizedBox(width: 6),
+                  Text('Admin',
+                      style: TextStyle(
+                          color: Color(0xFF1E293B),
+                          fontWeight: FontWeight.w500,
+                          fontSize: 13)),
+                  SizedBox(width: 4),
+                  Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B), size: 16),
+                  SizedBox(width: 4),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1193,32 +1197,18 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
           ),
           const SizedBox(height: 8),
           _sidebarItem(Icons.home_outlined, "Dashboard", onTap: () {
+            debugPrint("Dashboard clicked");
             if (isDrawer) Navigator.pop(context);
-            Navigator.pop(context); // Go back to job categories
+            Navigator.popUntil(context, (r) => r.isFirst);
           }),
           const SizedBox(height: 8),
-          _sidebarItem(Icons.widgets_outlined, "Switch Portal", onTap: () {}),
+          _sidebarItem(Icons.widgets_outlined, "Switch Portal", onTap: () {
+            debugPrint("Switch Portal clicked");
+            if (isDrawer) Navigator.pop(context);
+            Navigator.popUntil(context, (r) => r.isFirst);
+          }),
           const SizedBox(height: 8),
-          Container(
-            margin: const EdgeInsets.only(left: 12),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(topLeft: Radius.circular(24), bottomLeft: Radius.circular(24)),
-            ),
-            child: ListTile(
-              leading: const Icon(Icons.send_outlined, color: Color(0xFF1E293B), size: 20),
-              title: const Text("Apply Job", style: TextStyle(color: Color(0xFF1E293B), fontSize: 14, fontWeight: FontWeight.bold)),
-              trailing: const Padding(
-                padding: EdgeInsets.only(right: 8.0),
-                child: Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF1E293B), size: 20),
-              ),
-              dense: true,
-              onTap: () {},
-            ),
-          ),
-          const SizedBox(height: 8),
-          _sidebarSubItem("Apply for Job", textColor: pinkColor, onTap: () {}),
-          _sidebarSubItem("Company List", onTap: () {}),
+          _buildApplyJobExpansion(context, isDrawer: isDrawer, pinkColor: pinkColor, activeItem: 'apply_for_job'),
         ],
       ),
     );
@@ -1253,6 +1243,132 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
         ),
         onTap: onTap,
         dense: true,
+      );
+
+  Widget _buildApplyJobExpansion(
+    BuildContext context, {
+    required bool isDrawer,
+    required Color pinkColor,
+    required String activeItem,
+  }) {
+    return Column(
+      children: [
+        // Header tile — always white pill style
+        Container(
+          margin: const EdgeInsets.only(left: 12),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(24),
+                bottomLeft: Radius.circular(24)),
+          ),
+          child: ListTile(
+            leading: const Icon(Icons.send_outlined,
+                color: Color(0xFF1E293B), size: 20),
+            title: const Text('Apply Job',
+                style: TextStyle(
+                    color: Color(0xFF1E293B),
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold)),
+            trailing: Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: AnimatedRotation(
+                turns: _isApplyJobExpanded ? 0.5 : 0,
+                duration: const Duration(milliseconds: 250),
+                child: const Icon(Icons.keyboard_arrow_down_rounded,
+                    color: Color(0xFF1E293B), size: 20),
+              ),
+            ),
+            dense: true,
+            onTap: () {
+              setState(() {
+                _isApplyJobExpanded = !_isApplyJobExpanded;
+                debugPrint(_isApplyJobExpanded
+                    ? 'Apply Job menu expanded'
+                    : 'Apply Job menu collapsed');
+              });
+            },
+          ),
+        ),
+        // Animated child items
+        AnimatedCrossFade(
+          duration: const Duration(milliseconds: 250),
+          firstCurve: Curves.easeInOut,
+          secondCurve: Curves.easeInOut,
+          crossFadeState: _isApplyJobExpanded
+              ? CrossFadeState.showFirst
+              : CrossFadeState.showSecond,
+          firstChild: Column(
+            children: [
+              const SizedBox(height: 6),
+              // Job List
+              activeItem == 'job_list'
+                  ? _activeSubItem('Job List', onTap: () {
+                      debugPrint('Job List clicked');
+                      if (isDrawer) Navigator.pop(context);
+                    })
+                  : _sidebarSubItem('Job List', onTap: () {
+                      debugPrint('Job List clicked');
+                      if (isDrawer) Navigator.pop(context);
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => const JobListPage()));
+                    }),
+              // Applied List
+              activeItem == 'applied_list'
+                  ? _activeSubItem('Applied List', onTap: () {
+                      debugPrint('Applied List clicked');
+                      if (isDrawer) Navigator.pop(context);
+                    })
+                  : _sidebarSubItem('Applied List', onTap: () {
+                      debugPrint('Applied List clicked');
+                      if (isDrawer) Navigator.pop(context);
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => const AppliedListPage()));
+                    }),
+              // Apply for Job
+              activeItem == 'apply_for_job'
+                  ? _activeSubItem('Apply for Job',
+                      textColor: pinkColor,
+                      onTap: () {
+                        debugPrint('Apply For Job clicked');
+                        if (isDrawer) Navigator.pop(context);
+                      })
+                  : _sidebarSubItem('Apply for Job',
+                      textColor: pinkColor,
+                      onTap: () {
+                        debugPrint('Apply For Job clicked');
+                        if (isDrawer) Navigator.pop(context);
+                        Navigator.push(context,
+                            MaterialPageRoute(builder: (_) => const ApplyJobPage()));
+                      }),
+            ],
+          ),
+          secondChild: const SizedBox(width: double.infinity),
+        ),
+      ],
+    );
+  }
+
+  /// Highlighted active sub-item
+  Widget _activeSubItem(String title,
+          {Color? textColor, VoidCallback? onTap}) =>
+      Container(
+        margin: const EdgeInsets.only(left: 12, right: 0),
+        decoration: const BoxDecoration(
+          color: Color(0xFF334155),
+          borderRadius:
+              BorderRadius.only(topLeft: Radius.circular(8), bottomLeft: Radius.circular(8)),
+        ),
+        child: ListTile(
+          contentPadding: const EdgeInsets.only(left: 42),
+          dense: true,
+          title: Text(title,
+              style: TextStyle(
+                  color: textColor ?? Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold)),
+          onTap: onTap,
+        ),
       );
 
   Widget _buildPastExperiencesSection(bool isDesktop) {

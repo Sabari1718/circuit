@@ -45,7 +45,7 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  // 🔥 VALIDATION HELPERS
+
   bool isEmailInput(String input) {
     return RegExp(r'^[\w\.-]+@[\w\.-]+\.\w+$').hasMatch(input);
   }

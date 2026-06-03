@@ -115,6 +115,8 @@ class JobCategoriesPage extends StatelessWidget {
                     child: InkWell(
                       onTap: () {
                         if (category.title == "Driving") {
+                          debugPrint("Driving category selected");
+                          debugPrint("Navigating directly to Apply For A Job page");
                           Navigator.push(
                             context,
                             MaterialPageRoute(

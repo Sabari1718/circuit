@@ -7,23 +7,13 @@ class AppLockPage extends StatefulWidget {
   final String userName;
   final String email;
 
-  const AppLockPage({
-    super.key,
-    required this.userName,
-    required this.email,
-  });
+  const AppLockPage({super.key, required this.userName, required this.email});
 
   @override
   State<AppLockPage> createState() => _AppLockPageState();
 }
 
-enum _UnlockStep {
-  biometricFirst,
-  pin,
-  biometricRetry,
-  password,
-  resetPin,
-}
+enum _UnlockStep { biometricFirst, pin, biometricRetry, password, resetPin }
 
 class _AppLockPageState extends State<AppLockPage>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
@@ -32,7 +22,8 @@ class _AppLockPageState extends State<AppLockPage>
   final List<String> _enteredPin = [];
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _newPinController = TextEditingController();
-  final TextEditingController _confirmNewPinController = TextEditingController();
+  final TextEditingController _confirmNewPinController =
+      TextEditingController();
 
   bool _unlocked = false;
   bool _canUseBiometric = false;
@@ -133,8 +124,9 @@ class _AppLockPageState extends State<AppLockPage>
     _isForgotPinFlow = false;
     _biometricAttempts = 0;
     _pinAttempts = 0;
-    _currentStep =
-    _canUseBiometric ? _UnlockStep.biometricFirst : _UnlockStep.pin;
+    _currentStep = _canUseBiometric
+        ? _UnlockStep.biometricFirst
+        : _UnlockStep.pin;
   }
 
   void _unlock() {
@@ -147,10 +139,8 @@ class _AppLockPageState extends State<AppLockPage>
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) => HomePage(
-          userName: widget.userName,
-          email: widget.email,
-        ),
+        builder: (_) =>
+            HomePage(userName: widget.userName, email: widget.email),
       ),
     );
   }
@@ -197,10 +187,7 @@ class _AppLockPageState extends State<AppLockPage>
     });
   }
 
-  void _goToPasswordStep({
-    String? message,
-    bool isForgotPinFlow = false,
-  }) {
+  void _goToPasswordStep({String? message, bool isForgotPinFlow = false}) {
     setState(() {
       _currentStep = _UnlockStep.password;
       _enteredPin.clear();
@@ -251,9 +238,7 @@ class _AppLockPageState extends State<AppLockPage>
     });
 
     if (!isRetryStep) {
-      _goToPinStep(
-        message: 'Biometric cancelled/failed. Enter your PIN.',
-      );
+      _goToPinStep(message: 'Biometric cancelled/failed. Enter your PIN.');
       return;
     }
 
@@ -324,9 +309,7 @@ class _AppLockPageState extends State<AppLockPage>
 
     if (ok) {
       if (_isForgotPinFlow) {
-        _goToResetPinStep(
-          message: 'Password verified. Set a new 4-digit PIN.',
-        );
+        _goToResetPinStep(message: 'Password verified. Set a new 4-digit PIN.');
       } else {
         _unlock();
       }
@@ -408,11 +391,7 @@ class _AppLockPageState extends State<AppLockPage>
                       color: Colors.white.withOpacity(0.08),
                       border: Border.all(color: Colors.white12),
                     ),
-                    child: Icon(
-                      _iconForStep(),
-                      color: Colors.white,
-                      size: 48,
-                    ),
+                    child: Icon(_iconForStep(), color: Colors.white, size: 48),
                   ),
                   const SizedBox(height: 24),
                   const Text(
@@ -428,10 +407,7 @@ class _AppLockPageState extends State<AppLockPage>
                   Text(
                     _subtitleForStep(),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 15,
-                    ),
+                    style: const TextStyle(color: Colors.white70, fontSize: 15),
                   ),
                   const SizedBox(height: 40),
                   AnimatedBuilder(
@@ -447,15 +423,15 @@ class _AppLockPageState extends State<AppLockPage>
                     duration: const Duration(milliseconds: 250),
                     child: _errorMessage.isNotEmpty
                         ? Text(
-                      _errorMessage,
-                      key: ValueKey(_errorMessage),
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.redAccent,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                      ),
-                    )
+                            _errorMessage,
+                            key: ValueKey(_errorMessage),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.redAccent,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                            ),
+                          )
                         : const SizedBox.shrink(),
                   ),
                 ],
@@ -550,21 +526,21 @@ class _AppLockPageState extends State<AppLockPage>
             ),
             child: _isAuthenticatingBiometric
                 ? const SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            )
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
                 : Text(
-              isRetryStep ? 'Try Face / Biometric' : 'Use Fingerprint',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
+                    isRetryStep ? 'Try Face / Biometric' : 'Use Fingerprint',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
           ),
         ),
         const SizedBox(height: 14),
@@ -579,9 +555,7 @@ class _AppLockPageState extends State<AppLockPage>
                   isForgotPinFlow: false,
                 );
               } else {
-                _goToPinStep(
-                  message: 'Biometric cancelled. Enter your PIN.',
-                );
+                _goToPinStep(message: 'Biometric cancelled. Enter your PIN.');
               }
             },
             style: OutlinedButton.styleFrom(
@@ -657,7 +631,7 @@ class _AppLockPageState extends State<AppLockPage>
           ['4', '5', '6'],
           ['7', '8', '9'],
         ].map(
-              (row) => Padding(
+          (row) => Padding(
             padding: const EdgeInsets.only(bottom: 18),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -730,8 +704,10 @@ class _AppLockPageState extends State<AppLockPage>
             hintStyle: const TextStyle(color: Colors.white38),
             filled: true,
             fillColor: Colors.white.withOpacity(0.07),
-            contentPadding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 18,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide.none,
@@ -742,8 +718,10 @@ class _AppLockPageState extends State<AppLockPage>
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide:
-              const BorderSide(color: Color(0xFF6366F1), width: 1.5),
+              borderSide: const BorderSide(
+                color: Color(0xFF6366F1),
+                width: 1.5,
+              ),
             ),
             prefixIcon: const Icon(Icons.lock_outline, color: Colors.white38),
           ),
@@ -763,21 +741,21 @@ class _AppLockPageState extends State<AppLockPage>
             ),
             child: _isCheckingPassword
                 ? const SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            )
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
                 : Text(
-              _isForgotPinFlow ? 'Verify Password' : 'Unlock',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
+                    _isForgotPinFlow ? 'Verify Password' : 'Unlock',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
           ),
         ),
       ],
@@ -799,8 +777,10 @@ class _AppLockPageState extends State<AppLockPage>
             hintStyle: const TextStyle(color: Colors.white38),
             filled: true,
             fillColor: Colors.white.withOpacity(0.07),
-            contentPadding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 18,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide.none,
@@ -811,8 +791,10 @@ class _AppLockPageState extends State<AppLockPage>
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide:
-              const BorderSide(color: Color(0xFF6366F1), width: 1.5),
+              borderSide: const BorderSide(
+                color: Color(0xFF6366F1),
+                width: 1.5,
+              ),
             ),
             prefixIcon: const Icon(Icons.pin_outlined, color: Colors.white38),
             suffixIcon: IconButton(
@@ -841,8 +823,10 @@ class _AppLockPageState extends State<AppLockPage>
             hintStyle: const TextStyle(color: Colors.white38),
             filled: true,
             fillColor: Colors.white.withOpacity(0.07),
-            contentPadding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 18,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide.none,
@@ -853,11 +837,15 @@ class _AppLockPageState extends State<AppLockPage>
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide:
-              const BorderSide(color: Color(0xFF6366F1), width: 1.5),
+              borderSide: const BorderSide(
+                color: Color(0xFF6366F1),
+                width: 1.5,
+              ),
             ),
-            prefixIcon:
-            const Icon(Icons.lock_reset_rounded, color: Colors.white38),
+            prefixIcon: const Icon(
+              Icons.lock_reset_rounded,
+              color: Colors.white38,
+            ),
             suffixIcon: IconButton(
               icon: Icon(
                 _obscureConfirmNewPin
@@ -888,21 +876,21 @@ class _AppLockPageState extends State<AppLockPage>
             ),
             child: _isSavingNewPin
                 ? const SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            )
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
                 : const Text(
-              'Save New PIN',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
+                    'Save New PIN',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
           ),
         ),
       ],

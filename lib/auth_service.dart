@@ -259,10 +259,17 @@ class AuthService {
 
         return data;
       } else {
-        throw AuthException(data['message']?.toString() ?? 'Login failed.');
+        throw AuthException(
+          _extractErrorMessage(response.body, 'Login failed.'),
+        );
       }
     } else {
-      throw AuthException('Server error: ${response.statusCode}');
+      throw AuthException(
+        _extractErrorMessage(
+          response.body,
+          'Server error: ${response.statusCode}',
+        ),
+      );
     }
   }
 
@@ -271,10 +278,13 @@ class AuthService {
   // ──────────────────────────────────────────────
 
   Future<bool?> checkUserExists(String phoneNumber) async {
-    final String url = 'https://user.jobes24x7.com/api/login/check-phone/$phoneNumber';
+    final String url =
+        'https://user.jobes24x7.com/api/login/check-phone/$phoneNumber';
     debugPrint('[AuthService] CHECK USER → $url');
     try {
-      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 10));
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         if (data['data'] != null && data['data']['exists'] == true) {
@@ -299,6 +309,7 @@ class AuthService {
     required String password,
     required String address,
     required String userName,
+    required String pin,
   }) async {
     const String registerUrl = 'https://user.jobes24x7.com/api/login/create';
 
@@ -318,6 +329,7 @@ class AuthService {
       'status': 1,
       'user_main_id': null,
       'user_type': 'guest',
+      'pin': pin,
     };
 
     debugPrint('[AuthService] REGISTER → $registerUrl  body: $body');
@@ -337,16 +349,25 @@ class AuthService {
     debugPrint('[AuthService] Register body   : ${response.body}');
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      final bool success = data['status'] == true || data['success'] == true || data['code'] == 200;
-
-      if (success) {
-        return data;
-      } else {
-        throw AuthException(data['message']?.toString() ?? 'Registration failed.');
+      Map<String, dynamic> data = {};
+      try {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic>) {
+          data = decoded;
+        } else {
+          data = {'message': response.body};
+        }
+      } catch (_) {
+        data = {'message': response.body};
       }
+      return data;
     } else {
-      throw AuthException('Server error: ${response.statusCode}');
+      throw AuthException(
+        _extractErrorMessage(
+          response.body,
+          'Server error: ${response.statusCode}',
+        ),
+      );
     }
   }
 
@@ -368,6 +389,23 @@ class AuthService {
   /// Clears token + metadata. Call alongside UserService.logout().
   Future<void> logout() async {
     await clearToken();
+  }
+
+  /// Extracts the error message from the response body if present.
+  String _extractErrorMessage(String responseBody, String defaultMsg) {
+    try {
+      final decoded = jsonDecode(responseBody);
+      if (decoded is Map<String, dynamic>) {
+        final dataPart = decoded['data'];
+        if (dataPart is Map<String, dynamic>) {
+          final msg = dataPart['message']?.toString();
+          if (msg != null && msg.trim().isNotEmpty) return msg;
+        }
+        final msg = decoded['message']?.toString();
+        if (msg != null && msg.trim().isNotEmpty) return msg;
+      }
+    } catch (_) {}
+    return defaultMsg;
   }
 }
 

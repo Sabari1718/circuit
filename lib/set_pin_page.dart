@@ -1,19 +1,16 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'login_page.dart';
 import 'home_page.dart';
 import 'user_service.dart';
 import 'app_lock_service.dart';
-import 'secret_image_setup_page.dart';
 import 'auth_service.dart';
 
 class SetPinPage extends StatefulWidget {
   final String password;
 
-  const SetPinPage({
-    super.key,
-    required this.password,
-  });
+  const SetPinPage({super.key, required this.password});
 
   @override
   State<SetPinPage> createState() => _SetPinPageState();
@@ -49,10 +46,7 @@ class _SetPinPageState extends State<SetPinPage> {
       final String pin = pinController.text.trim();
 
       // Save user's own PIN + password fallback + enable app lock
-      await AppLockService().enableAppLock(
-        pin: pin,
-        password: widget.password,
-      );
+      await AppLockService().enableAppLock(pin: pin, password: widget.password);
 
       final data = await userService.getUserData();
       final String name = data['name'] ?? 'User';
@@ -60,62 +54,103 @@ class _SetPinPageState extends State<SetPinPage> {
       final String mobile = data['phone'] ?? '';
       final String address = data['address'] ?? 'N/A';
 
-      // Call API to create user in backend
-      try {
-        await AuthService().register(
-          phoneNumber: mobile,
-          email: email,
-          password: widget.password,
-          address: address,
-          userName: name,
-        );
-      } catch (e) {
-        throw Exception('Backend registration failed: $e');
-      }
+      print("========== REGISTER USER IN BACKEND ==========");
+      print("NAME: $name");
+      print("PHONE: $mobile");
+      print("EMAIL: $email");
+      print("ADDRESS: $address");
+      print("PIN: $pin");
 
-      // Save user locally (bypassing secret image)
-      await userService.saveRegisteredUser(
-        mobile: mobile,
+      final registerResult = await AuthService().register(
+        phoneNumber: mobile,
         email: email,
         password: widget.password,
+        address: address,
+        userName: name,
         pin: pin,
-        secretImage: 'bypassed',
       );
 
-      // Set user as logged in with the session data
-      await userService.saveUserData(
-        phone: mobile,
-        email: email,
-        secretImage: 'bypassed',
-        isLoggedIn: true,
-      );
+      print("REGISTER RESULT: $registerResult");
+
+      try {
+        // Verify if token exists locally, if not, perform a programmatic login to get the JWT token.
+        final String? token = await AuthService().getToken();
+        if (token == null || token.trim().isEmpty) {
+          print(
+            "No token in registration response. Logging in programmatically...",
+          );
+          final String identifier = mobile.isNotEmpty ? mobile : email;
+          final loginResponse = await AuthService().login(
+            identifier: identifier,
+            password: widget.password,
+          );
+          final userData = loginResponse['data']?['data'];
+          if (userData != null) {
+            await userService.saveFromApiUser(userData);
+          }
+        }
+      } catch (loginErr) {
+        print("Programmatic login failed: $loginErr");
+      }
+
+      try {
+        // Save user locally (bypassing secret image)
+        await userService.saveRegisteredUser(
+          mobile: mobile,
+          email: email,
+          password: widget.password,
+          pin: pin,
+          secretImage: 'bypassed',
+        );
+
+        // Set user session data with isLoggedIn: true
+        await userService.saveUserData(
+          phone: mobile,
+          email: email,
+          secretImage: 'bypassed',
+          isLoggedIn: true,
+        );
+      } catch (saveErr) {
+        print("Saving user session locally failed: $saveErr");
+      }
+
+      print("PIN SAVED AND USER REGISTERED SUCCESSFULLY");
 
       if (!mounted) return;
 
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(
-          builder: (context) => HomePage(
-            userName: name,
-            email: email,
-          ),
-        ),
+        MaterialPageRoute(builder: (context) => const HomePage()),
         (route) => false,
       );
     } catch (e) {
+      setState(() => _isSaving = false);
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Failed to save PIN: $e',
-            style: const TextStyle(fontWeight: FontWeight.w600),
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
           ),
-          behavior: SnackBarBehavior.floating,
+          title: const Text(
+            "Error Saving PIN",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Text(
+            e
+                .toString()
+                .replaceAll('Exception: ', '')
+                .replaceAll('AuthException: ', ''),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            ),
+          ],
         ),
       );
-
-      setState(() => _isSaving = false);
     }
   }
 
@@ -135,10 +170,7 @@ class _SetPinPageState extends State<SetPinPage> {
           Positioned(
             bottom: -50,
             left: -100,
-            child: _buildBlob(
-              const Color(0xFFEC4899).withOpacity(0.08),
-              350,
-            ),
+            child: _buildBlob(const Color(0xFFEC4899).withOpacity(0.08), 350),
           ),
           SafeArea(
             child: SingleChildScrollView(
@@ -173,7 +205,9 @@ class _SetPinPageState extends State<SetPinPage> {
                             children: [
                               Container(
                                 width: double.infinity,
-                                padding: const EdgeInsets.symmetric(vertical: 40),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 40,
+                                ),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
@@ -222,7 +256,7 @@ class _SetPinPageState extends State<SetPinPage> {
                                     ),
                                     const SizedBox(height: 8),
                                     const Text(
-                                      'Create your own 4-digit PIN for app unlock',
+                                      'Create your own 6-digit PIN for app unlock',
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontSize: 15,
@@ -238,7 +272,8 @@ class _SetPinPageState extends State<SetPinPage> {
                                 child: Form(
                                   key: _formKey,
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Text(
                                         'New PIN',
@@ -253,32 +288,35 @@ class _SetPinPageState extends State<SetPinPage> {
                                         controller: pinController,
                                         obscureText: _obscurePin,
                                         keyboardType: TextInputType.number,
-                                        maxLength: 4,
+                                        maxLength: 6,
                                         decoration: _inputDecoration(
-                                          'Enter 4-digit PIN',
+                                          'Enter 6-digit PIN',
                                           Icons.pin_outlined,
                                           themeColor,
                                           suffix: IconButton(
                                             icon: Icon(
                                               _obscurePin
                                                   ? Icons.visibility_outlined
-                                                  : Icons.visibility_off_outlined,
+                                                  : Icons
+                                                        .visibility_off_outlined,
                                               size: 20,
                                             ),
                                             onPressed: () => setState(
-                                                  () => _obscurePin = !_obscurePin,
+                                              () => _obscurePin = !_obscurePin,
                                             ),
                                           ),
                                         ),
                                         validator: (val) {
                                           final pin = val?.trim() ?? '';
 
-                                          if (pin.length != 4) {
-                                            return 'PIN must be exactly 4 digits';
+                                          if (pin.length != 6) {
+                                            return 'PIN must be exactly 6 digits';
                                           }
 
-                                          if (!RegExp(r'^\d{4}$').hasMatch(pin)) {
-                                            return 'Only 4 digits allowed';
+                                          if (!RegExp(
+                                            r'^\d{6}$',
+                                          ).hasMatch(pin)) {
+                                            return 'Only 6 digits allowed';
                                           }
 
                                           return null;
@@ -298,31 +336,32 @@ class _SetPinPageState extends State<SetPinPage> {
                                         controller: confirmPinController,
                                         obscureText: _obscureConfirmPin,
                                         keyboardType: TextInputType.number,
-                                        maxLength: 4,
+                                        maxLength: 6,
                                         decoration: _inputDecoration(
-                                          'Re-enter 4-digit PIN',
+                                          'Re-enter 6-digit PIN',
                                           Icons.lock_reset_rounded,
                                           themeColor,
                                           suffix: IconButton(
                                             icon: Icon(
                                               _obscureConfirmPin
                                                   ? Icons.visibility_outlined
-                                                  : Icons.visibility_off_outlined,
+                                                  : Icons
+                                                        .visibility_off_outlined,
                                               size: 20,
                                             ),
                                             onPressed: () => setState(
-                                                  () => _obscureConfirmPin =
-                                              !_obscureConfirmPin,
+                                              () => _obscureConfirmPin =
+                                                  !_obscureConfirmPin,
                                             ),
                                           ),
                                         ),
                                         validator: (val) {
                                           final confirmPin = val?.trim() ?? '';
-                                          final originalPin =
-                                          pinController.text.trim();
+                                          final originalPin = pinController.text
+                                              .trim();
 
-                                          if (confirmPin.length != 4) {
-                                            return 'Confirm PIN must be 4 digits';
+                                          if (confirmPin.length != 6) {
+                                            return 'Confirm PIN must be 6 digits';
                                           }
 
                                           if (confirmPin != originalPin) {
@@ -364,11 +403,11 @@ class _SetPinPageState extends State<SetPinPage> {
   }
 
   InputDecoration _inputDecoration(
-      String hint,
-      IconData icon,
-      Color color, {
-        Widget? suffix,
-      }) {
+    String hint,
+    IconData icon,
+    Color color, {
+    Widget? suffix,
+  }) {
     return InputDecoration(
       hintText: hint,
       counterText: '',
@@ -433,22 +472,22 @@ class _SetPinPageState extends State<SetPinPage> {
         ),
         child: isLoading
             ? const SizedBox(
-          width: 22,
-          height: 22,
-          child: CircularProgressIndicator(
-            strokeWidth: 2.5,
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-          ),
-        )
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
             : Text(
-          text,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            letterSpacing: 0.5,
-          ),
-        ),
+                text,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                ),
+              ),
       ),
     );
   }
