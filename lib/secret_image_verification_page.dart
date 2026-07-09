@@ -1,21 +1,22 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'providers.dart';
 import 'home_page.dart';
 import 'user_service.dart';
 
-class SecretImageVerificationPage extends StatefulWidget {
+class SecretImageVerificationPage extends ConsumerStatefulWidget {
   final String identifier; // email or mobile
 
   const SecretImageVerificationPage({super.key, required this.identifier});
 
   @override
-  State<SecretImageVerificationPage> createState() =>
+  ConsumerState<SecretImageVerificationPage> createState() =>
       _SecretImageVerificationPageState();
 }
 
 class _SecretImageVerificationPageState
-    extends State<SecretImageVerificationPage> {
+    extends ConsumerState<SecretImageVerificationPage> {
   String? _selectedImage;
   bool _isVerifying = false;
 
@@ -35,7 +36,7 @@ class _SecretImageVerificationPageState
     setState(() => _isVerifying = true);
 
     try {
-      final userService = Provider.of<UserService>(context, listen: false);
+      final userService = ref.read(userServiceProvider);
       final userData = await userService.getUserByInput(widget.identifier);
 
       if (userData == null) {

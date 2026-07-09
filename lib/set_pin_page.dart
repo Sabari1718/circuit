@@ -1,22 +1,24 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'providers.dart';
 import 'login_page.dart';
 import 'home_page.dart';
 import 'user_service.dart';
 import 'app_lock_service.dart';
 import 'auth_service.dart';
 
-class SetPinPage extends StatefulWidget {
+class SetPinPage extends ConsumerStatefulWidget {
   final String password;
 
   const SetPinPage({super.key, required this.password});
 
   @override
-  State<SetPinPage> createState() => _SetPinPageState();
+  ConsumerState<SetPinPage> createState() => _SetPinPageState();
 }
 
-class _SetPinPageState extends State<SetPinPage> {
+class _SetPinPageState extends ConsumerState<SetPinPage> {
   final TextEditingController pinController = TextEditingController();
   final TextEditingController confirmPinController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -42,7 +44,7 @@ class _SetPinPageState extends State<SetPinPage> {
     setState(() => _isSaving = true);
 
     try {
-      final userService = Provider.of<UserService>(context, listen: false);
+      final userService = ref.read(userServiceProvider);
       final String pin = pinController.text.trim();
 
       // Save user's own PIN + password fallback + enable app lock
@@ -289,6 +291,7 @@ class _SetPinPageState extends State<SetPinPage> {
                                         obscureText: _obscurePin,
                                         keyboardType: TextInputType.number,
                                         maxLength: 6,
+                                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                                         decoration: _inputDecoration(
                                           'Enter 6-digit PIN',
                                           Icons.pin_outlined,
@@ -337,6 +340,7 @@ class _SetPinPageState extends State<SetPinPage> {
                                         obscureText: _obscureConfirmPin,
                                         keyboardType: TextInputType.number,
                                         maxLength: 6,
+                                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                                         decoration: _inputDecoration(
                                           'Re-enter 6-digit PIN',
                                           Icons.lock_reset_rounded,

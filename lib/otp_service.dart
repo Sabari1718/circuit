@@ -105,7 +105,7 @@ class OtpService {
           "authToken": authToken,
           "accept": "application/json",
         },
-      );
+      ).timeout(const Duration(seconds: 10));
 
       print("====================================");
       print("VALIDATE OTP URL: $uri");

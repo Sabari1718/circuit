@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:circuit/features/upgrade/business_user_model.dart';
 import 'package:circuit/features/upgrade/business_user_store.dart';
+import '../../core/services/api_service.dart';
 
 class CreatePartnerBusinessPage extends StatefulWidget {
   const CreatePartnerBusinessPage({super.key});
@@ -25,7 +26,7 @@ class _CreatePartnerBusinessPageState extends State<CreatePartnerBusinessPage> {
   final _step5Key = GlobalKey<FormState>();
 
   // Step 1: Partner Details
-  final List<_PartnerFormController> _partners = [_PartnerFormController()];
+  final List<_PartnerFormController> _partners = [];
 
   // Step 2: Basic Details
   final _nameCtrl = TextEditingController();
@@ -33,6 +34,9 @@ class _CreatePartnerBusinessPageState extends State<CreatePartnerBusinessPage> {
   final _phoneCtrl = TextEditingController();
   final _websiteCtrl = TextEditingController();
   final _panCtrl = TextEditingController();
+  String? _logoFileName; Uint8List? _logoBytes;
+  String? _turnoverRange;
+  String? _selectedTier;
   String? _panFileName; Uint8List? _panBytes;
   String? _sigFileName; Uint8List? _sigBytes;
 
@@ -72,65 +76,62 @@ class _CreatePartnerBusinessPageState extends State<CreatePartnerBusinessPage> {
   String? _activePrimaryCategory;
   final Set<String> _selectedSubCategories = {};
 
-  // Mock Category Hierarchy Dataset
-  final Map<String, Map<String, Map<String, Map<String, List<String>>>>> _categoriesData = {
-    "Agriculture & Allied": {
-      "Farming": {
-        "Organic Farming": {
-          "Fruits & Veggies": ["Organic Apples", "Organic Berries", "Organic Leafy Greens", "Organic Tomatoes"],
-          "Grains & Pulses": ["Organic Rice", "Organic Wheat", "Organic Lentils", "Organic Oats"],
-        },
-        "Commercial Crops": {
-          "Fibers": ["Cotton", "Jute", "Hemp"],
-          "Beverages": ["Tea Leaves", "Coffee Beans", "Cocoa"],
+  Map<String, Map<String, Map<String, Map<String, List<String>>>>> _categoriesData = {};
+  bool _isCategoriesLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCategories();
+  }
+
+  Future<void> _fetchCategories() async {
+    setState(() => _isCategoriesLoading = true);
+    try {
+      final res = await ApiService().fetchCategories();
+      if (res['success'] == true && res['data'] != null) {
+        final List<dynamic> apiData = res['data'];
+        Map<String, Map<String, Map<String, Map<String, List<String>>>>> newData = {};
+
+        for (var item in apiData) {
+          String title = item['sector_title_name']?.toString().trim() ?? '';
+          if (title == '-' || title.isEmpty) continue;
+
+          String sector = item['sector_name']?.toString().trim() ?? '';
+          String subSector = item['sub_sector_name']?.toString().trim() ?? '';
+          
+          newData.putIfAbsent(title, () => {});
+          newData[title]!.putIfAbsent(sector, () => {});
+          newData[title]![sector]!.putIfAbsent(subSector, () => {});
+
+          String categoryType = item['category_type']?.toString().toLowerCase() ?? '';
+          String categoryName = item['category_name']?.toString().trim() ?? '';
+
+          if (categoryType == 'primary') {
+            newData[title]![sector]![subSector]!.putIfAbsent(categoryName, () => []);
+          } else if (categoryType == 'secondary') {
+            String parentName = item['parent_category_name']?.toString().trim() ?? '';
+            if (parentName != '-' && parentName.isNotEmpty) {
+              newData[title]![sector]![subSector]!.putIfAbsent(parentName, () => []);
+              if (!newData[title]![sector]![subSector]![parentName]!.contains(categoryName)) {
+                newData[title]![sector]![subSector]![parentName]!.add(categoryName);
+              }
+            }
+          }
         }
-      },
-      "Livestock": {
-        "Dairy Farming": {
-          "Milk Products": ["Fresh Milk", "Cheese & Butter", "Yogurt", "Ghee"],
-        },
-        "Poultry": {
-          "Eggs & Meat": ["Broiler Chicken", "Organic Eggs", "Turkey"],
-        }
+        
+        setState(() {
+          _categoriesData = newData;
+          _isCategoriesLoading = false;
+        });
+      } else {
+        setState(() => _isCategoriesLoading = false);
       }
-    },
-    "Manufacturing & Industrial": {
-      "Textiles": {
-        "Apparel": {
-          "Men's Wear": ["Casual Shirts", "Denim Pants", "Formal Suits", "Activewear"],
-          "Women's Wear": ["Ethnic Wear", "Dresses", "Sarees", "Formal Blazers"],
-        },
-        "Home Textiles": {
-          "Bedding": ["Bed Sheets", "Pillows", "Duvets"],
-          "Curtains": ["Blackout Curtains", "Sheer Curtains"],
-        }
-      },
-      "Electronics": {
-        "Consumer Electronics": {
-          "Smartphones": ["Android Phones", "iOS Phones", "Refurbished Devices"],
-          "Home Appliances": ["Smart TVs", "Air Conditioners", "Refrigerators", "Microwaves"],
-        }
-      }
-    },
-    "Service Sector": {
-      "Technology": {
-        "Software Development": {
-          "Web Apps": ["Frontend Projects", "Backend APIs", "Fullstack Systems", "SaaS Platforms"],
-          "Mobile Apps": ["Flutter Apps", "Native iOS Apps", "Native Android Apps", "Hybrid Apps"],
-        },
-        "IT Services": {
-          "Cloud Infrastructure": ["AWS Services", "Google Cloud Projects", "Azure Management", "DevOps Pipelines"],
-          "Cybersecurity": ["Penetration Testing", "Security Audits", "Identity Management"],
-        }
-      },
-      "Healthcare": {
-        "Medical Clinics": {
-          "General Health": ["Consultation Services", "Diagnostic Tests", "Therapy Sessions"],
-          "Pharmacy": ["Prescription Drugs", "OTC Medicines", "Health Supplements"],
-        }
-      }
+    } catch (e) {
+      debugPrint('Error fetching categories: $e');
+      setState(() => _isCategoriesLoading = false);
     }
-  };
+  }
 
   void _addPartner() {
     if (_partners.length < 10) {
@@ -289,6 +290,7 @@ class _CreatePartnerBusinessPageState extends State<CreatePartnerBusinessPage> {
           else if (type == 'sig') { _sigFileName = f.name; _sigBytes = f.bytes; }
           else if (type == 'gst') { _gstFileName = f.name; _gstBytes = f.bytes; }
           else if (type == 'bank') { _bankDocFileName = f.name; _bankDocBytes = f.bytes; }
+          else if (type == 'logo') { _logoFileName = f.name; _logoBytes = f.bytes; }
         }
       });
     }
@@ -362,16 +364,62 @@ class _CreatePartnerBusinessPageState extends State<CreatePartnerBusinessPage> {
   // STEP 1: Partner Details
   Widget _buildStep1(Color color, bool isDark) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('Partner Details', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
-      const SizedBox(height: 8),
-      const Text('Add information about your business partners (up to 10)', style: TextStyle(fontSize: 13, color: Colors.grey)),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.people_alt, color: Color(0xFF3B82F6), size: 20),
+                    const SizedBox(width: 8),
+                    const Text('Partner Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text('Maximum of 10 partners can be added. (${_partners.length}/10 added)', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+              ],
+            ),
+          ),
+          if (_partners.length < 10)
+            ElevatedButton.icon(
+              onPressed: _addPartner,
+              icon: const Icon(Icons.add, color: Colors.white, size: 14),
+              label: const Text('Add Partner', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE11D48),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                minimumSize: Size.zero,
+                elevation: 0,
+              ),
+            ),
+        ],
+      ),
       const SizedBox(height: 24),
-      ...List.generate(_partners.length, (index) => _buildPartnerBlock(index, color, isDark)),
-      if (_partners.length < 10)
-        Padding(
-          padding: const EdgeInsets.only(top: 16),
-          child: TextButton.icon(onPressed: _addPartner, icon: const Icon(Icons.add, color: Color(0xFF3B82F6)), label: const Text('Add Another Partner', style: TextStyle(color: Color(0xFF3B82F6), fontWeight: FontWeight.bold))),
-        ),
+      if (_partners.isEmpty)
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(32),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withOpacity(0.02) : const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            children: [
+              Icon(Icons.person_add_alt_1, size: 40, color: Colors.grey[400]),
+              const SizedBox(height: 12),
+              const Text('No partners added yet', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey)),
+              const SizedBox(height: 4),
+              const Text('Click "Add Partner" to add business partners (Max 10)', style: TextStyle(fontSize: 11, color: Colors.grey)),
+            ],
+          ),
+        )
+      else
+        ...List.generate(_partners.length, (index) => _buildPartnerBlock(index, color, isDark)),
     ]);
   }
 
@@ -379,27 +427,77 @@ class _CreatePartnerBusinessPageState extends State<CreatePartnerBusinessPage> {
     final p = _partners[index];
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.03) : Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: isDark ? Colors.white10 : Colors.grey[200]!)),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withOpacity(0.02) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.grey[200]!),
+        boxShadow: isDark ? [] : [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))
+        ],
+      ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text('Partner ${index + 1}', style: const TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF3B82F6))),
-          if (_partners.length > 1) IconButton(icon: const Icon(Icons.remove_circle_outline, color: Colors.red, size: 20), onPressed: () => _removePartner(index)),
+          Text('Partner ${index + 1}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Color(0xFF3B82F6))),
+          InkWell(
+            onTap: () => _removePartner(index),
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                border: Border.all(color: const Color(0xFF818CF8)),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Icon(Icons.close, color: Color(0xFF818CF8), size: 14),
+            ),
+          ),
         ]),
-        const SizedBox(height: 16),
-        _buildInputField('Partner Name *', p.nameCtrl, isDark),
-        _buildInputField('PAN Number *', p.panCtrl, isDark),
-        const Text('Access Level', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
-        const SizedBox(height: 8),
+        const SizedBox(height: 24),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: _buildInputField('Partner Name *', p.nameCtrl, isDark)),
+            const SizedBox(width: 16),
+            Expanded(child: _buildInputField('PAN Number *', p.panCtrl, isDark)),
+          ],
+        ),
+        const Text('Access Level', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: Colors.grey)),
+        const SizedBox(height: 12),
         Row(children: [
           _buildRadio(p.accessLevel == 'View Only', 'View Only', () => setState(() => p.accessLevel = 'View Only'), isDark),
-          const SizedBox(width: 20),
+          const SizedBox(width: 24),
           _buildRadio(p.accessLevel == 'Full Access', 'Full Access', () => setState(() => p.accessLevel = 'Full Access'), isDark),
         ]),
-        const SizedBox(height: 16),
-        _buildFileUpload('Partnership Deal Upload', p.dealFileName, p.dealBytes, () => _pickFile('', partnerIndex: index, partnerFileType: 'deal'), isDark),
-        const SizedBox(height: 16),
-        _buildFileUpload('Written Letter with Sign', p.letterFileName, p.letterBytes, () => _pickFile('', partnerIndex: index, partnerFileType: 'letter'), isDark),
+        const SizedBox(height: 24),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _buildFileUpload('Partnership Deal *', p.dealFileName, p.dealBytes, () => _pickFile('', partnerIndex: index, partnerFileType: 'deal'), isDark),
+            ),
+            if (p.accessLevel == 'View Only') ...[
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildFileUpload('Written Letter (with sign) *', p.letterFileName, p.letterBytes, () => _pickFile('', partnerIndex: index, partnerFileType: 'letter'), isDark),
+                    const SizedBox(height: 6),
+                    const Row(
+                      children: [
+                        Icon(Icons.info, color: Colors.amber, size: 12),
+                        SizedBox(width: 4),
+                        Text('Required for view only mode', style: TextStyle(color: Colors.amber, fontSize: 10, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              const SizedBox(width: 16),
+              const Expanded(child: SizedBox()), // Placeholder to keep the Partnership Deal box the same size
+            ]
+          ],
+        ),
       ]),
     );
   }
@@ -547,6 +645,14 @@ class _CreatePartnerBusinessPageState extends State<CreatePartnerBusinessPage> {
 
   // STEP 7: Business Categories
   Widget _buildStep7(Color color, bool isDark) {
+    if (_isCategoriesLoading) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(40.0),
+          child: CircularProgressIndicator(color: color),
+        ),
+      );
+    }
     final sectorTitles = _categoriesData.keys.toList();
     final sectors = _selectedSectorTitle != null ? _categoriesData[_selectedSectorTitle]!.keys.toList() : <String>[];
     final subSectors = (_selectedSectorTitle != null && _selectedSector != null)
@@ -724,6 +830,438 @@ class _CreatePartnerBusinessPageState extends State<CreatePartnerBusinessPage> {
   }
 
   // HELPERS
+  Widget _buildTierCard(
+    String title,
+    String subtitle,
+    IconData icon,
+    Color iconColor,
+    bool isSelected,
+    bool isDark,
+    bool isRecommended,
+  ) {
+    return GestureDetector(
+      onTap: () => setState(() => _selectedTier = title),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? Colors.white
+                  : (isDark ? Colors.white.withOpacity(0.02) : Colors.white),
+              border: Border.all(
+                color: isSelected
+                    ? Colors.blue.withOpacity(0.5)
+                    : (isDark ? Colors.white10 : Colors.grey[200]!),
+                width: isSelected ? 1.5 : 1,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: isSelected && !isDark
+                  ? [
+                      BoxShadow(
+                        color: Colors.blue.withOpacity(0.05),
+                        blurRadius: 10,
+                        spreadRadius: 1,
+                      ),
+                    ]
+                  : [],
+            ),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: iconColor.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, size: 20, color: iconColor),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 8, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+          if (isRecommended)
+            Positioned(
+              top: -8,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.star, color: Colors.white, size: 8),
+                      const SizedBox(width: 2),
+                      const Text(
+                        'Recommended',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 7,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          if (isSelected)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: const BoxDecoration(
+                  color: Colors.blue,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.check, color: Colors.white, size: 8),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+Widget _buildLogoUploadField(
+    String label,
+    String? name,
+    Uint8List? bytes,
+    VoidCallback onTap,
+    bool isDark,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+              color: isDark ? Colors.white70 : const Color(0xFF334155),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: onTap,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.white.withOpacity(0.05)
+                          : const Color(0xFFF1F5F9).withOpacity(0.5),
+                      border: Border.all(
+                        color: isDark ? Colors.white10 : Colors.grey[300]!,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.white10 : Colors.white,
+                            border: Border.all(color: Colors.grey[300]!),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            'Choose File',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            name ?? 'No file chosen',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: name != null
+                                  ? (isDark ? Colors.white : Colors.black87)
+                                  : Colors.grey,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              if (bytes != null &&
+                  (name?.toLowerCase().endsWith('.jpg') == true ||
+                      name?.toLowerCase().endsWith('.png') == true ||
+                      name?.toLowerCase().endsWith('.jpeg') == true)) ...[
+                const SizedBox(width: 12),
+                GestureDetector(
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (_) => Dialog(
+                        backgroundColor: Colors.transparent,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Image.memory(bytes, fit: BoxFit.contain),
+                            Positioned(
+                              top: 0,
+                              right: 0,
+                              child: IconButton(
+                                icon: const Icon(
+                                  Icons.close,
+                                  color: Colors.white,
+                                  size: 30,
+                                ),
+                                onPressed: () => Navigator.pop(context),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isDark ? Colors.white10 : Colors.grey[300]!,
+                      ),
+                      image: DecorationImage(
+                        image: MemoryImage(bytes),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'JPG, PNG (Max 2MB)',
+            style: TextStyle(fontSize: 10, color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+
+Widget _buildTurnoverDropdown(bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Turnover / Income *',
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+              color: isDark ? Colors.white70 : const Color(0xFF334155),
+            ),
+          ),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+            value: _turnoverRange,
+            hint: Text(
+              'Select Turnover Range',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white38 : Colors.grey[500],
+              ),
+            ),
+            items:
+                [
+                      '20 Lakhs to 50 Lakhs',
+                      '50 Lakhs to 2 Crores',
+                      'Above 2 Crores',
+                    ]
+                    .map(
+                      (e) => DropdownMenuItem(
+                        value: e,
+                        child: Text(
+                          e,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : Colors.black,
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+            onChanged: (v) {
+              setState(() {
+                _turnoverRange = v;
+                if (v == '20 Lakhs to 50 Lakhs') {
+                  _selectedTier = 'Startup';
+                } else if (v == '50 Lakhs to 2 Crores') {
+                  _selectedTier = 'Standard';
+                } else if (v == 'Above 2 Crores') {
+                  _selectedTier = 'Corporate';
+                }
+              });
+            },
+            validator: (value) =>
+                value == null ? 'Select Turnover Range' : null,
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: isDark
+                  ? Colors.white.withOpacity(0.05)
+                  : const Color(0xFFF1F5F9).withOpacity(0.5),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 18,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(
+                  color: isDark ? Colors.white10 : Colors.grey[300]!,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(
+                  color: isDark ? Colors.white10 : Colors.grey[200]!,
+                ),
+              ),
+            ),
+          ),
+          if (_turnoverRange != null) ...[
+            const SizedBox(height: 24),
+            Text(
+              'Company Tier *',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 13,
+                color: isDark ? Colors.white70 : const Color(0xFF334155),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                if (_turnoverRange == '20 Lakhs to 50 Lakhs') ...[
+                  Expanded(
+                    child: _buildTierCard(
+                      'Startup',
+                      'Small business / new company',
+                      Icons.rocket_launch,
+                      Colors.red,
+                      _selectedTier == 'Startup',
+                      isDark,
+                      _turnoverRange == '20 Lakhs to 50 Lakhs',
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                if (_turnoverRange == '20 Lakhs to 50 Lakhs' ||
+                    _turnoverRange == '50 Lakhs to 2 Crores') ...[
+                  Expanded(
+                    child: _buildTierCard(
+                      'Standard',
+                      'Growing business',
+                      Icons.domain,
+                      Colors.blue,
+                      _selectedTier == 'Standard',
+                      isDark,
+                      _turnoverRange == '50 Lakhs to 2 Crores',
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Expanded(
+                  child: _buildTierCard(
+                    'Corporate',
+                    'Large organization',
+                    Icons.apartment,
+                    Colors.green,
+                    _selectedTier == 'Corporate',
+                    isDark,
+                    _turnoverRange == 'Above 2 Crores',
+                  ),
+                ),
+                if (_turnoverRange == '50 Lakhs to 2 Crores') ...[
+                  const SizedBox(width: 8),
+                  const Expanded(child: SizedBox()),
+                ],
+                if (_turnoverRange == 'Above 2 Crores') ...[
+                  const SizedBox(width: 8),
+                  const Expanded(child: SizedBox()),
+                  const SizedBox(width: 8),
+                  const Expanded(child: SizedBox()),
+                ],
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.lightBlueAccent.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info, color: Colors.blue, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Based on your turnover range, we recommended this tier. You can still choose another option.',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? Colors.white70 : Colors.black87,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildInputField(String label, TextEditingController ctrl, bool isDark, {TextInputType keyboardType = TextInputType.text, bool readOnly = false, List<TextInputFormatter>? inputFormatters}) {
     final isPan = label.toLowerCase().contains('pan') || ctrl == _panCtrl;
     final isPhone = label.toLowerCase().contains('phone') || label.toLowerCase().contains('mobile') || ctrl == _phoneCtrl;
@@ -777,9 +1315,9 @@ class _CreatePartnerBusinessPageState extends State<CreatePartnerBusinessPage> {
   }
 
   void _resetControllers() {
-    _nameCtrl.clear(); _emailCtrl.clear(); _phoneCtrl.clear(); _websiteCtrl.clear(); _panCtrl.clear(); _gstCtrl.clear(); _accNumberCtrl.clear(); _confirmAccNumberCtrl.clear(); _doorCtrl.clear(); _streetCtrl.clear(); _buildingCtrl.clear(); _landmarkCtrl.clear(); _areaCtrl.clear(); _districtCtrl.clear(); _pincodeCtrl.clear(); _stateCtrl.clear(); _yearCtrl.clear(); _panBytes = null; _sigBytes = null; _gstBytes = null; _bankDocBytes = null; _selectedTypes.clear(); _employeeRange = null;
+    _nameCtrl.clear(); _emailCtrl.clear(); _phoneCtrl.clear(); _websiteCtrl.clear(); _panCtrl.clear(); _gstCtrl.clear(); _accNumberCtrl.clear(); _confirmAccNumberCtrl.clear(); _doorCtrl.clear(); _streetCtrl.clear(); _buildingCtrl.clear(); _landmarkCtrl.clear(); _areaCtrl.clear(); _districtCtrl.clear(); _pincodeCtrl.clear(); _stateCtrl.clear(); _yearCtrl.clear(); _panBytes = null; _sigBytes = null; _gstBytes = null; _bankDocBytes = null; _selectedTypes.clear(); _employeeRange = null; _logoFileName = null; _logoBytes = null; _turnoverRange = null; _selectedTier = null;
     _selectedSectorTitle = null; _selectedSector = null; _selectedSubSector = null; _activePrimaryCategory = null; _selectedSubCategories.clear();
-    _partners.clear(); _partners.add(_PartnerFormController());
+    _partners.clear();
   }
 }
 

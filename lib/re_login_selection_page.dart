@@ -1,6 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'providers.dart';
 import 'user_service.dart';
 import 'password_page.dart';
 import 'login_page.dart';
@@ -9,14 +11,14 @@ import 'otp_page.dart';
 import 'otp_service.dart';
 import 'auth_service.dart';
 
-class ReLoginSelectionPage extends StatefulWidget {
+class ReLoginSelectionPage extends ConsumerStatefulWidget {
   const ReLoginSelectionPage({super.key});
 
   @override
-  State<ReLoginSelectionPage> createState() => _ReLoginSelectionPageState();
+  ConsumerState<ReLoginSelectionPage> createState() => _ReLoginSelectionPageState();
 }
 
-class _ReLoginSelectionPageState extends State<ReLoginSelectionPage> {
+class _ReLoginSelectionPageState extends ConsumerState<ReLoginSelectionPage> {
   String _selectedMethod = 'Phone Number';
   final TextEditingController _inputController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -46,7 +48,7 @@ class _ReLoginSelectionPageState extends State<ReLoginSelectionPage> {
 
     setState(() => _isLoading = true);
     final String input = _inputController.text.trim();
-    final userService = Provider.of<UserService>(context, listen: false);
+    final userService = ref.read(userServiceProvider);
 
     try {
       // 1. Check if account already exists
@@ -255,13 +257,30 @@ class _ReLoginSelectionPageState extends State<ReLoginSelectionPage> {
   Widget _buildInputField() {
     String hint = 'Enter ${_selectedMethod.toLowerCase()}';
     TextInputType keyboard = TextInputType.text;
+    List<TextInputFormatter>? formatters;
+    TextCapitalization textCap = TextCapitalization.none;
     
-    if (_selectedMethod == 'Phone Number') keyboard = TextInputType.phone;
-    if (_selectedMethod == 'Email Address') keyboard = TextInputType.emailAddress;
+    if (_selectedMethod == 'Phone Number') {
+      keyboard = TextInputType.phone;
+      formatters = [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)];
+    }
+    if (_selectedMethod == 'Email Address') {
+      keyboard = TextInputType.emailAddress;
+    }
+    if (_selectedMethod == 'PAN Number') {
+      textCap = TextCapitalization.characters;
+      formatters = [
+        TextInputFormatter.withFunction((oldValue, newValue) => 
+            TextEditingValue(text: newValue.text.toUpperCase(), selection: newValue.selection)),
+        LengthLimitingTextInputFormatter(10)
+      ];
+    }
 
     return TextFormField(
       controller: _inputController,
       keyboardType: keyboard,
+      inputFormatters: formatters,
+      textCapitalization: textCap,
       style: const TextStyle(fontWeight: FontWeight.w600),
       decoration: InputDecoration(
         hintText: hint,

@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:convert';
 
 class PartnerModel {
   final String name;
@@ -27,6 +28,9 @@ class BusinessUser {
   final String email;
   final String phone;
   final String? website;
+  final String? companyLogoFileName;
+  final Uint8List? companyLogoBytes;
+  final String? turnoverRange;
 
   // PAN Identification
   final String panNumber;
@@ -82,6 +86,9 @@ class BusinessUser {
     required this.email,
     required this.phone,
     this.website,
+    this.companyLogoFileName,
+    this.companyLogoBytes,
+    this.turnoverRange,
     required this.panNumber,
     this.panFileName,
     this.panFileBytes,
@@ -118,5 +125,58 @@ class BusinessUser {
     this.subSector,
     this.categories,
   });
+
+  factory BusinessUser.fromJson(Map<String, dynamic> json) {
+    // Determine type formatting (API returns 'supplier', we want 'Supplier')
+    String? apiType = json['type']?.toString();
+    String? regType = apiType != null && apiType.isNotEmpty
+        ? apiType[0].toUpperCase() + apiType.substring(1).toLowerCase()
+        : null;
+
+    // Parse business types
+    List<String> bTypes = [];
+    if (json['business_types'] != null) {
+      if (json['business_types'] is String) {
+        try {
+          final decoded = jsonDecode(json['business_types']);
+          if (decoded is List) bTypes = decoded.map((e) => e.toString()).toList();
+        } catch (_) {}
+      } else if (json['business_types'] is List) {
+        bTypes = (json['business_types'] as List).map((e) => e.toString()).toList();
+      }
+    }
+
+    return BusinessUser(
+      id: json['business_id']?.toString() ?? json['id']?.toString() ?? '',
+      registrationType: regType,
+      businessName: json['business_name']?.toString() ?? '',
+      email: json['business_email']?.toString() ?? '',
+      phone: json['business_phone']?.toString() ?? '',
+      website: json['website']?.toString(),
+      panNumber: json['pan_number']?.toString() ?? '',
+      gstNumber: json['gst_number']?.toString() ?? '',
+      accountNumber: json['current_account_number']?.toString() ?? '',
+      bankDocType: json['bank_document_type']?.toString() ?? 'statement',
+      doorNumber: json['door_number']?.toString() ?? '',
+      streetName: json['street_name']?.toString() ?? '',
+      buildingName: json['building_name']?.toString(),
+      landmark: json['landmark']?.toString(),
+      area: json['area']?.toString() ?? '',
+      district: json['district']?.toString() ?? '',
+      pincode: json['pincode']?.toString() ?? '',
+      state: json['state']?.toString() ?? '',
+      country: json['country']?.toString() ?? 'India',
+      businessTypes: bTypes,
+      yearOfEstablishment: json['year_of_establishment']?.toString() ?? '',
+      employeeRange: json['employee_count']?.toString() ?? '',
+      partnerCount: int.tryParse(json['partner_count']?.toString() ?? '0') ?? 0,
+      createdDate: DateTime.tryParse(json['created_at']?.toString() ?? '') ?? DateTime.now(),
+      status: json['status']?.toString() ?? 'Active',
+      sectorTitle: json['sector_title']?.toString(),
+      sector: json['sector']?.toString(),
+      subSector: json['sub_sector']?.toString(),
+      companyLogoFileName: json['company_logo']?.toString(),
+    );
+  }
 }
 

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import '../../features/auth/legacy_login_page.dart';
 import 'login_page.dart';
+import 'package:circuit/auth_service.dart';
 
 class UserService extends ChangeNotifier {
   static final UserService _instance = UserService._internal();
@@ -108,6 +109,33 @@ class UserService extends ChangeNotifier {
       userId: userId,
       userMainId: user['user_main_id']?.toString(),
     );
+  }
+
+  Future<void> fetchAndUpdateProfileFromApi() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? userMainId = prefs.getString(keyUserMainId);
+    
+    if (userMainId != null && userMainId.isNotEmpty) {
+      try {
+        final token = await AuthService().getToken();
+        final response = await http.get(
+          Uri.parse('https://user.jobes24x7.com/api/login/$userMainId'),
+          headers: {
+            if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        ).timeout(const Duration(seconds: 10));
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          final apiData = jsonDecode(response.body);
+          if (apiData['data'] != null && apiData['data']['data'] != null) {
+            final userDetails = apiData['data']['data'];
+            await saveFromApiUser(userDetails);
+          }
+        }
+      } catch (e) {
+        debugPrint("Error fetching profile from API: $e");
+      }
+    }
   }
 
   Future<void> updateProfilePhoto(Uint8List bytes) async {

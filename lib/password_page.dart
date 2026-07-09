@@ -2,14 +2,15 @@ import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'providers.dart';
 import 'auth_service.dart';
 import 'home_page.dart';
 import 'user_service.dart';
 import 'set_pin_page.dart';
 import 'secret_image_verification_page.dart';
 
-class PasswordPage extends StatefulWidget {
+class PasswordPage extends ConsumerStatefulWidget {
   final String phoneNumber;
   final String email;
   final bool isExistingUser;
@@ -24,10 +25,10 @@ class PasswordPage extends StatefulWidget {
   });
 
   @override
-  State<PasswordPage> createState() => _PasswordPageState();
+  ConsumerState<PasswordPage> createState() => _PasswordPageState();
 }
 
-class _PasswordPageState extends State<PasswordPage> {
+class _PasswordPageState extends ConsumerState<PasswordPage> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
@@ -63,7 +64,7 @@ class _PasswordPageState extends State<PasswordPage> {
     });
 
     try {
-      final userService = Provider.of<UserService>(context, listen: false);
+      final userService = ref.read(userServiceProvider);
       final String password = passwordController.text.trim();
 
       if (widget.isExistingUser) {
@@ -95,10 +96,7 @@ class _PasswordPageState extends State<PasswordPage> {
           final String email = userData?['email'] ?? '';
 
           if (userData != null) {
-            await Provider.of<UserService>(
-              context,
-              listen: false,
-            ).saveFromApiUser(userData);
+            await ref.read(userServiceProvider).saveFromApiUser(userData);
           }
 
           Navigator.pushAndRemoveUntil(

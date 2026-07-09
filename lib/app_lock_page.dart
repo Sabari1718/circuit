@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/services.dart';
 import 'app_lock_service.dart';
 import 'home_page.dart';
 
@@ -250,14 +251,14 @@ class _AppLockPageState extends State<AppLockPage>
 
   void _onPinDigit(String digit) {
     if (_currentStep != _UnlockStep.pin) return;
-    if (_enteredPin.length >= 4) return;
+    if (_enteredPin.length >= 6) return;
 
     setState(() {
       _enteredPin.add(digit);
       _errorMessage = '';
     });
 
-    if (_enteredPin.length == 4) {
+    if (_enteredPin.length == 6) {
       _checkPin();
     }
   }
@@ -309,7 +310,7 @@ class _AppLockPageState extends State<AppLockPage>
 
     if (ok) {
       if (_isForgotPinFlow) {
-        _goToResetPinStep(message: 'Password verified. Set a new 4-digit PIN.');
+        _goToResetPinStep(message: 'Password verified. Set a new 6-digit PIN.');
       } else {
         _unlock();
       }
@@ -328,9 +329,9 @@ class _AppLockPageState extends State<AppLockPage>
     final newPin = _newPinController.text.trim();
     final confirmPin = _confirmNewPinController.text.trim();
 
-    if (!RegExp(r'^\d{4}$').hasMatch(newPin)) {
+    if (!RegExp(r'^\d{6}$').hasMatch(newPin)) {
       setState(() {
-        _errorMessage = 'New PIN must be exactly 4 digits.';
+        _errorMessage = 'New PIN must be exactly 6 digits.';
       });
       _triggerShake();
       return;
@@ -465,7 +466,7 @@ class _AppLockPageState extends State<AppLockPage>
       case _UnlockStep.biometricFirst:
         return 'Use fingerprint / face to unlock';
       case _UnlockStep.pin:
-        return 'Enter your 4-digit PIN';
+        return 'Enter your 6-digit PIN';
       case _UnlockStep.biometricRetry:
         return 'Try Face / Biometric unlock again';
       case _UnlockStep.password:
@@ -473,7 +474,7 @@ class _AppLockPageState extends State<AppLockPage>
             ? 'Verify your account password to reset PIN'
             : 'Enter your account password to unlock';
       case _UnlockStep.resetPin:
-        return 'Create a new 4-digit PIN';
+        return 'Create a new 6-digit PIN';
     }
   }
 
@@ -582,7 +583,7 @@ class _AppLockPageState extends State<AppLockPage>
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(4, (i) {
+          children: List.generate(6, (i) {
             final filled = i < _enteredPin.length;
             return AnimatedContainer(
               duration: const Duration(milliseconds: 150),
@@ -769,10 +770,11 @@ class _AppLockPageState extends State<AppLockPage>
           controller: _newPinController,
           obscureText: _obscureNewPin,
           keyboardType: TextInputType.number,
-          maxLength: 4,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          maxLength: 6,
           style: const TextStyle(color: Colors.white),
           decoration: InputDecoration(
-            hintText: 'Enter new 4-digit PIN',
+            hintText: 'Enter new 6-digit PIN',
             counterText: '',
             hintStyle: const TextStyle(color: Colors.white38),
             filled: true,
@@ -815,10 +817,11 @@ class _AppLockPageState extends State<AppLockPage>
           controller: _confirmNewPinController,
           obscureText: _obscureConfirmNewPin,
           keyboardType: TextInputType.number,
-          maxLength: 4,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          maxLength: 6,
           style: const TextStyle(color: Colors.white),
           decoration: InputDecoration(
-            hintText: 'Confirm new 4-digit PIN',
+            hintText: 'Confirm new 6-digit PIN',
             counterText: '',
             hintStyle: const TextStyle(color: Colors.white38),
             filled: true,

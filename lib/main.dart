@@ -1,69 +1,27 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'providers.dart';
 
 import 'login_page.dart';
 import 're_login_selection_page.dart';
 import 'user_service.dart';
 import 'theme/theme_provider.dart';
-import 'app_security_service.dart';
+
 import 'auth_service.dart';
 import 'biometric_pin_gate_page.dart';
+import 'splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // APP SECURITY CHECK
-  bool isValid = await AppSecurityService.checkApp();
-
-  // BLOCK APP IF INVALID
-  if (!isValid) {
-    runApp(
-      const MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: SecurityBlockedPage(),
-      ),
-    );
-    return;
-  }
-
-  final UserService userService = UserService();
-  final AuthService authService = AuthService();
-
-  // CHECK TOKEN VALIDITY
-  final String authResult = await authService.checkAuthOnStartup();
-
-  final bool isLoggedIn =
-      authResult == AuthService.resultDashboard &&
-          await userService.isUserLoggedIn();
-
-  final userData = await userService.getUserData();
-
-  Widget home;
-
-  if (!isLoggedIn) {
-    final bool hasLoggedOut = await userService.hasLoggedOut();
-    home = hasLoggedOut ? const ReLoginSelectionPage() : const LoginPage();
-  } else {
-    // ── Always require biometric / PIN verification on reopen ──────────────
-    home = BiometricPinGatePage(
-      userName: userData['name'] ?? '',
-      email: userData['email'] ?? '',
-      phone: userData['phone'] ?? '',
-    );
-  }
-
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => userService),
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
-      ],
-      child: MyApp(initialHome: home),
+    const ProviderScope(
+      child: MyApp(initialHome: SplashScreen()),
     ),
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   final Widget initialHome;
 
   const MyApp({
@@ -72,42 +30,20 @@ class MyApp extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
-        return MaterialApp(
-          debugShowCheckedModeBanner: false,
-          title: 'UserPortal',
-          themeMode: themeProvider.themeMode,
-          theme: themeProvider.lightTheme,
-          darkTheme: themeProvider.darkTheme,
-          home: initialHome,
-          routes: {
-            '/login': (context) => const LoginPage(),
-          },
-        );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeProvider = ref.watch(themeProviderState);
+    
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'UserPortal',
+      themeMode: themeProvider.themeMode,
+      theme: themeProvider.lightTheme,
+      darkTheme: themeProvider.darkTheme,
+      home: initialHome,
+      routes: {
+        '/login': (context) => const LoginPage(),
       },
     );
   }
 }
 
-class SecurityBlockedPage extends StatelessWidget {
-  const SecurityBlockedPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: const Center(
-        child: Text(
-          "❌ INVALID APPLICATION",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-}

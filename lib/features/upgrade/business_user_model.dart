@@ -119,4 +119,3 @@ class BusinessUser {
     this.categories,
   });
 }
-

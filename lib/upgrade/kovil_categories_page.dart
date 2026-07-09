@@ -1,36 +1,31 @@
 import 'package:flutter/material.dart';
-import 'job_list_page.dart';
+import 'kovil_list_page.dart';
 
-class JobCategory {
+class ReligionCategory {
   final String title;
   final String icon;
   final Color bgColor;
 
-  JobCategory(this.title, this.icon, this.bgColor);
+  ReligionCategory(this.title, this.icon, this.bgColor);
 }
 
-class JobCategoriesPage extends StatelessWidget {
-  const JobCategoriesPage({super.key});
+class KovilCategoriesPage extends StatelessWidget {
+  const KovilCategoriesPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final List<JobCategory> categories = [
-      JobCategory("Marketing", "📈", const Color(0xFFF3F4F6)),
-      JobCategory("Sales", "🛒", const Color(0xFFECFDF5)),
-      JobCategory("Driving", "🚗", const Color(0xFFFEF2F2)),
-      JobCategory("IT & Software", "💻", const Color(0xFFEFF6FF)),
-      JobCategory("Healthcare", "⚕️", const Color(0xFFFDF2F8)),
-      JobCategory("Finance", "💰", const Color(0xFFFEF3C7)),
-      JobCategory("Engineering", "⚙️", const Color(0xFFF1F5F9)),
-      JobCategory("Customer Service", "🎧", const Color(0xFFF5F3FF)),
-      JobCategory("Human Resources", "👥", const Color(0xFFFFF7ED)),
-      JobCategory("Education", "🎓", const Color(0xFFE0F2FE)),
-      JobCategory("Construction", "🏗️", const Color(0xFFFFEDD5)),
-      JobCategory("Hospitality", "🏨", const Color(0xFFFCE7F3)),
+    final List<ReligionCategory> categories = [
+      ReligionCategory("Hindu", "🕉️", const Color(0xFFFEF2F2)),
+      ReligionCategory("Muslim", "☪️", const Color(0xFFECFDF5)),
+      ReligionCategory("Christian", "✝️", const Color(0xFFEFF6FF)),
+      ReligionCategory("Sikh", "🪯", const Color(0xFFFEF3C7)),
+      ReligionCategory("Buddhist", "☸️", const Color(0xFFFDF2F8)),
+      ReligionCategory("Jain", "🛕", const Color(0xFFF3F4F6)),
+      ReligionCategory("Other", "✨", const Color(0xFFF5F3FF)),
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC), // Light grayish background matching typical admin panels
+      backgroundColor: const Color(0xFFF8FAFC), // Light grayish background
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -65,7 +60,7 @@ class JobCategoriesPage extends StatelessWidget {
           ),
         ),
         title: const Text(
-          "Job Categories",
+          "Religion Categories",
           style: TextStyle(
             color: Color(0xFF1E293B),
             fontSize: 20,
@@ -114,16 +109,12 @@ class JobCategoriesPage extends StatelessWidget {
                     color: Colors.transparent,
                     child: InkWell(
                       onTap: () {
-                        if (category.title == "Driving") {
-                          debugPrint("Driving category selected");
-                          debugPrint("Navigating directly to Job List page");
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const JobListPage(),
-                            ),
-                          );
-                        }
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => KovilListPage(religion: category.title),
+                          ),
+                        );
                       },
                       borderRadius: BorderRadius.circular(12),
                       child: Padding(

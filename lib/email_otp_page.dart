@@ -357,6 +357,12 @@ class _EmailOtpPageState extends State<EmailOtpPage> {
 
                     // ✅ CHANGED: 4 digits only
                     maxLength: 4,
+                    onChanged: (value) {
+                      if (value.length == 4) {
+                        FocusScope.of(context).unfocus();
+                        _verifyOtp();
+                      }
+                    },
 
                     textAlign: TextAlign.center,
                     style: const TextStyle(

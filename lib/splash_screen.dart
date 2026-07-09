@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import 'auth_service.dart';
 import 'user_service.dart';
 import 'login_page.dart';
-import 'home_page.dart';
-import 'app_lock_page.dart';
-import 'app_lock_service.dart';
+import 're_login_selection_page.dart';
+import 'biometric_pin_gate_page.dart';
 
 /// SplashScreen — first widget shown on every app launch.
 ///
@@ -66,61 +65,43 @@ class _SplashScreenState extends State<SplashScreen>
 
     final authService = AuthService();
     final userService = UserService();
-    final appLockService = AppLockService();
 
     // ── Local 24-hour expiry check ────────────────────────────────────────
     final String route = await authService.checkAuthOnStartup();
+    final bool isLoggedIn = route == AuthService.resultDashboard && await userService.isUserLoggedIn();
 
     if (!mounted) return;
 
-    if (route == AuthService.resultDashboard) {
-      // ── Token is valid ── ─────────────────────────────────────────────────
-      // Show remaining time on splash for a moment
-      final Duration remaining = await authService.tokenTimeRemaining();
-      final int hoursLeft = remaining.inHours;
-      final int minsLeft = remaining.inMinutes % 60;
-
+    if (isLoggedIn) {
       if (mounted) {
         setState(() {
-          _statusText = 'Session valid · ${hoursLeft}h ${minsLeft}m left';
+          _statusText = 'Session valid...';
         });
       }
 
       await Future.delayed(const Duration(milliseconds: 600));
       if (!mounted) return;
 
-      // Load user data + check app-lock
-      final bool isAppLockEnabled = await appLockService.isAppLockEnabled();
       final userData = await userService.getUserData();
-
       if (!mounted) return;
 
-      Widget destination;
-      if (isAppLockEnabled) {
-        destination = AppLockPage(
-          userName: userData['name'] ?? '',
-          email: userData['email'] ?? '',
-        );
-      } else {
-        destination = HomePage(
-          userName: userData['name'] ?? '',
-          email: userData['email'] ?? '',
-        );
-      }
-
-      _navigate(destination);
+      _navigate(BiometricPinGatePage(
+        userName: userData['name'] ?? '',
+        email: userData['email'] ?? '',
+        phone: userData['phone'] ?? '',
+      ));
     } else {
-      // ── No token or expired ────────────────────────────────────────────────
       if (mounted) {
         setState(() {
-          _statusText = 'Session expired. Please login.';
+          _statusText = 'Checking session...';
         });
       }
 
-      await Future.delayed(const Duration(milliseconds: 700));
+      final bool hasLoggedOut = await userService.hasLoggedOut();
+      await Future.delayed(const Duration(milliseconds: 600));
       if (!mounted) return;
 
-      _navigate(const LoginPage());
+      _navigate(hasLoggedOut ? const ReLoginSelectionPage() : const LoginPage());
     }
   }
 

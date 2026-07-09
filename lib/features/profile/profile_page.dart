@@ -25,6 +25,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _loadProfile() async {
     await UserService().loadSession();
+    await UserService().fetchAndUpdateProfileFromApi();
     final data = await UserService().getUserData();
     if (mounted) {
       setState(() {

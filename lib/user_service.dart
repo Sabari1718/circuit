@@ -221,7 +221,14 @@ class UserService extends ChangeNotifier {
     
     if (userMainId != null && userMainId.isNotEmpty) {
       try {
-        final response = await http.get(Uri.parse('https://user.jobes24x7.com/api/login/$userMainId')).timeout(const Duration(seconds: 10));
+        final token = await AuthService().getToken();
+        final response = await http.get(
+          Uri.parse('https://user.jobes24x7.com/api/login/$userMainId'),
+          headers: {
+            if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        ).timeout(const Duration(seconds: 10));
         if (response.statusCode == 200 || response.statusCode == 201) {
           final apiData = jsonDecode(response.body);
           if (apiData['data'] != null && apiData['data']['data'] != null) {
@@ -254,14 +261,8 @@ class UserService extends ChangeNotifier {
 
   Future<bool> checkPhoneRegistration(String phone) async {
     try {
-      final response = await http
-          .get(Uri.parse('$backendBaseUrl/check_user.php?phone=$phone'))
-          .timeout(const Duration(seconds: 15));
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['registered'] == true;
-      }
-      return false;
+      final exists = await AuthService().checkUserExists(phone);
+      return exists == true;
     } catch (e) {
       return false;
     }

@@ -10,6 +10,8 @@ import 'package:circuit/features/upgrade/business_created_page.dart';
 import 'package:circuit/features/business/business_registration_overview_page.dart';
 import 'package:circuit/core/services/user_service.dart';
 
+import '../../upgrade/business_created_page.dart';
+
 class UserOverviewPage extends StatefulWidget {
   const UserOverviewPage({super.key});
 

@@ -1,11 +1,15 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'business_user_model.dart';
 import 'business_user_store.dart';
 import 'business_created_page.dart';
-
+import '../user_service.dart';
+import '../core/services/api_service.dart';
 class BusinessUpgradePage extends StatefulWidget {
   const BusinessUpgradePage({super.key});
 
@@ -22,6 +26,7 @@ class _BusinessUpgradePageState extends State<BusinessUpgradePage> {
   final _formKey4 = GlobalKey<FormState>();
 
   final _panCtrl = TextEditingController();
+  String _gender = 'Male';
   String? _panFileName;
   Uint8List? _panBytes;
   String? _profileFileName;
@@ -34,7 +39,7 @@ class _BusinessUpgradePageState extends State<BusinessUpgradePage> {
   String? _bankDocFileName;
   Uint8List? _bankDocBytes;
 
-  String _addressProofDocType = 'Aadhaar Card';
+  String? _addressProofDocType;
   String? _addressProofFileName;
   Uint8List? _addressProofBytes;
 
@@ -54,6 +59,7 @@ class _BusinessUpgradePageState extends State<BusinessUpgradePage> {
   final _countryCtrl = TextEditingController(text: 'India');
 
   bool _declarationAccepted = false;
+  bool _showDeclarationError = false;
   bool _isLoading = false;
 
   void _nextStep() {
@@ -115,68 +121,79 @@ class _BusinessUpgradePageState extends State<BusinessUpgradePage> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: const Color(0xFFE11D48)));
   }
 
-  void _handleSubmit() {
+  Future<void> _handleSubmit() async {
     if (!_declarationAccepted) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Action Required', style: TextStyle(fontWeight: FontWeight.w900)),
-          content: const Text('Please check this box if you want to proceed.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK', style: TextStyle(color: Color(0xFFE11D48), fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ),
-      );
+      setState(() => _showDeclarationError = true);
       return;
     }
-
+    setState(() => _showDeclarationError = false);
     setState(() => _isLoading = true);
-    Future.delayed(const Duration(seconds: 1), () {
+
+    try {
+      final userData = await UserService().getUserData();
+      final String userMainId = userData['user_main_id'] ?? '';
+
+      if (userMainId.isEmpty) {
+        _showError("User ID missing. Please login again.");
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      final response = await ApiService().createBusinessUser(
+        userMainId: userMainId,
+        panNumber: _panCtrl.text,
+        gender: _gender.toLowerCase(),
+        addressDocType: _addressProofDocType?.toLowerCase().split(' ').first ?? 'aadhar',
+        addressType: _addressTypeSelection == 'Add Custom Address Type' ? 'custom' : 'standard',
+        selectedAddressType: _addressTypeSelection == 'Add Custom Address Type' ? _customAddressTypeCtrl.text : (_standardAddressTypeValue ?? ''),
+        area: _areaCtrl.text,
+        bankAccountNumber: _accNumberCtrl.text,
+        bankDocumentType: _bankDocType.toLowerCase().contains('passbook') ? 'passbook' : 'statement',
+        buildingName: _buildingCtrl.text,
+        country: _countryCtrl.text,
+        district: _districtCtrl.text,
+        doorNumber: _doorCtrl.text,
+        landmark: _landmarkCtrl.text,
+        pincode: _pincodeCtrl.text,
+        state: _stateCtrl.text,
+        streetName: _streetCtrl.text,
+        addressProofBytes: _addressProofBytes,
+        addressProofFileName: _addressProofFileName ?? 'address.jpg',
+        bankDocumentBytes: _bankDocBytes,
+        bankDocumentFileName: _bankDocFileName ?? 'bank.jpg',
+        panFrontPhotoBytes: _panBytes,
+        panFrontPhotoFileName: _panFileName ?? 'pan.jpg',
+        profilePhotoBytes: _profileBytes,
+        profilePhotoFileName: _profileFileName ?? 'profile.jpg',
+      );
+
+      if (!mounted) return;
+
+      setState(() => _isLoading = false);
+
+      if (response['status'] == 'error' || 
+          response['result'] == 'Error' || 
+          (response['data'] != null && (response['data']['result'] == 'Error' || response['data']['result'] == 'Failure'))) {
+        
+        String errorMsg = response['message'] ?? 'Failed to create business.';
+        if (response['data'] != null && response['data']['message'] != null) {
+          errorMsg = response['data']['message'];
+        }
+        
+        _showError(errorMsg);
+      } else {
+        final prefs = await   SharedPreferences.getInstance();
+        await prefs.setBool('is_main_business_registered', true);
+        
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Business User Created Successfully!'), backgroundColor: Colors.green));
+        Navigator.of(context).pop(true);
+      }
+    } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        final String businessId = (1000000000 + (DateTime.now().millisecondsSinceEpoch % 8999999999)).toString();
-
-        final business = BusinessUser(
-          id: businessId,
-          businessName: "My Business",
-          email: "sabari@example.com",
-          phone: "9508383027",
-          panNumber: _panCtrl.text,
-          panFileName: _panFileName,
-          panFileBytes: _panBytes,
-          signatureFileName: _profileFileName,
-          signatureFileBytes: _profileBytes,
-          gstNumber: "Not Provided",
-          accountNumber: _accNumberCtrl.text,
-          bankDocType: _bankDocType,
-          bankDocFileName: _bankDocFileName,
-          bankDocFileBytes: _bankDocBytes,
-          doorNumber: _doorCtrl.text,
-          streetName: _streetCtrl.text,
-          buildingName: _buildingCtrl.text,
-          landmark: _landmarkCtrl.text,
-          area: _areaCtrl.text,
-          district: _districtCtrl.text,
-          pincode: _pincodeCtrl.text,
-          state: _stateCtrl.text,
-          country: _countryCtrl.text,
-          businessTypes: ["Trade", "Import", "Export", "Services", "Manufacturing"],
-          yearOfEstablishment: "2026",
-          employeeRange: "1-10",
-          createdDate: DateTime.now(),
-          status: "Active",
-        );
-
-        BusinessUserStore().addBusiness(business);
-
-        // Pop twice to get back to HomePage (from BusinessUpgradePage -> BusinessWelcomePage -> HomePage)
-        Navigator.of(context).pop(); // Pops BusinessUpgradePage
-        Navigator.of(context).pop(); // Pops BusinessWelcomePage
+        _showError("An unexpected error occurred: $e");
       }
-    });
+    }
   }
 
   Future<void> _pickFile(String type) async {
@@ -194,13 +211,26 @@ class _BusinessUpgradePageState extends State<BusinessUpgradePage> {
     }
   }
 
-  void _mockAutofill(String pin) {
-    if (pin == '642101') {
-      _areaCtrl.text = 'Aliyar Nagar'; _districtCtrl.text = 'Coimbatore'; _stateCtrl.text = 'Tamil Nadu';
-    } else if (pin == '641001') {
-      _areaCtrl.text = 'Coimbatore'; _districtCtrl.text = 'Coimbatore'; _stateCtrl.text = 'Tamil Nadu';
-    } else if (pin == '600001') {
-      _areaCtrl.text = 'Chennai'; _districtCtrl.text = 'Chennai'; _stateCtrl.text = 'Tamil Nadu';
+  Future<void> _fetchPincodeDetails(String pin) async {
+    if (pin.length != 6) return;
+    try {
+      final response = await http.get(Uri.parse('https://api.postalpincode.in/pincode/$pin'));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        if (data.isNotEmpty && data[0]['Status'] == 'Success') {
+          final postOffice = data[0]['PostOffice'][0];
+          setState(() {
+            _areaCtrl.text = postOffice['Name'] ?? '';
+            _districtCtrl.text = postOffice['District'] ?? '';
+            _stateCtrl.text = postOffice['State'] ?? '';
+            _countryCtrl.text = postOffice['Country'] ?? 'India';
+          });
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid Pincode or no data found')));
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching pincode: $e');
     }
   }
 
@@ -210,7 +240,70 @@ class _BusinessUpgradePageState extends State<BusinessUpgradePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(backgroundColor: Colors.white, elevation: 0, centerTitle: true, iconTheme: const IconThemeData(color: Color(0xFF0F172A)), title: const Text("Business Upgrade", style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.w800))),
-      body: Stack(children: [Column(children: [_buildProgressHeader(themeColor), Expanded(child: SingleChildScrollView(padding: const EdgeInsets.all(24), child: _buildCurrentStep(themeColor))), _buildNavigationButtons(themeColor)]), if (_isLoading) Container(color: Colors.black.withOpacity(0.3), child: const Center(child: CircularProgressIndicator(color: Colors.white)))]),
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              _buildWelcomeHeader(),
+              _buildProgressHeader(themeColor),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: _buildCurrentStep(themeColor),
+                      ),
+                      const SizedBox(height: 24),
+                      const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.lock, size: 14, color: Color(0xFF94A3B8)),
+                          SizedBox(width: 8),
+                          Text("All information is encrypted and securely stored", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              _buildNavigationButtons(themeColor)
+            ],
+          ),
+          if (_isLoading) Container(color: Colors.black.withOpacity(0.3), child: const Center(child: CircularProgressIndicator(color: Colors.white)))
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWelcomeHeader() {
+    return FutureBuilder<Map<String, String>>(
+      future: UserService().getUserData(),
+      builder: (context, snapshot) {
+        final name = snapshot.data?['name']?.split(' ').first ?? 'Sabari';
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("Welcome Back, $name! 👋", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                    const SizedBox(height: 4),
+                    const Text("Create a new business user account", style: TextStyle(color: Color(0xFF64748B), fontSize: 14)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      }
     );
   }
 
@@ -223,7 +316,25 @@ class _BusinessUpgradePageState extends State<BusinessUpgradePage> {
       case 3: stepLabel = 'Address Proof'; break;
       case 4: stepLabel = 'Review'; break;
     }
-    return Container(color: Colors.white, padding: const EdgeInsets.fromLTRB(24, 16, 24, 16), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Step ${_currentStep + 1} of 5', style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF64748B), fontSize: 13)), Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFE11D48).withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: Text(stepLabel, style: const TextStyle(color: Color(0xFFE11D48), fontWeight: FontWeight.w800, fontSize: 11)))]), const SizedBox(height: 12), ClipRRect(borderRadius: BorderRadius.circular(10), child: LinearProgressIndicator(value: (_currentStep + 1) / 5, minHeight: 6, backgroundColor: const Color(0xFFE2E8F0), valueColor: AlwaysStoppedAnimation<Color>(color)))]));
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Step ${_currentStep + 1} of 5', style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF334155), fontSize: 14)),
+              Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: const Color(0xFFE11D48), borderRadius: BorderRadius.circular(12)), child: Text(stepLabel, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 11))),
+            ]
+          ),
+          const SizedBox(height: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: LinearProgressIndicator(value: (_currentStep + 1) / 5, minHeight: 6, backgroundColor: const Color(0xFFE2E8F0), valueColor: AlwaysStoppedAnimation<Color>(const Color(0xFF8B5CF6))),
+          )
+        ],
+      ),
+    );
   }
 
   Widget _buildCurrentStep(Color color) {
@@ -238,193 +349,661 @@ class _BusinessUpgradePageState extends State<BusinessUpgradePage> {
   }
 
   Widget _buildStep1() {
-    return Form(key: _formKey1, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildHeader('PAN Details & Photos', Icons.account_box_rounded), _buildFormCard([_buildTextField(label: 'PAN Number', hint: 'E.G. ABCDE1234F', controller: _panCtrl, inputFormatters: [LengthLimitingTextInputFormatter(10), UpperCaseTextFormatter()], validator: (v) => RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$').hasMatch(v ?? '') ? null : 'Invalid PAN'), const SizedBox(height: 24), _buildUploadBox('PAN Front Photo *', _panFileName, _panBytes, () => _pickFile('pan')), const SizedBox(height: 24), _buildUploadBox('Profile Photo *', _profileFileName, _profileBytes, () => _pickFile('profile'))])]));
-  }
-
-  Widget _buildStep2(Color color) {
-    return Form(key: _formKey2, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildHeader('Bank Account', Icons.account_balance_rounded), _buildFormCard([_buildTextField(label: 'Account Number', hint: 'Enter account number', controller: _accNumberCtrl, keyboardType: TextInputType.number, validator: (v) => (v != null && v.isNotEmpty) ? null : 'Required'), const SizedBox(height: 16), _buildTextField(label: 'Confirm Account Number', hint: 'Re-enter account number', controller: _confirmAccNumberCtrl, keyboardType: TextInputType.number, validator: (v) => (v == _accNumberCtrl.text) ? null : 'Mismatched'), const SizedBox(height: 24), _buildInfoBanner('Check your account number carefully for accuracy', color)])]));
-  }
-
-  Widget _buildStep3(Color color) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildHeader('Bank Document', Icons.description_rounded), _buildFormCard([const Text('Document Type', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF334155))), RadioListTile<String>(title: const Text('Passbook / Bank Statement', style: TextStyle(fontSize: 14)), value: 'Passbook / Bank Statement', groupValue: _bankDocType, activeColor: color, onChanged: (v) => setState(() => _bankDocType = v!)), RadioListTile<String>(title: const Text('Canceled Cheque Leaf', style: TextStyle(fontSize: 14)), value: 'Canceled Cheque Leaf', groupValue: _bankDocType, activeColor: color, onChanged: (v) => setState(() => _bankDocType = v!)), const SizedBox(height: 16), _buildUploadBox('Upload $_bankDocType *', _bankDocFileName, _bankDocBytes, () => _pickFile('bank'))])]);
-  }
-
-  Widget _buildStep4(Color themeColor) {
-    final docs = ['Aadhaar Card', 'Passport', 'Voter ID', 'Driving License', 'Utility Bill'];
-    final addrTypes = ['Home', 'Office', 'Shop', 'Warehouse', 'Factory'];
     return Form(
-      key: _formKey4,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader('Address Proof & Details', Icons.location_on_rounded),
-          _buildFormCard([
-            _buildDropdown(label: 'Document Type', value: _addressProofDocType, items: docs, onChanged: (v) => setState(() => _addressProofDocType = v!)),
-            const SizedBox(height: 16),
-            _buildUploadBox('Address Proof Document *', _addressProofFileName, _addressProofBytes, () => _pickFile('address')),
-            const SizedBox(height: 32),
-            const Text('Address Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-            const Divider(height: 20),
-            const Text('Address Type *', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF334155))),
+      key: _formKey1,
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeader('PAN Details & Photos', 'Enter your PAN number and upload required photos', Icons.badge_rounded),
+            _buildTextField(label: 'PAN Number *', hint: 'E.G., ABCDE1234F', controller: _panCtrl, inputFormatters: [LengthLimitingTextInputFormatter(10), UpperCaseTextFormatter()], validator: (v) => RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$').hasMatch(v ?? '') ? null : 'Invalid PAN'),
             const SizedBox(height: 8),
+            const Row(
+              children: [
+                Icon(Icons.info, color: Color(0xFF64748B), size: 14),
+                SizedBox(width: 6),
+                Expanded(child: Text("Enter 10-character alphanumeric PAN", style: TextStyle(color: Color(0xFF64748B), fontSize: 11))),
+              ],
+            ),
+            const SizedBox(height: 24),
+            const Text('Gender *', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF334155))),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 16,
+              runSpacing: 12,
+              children: [
+                _buildGenderOption('Male'),
+                _buildGenderOption('Female'),
+                _buildGenderOption('Others'),
+              ],
+            ),
+            const SizedBox(height: 32),
+            _buildUploadBox('PAN Front Photo *', _panFileName, _panBytes, () => _pickFile('pan')),
+            const SizedBox(height: 24),
+            _buildUploadBox('Profile Photo *', _profileFileName, _profileBytes, () => _pickFile('profile')),
+            const SizedBox(height: 24),
             Container(
-              decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(12), border: Border.all(color: _addressTypeError != null ? Colors.red : const Color(0xFFE2E8F0))),
-              child: Column(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF9E42F5),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Row(
                 children: [
-                  RadioListTile<String>(title: const Text('Standard Address Type', style: TextStyle(fontSize: 14)), value: 'Standard Address Type', groupValue: _addressTypeSelection, activeColor: themeColor, onChanged: (v) => setState(() => _addressTypeSelection = v!)),
-                  if (_addressTypeSelection == 'Standard Address Type') Padding(padding: const EdgeInsets.fromLTRB(20, 0, 20, 16), child: _buildDropdown(label: '-- Select --', value: _standardAddressTypeValue, items: addrTypes, onChanged: (v) => setState(() => _standardAddressTypeValue = v))),
-                  RadioListTile<String>(title: const Text('Add Custom Address Type', style: TextStyle(fontSize: 14)), value: 'Add Custom Address Type', groupValue: _addressTypeSelection, activeColor: themeColor, onChanged: (v) => setState(() => _addressTypeSelection = v!)),
-                  if (_addressTypeSelection == 'Add Custom Address Type') Padding(padding: const EdgeInsets.fromLTRB(20, 0, 20, 16), child: _buildTextField(label: 'Custom Type', controller: _customAddressTypeCtrl)),
+                  Icon(Icons.shield_outlined, color: Colors.blue, size: 20),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      "Your PAN details and photos are encrypted and securely stored",
+                      style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                  ),
                 ],
               ),
             ),
-            if (_addressTypeError != null) Padding(padding: const EdgeInsets.only(top: 8, left: 4), child: Text(_addressTypeError!, style: const TextStyle(color: Colors.red, fontSize: 12))),
-            const SizedBox(height: 24),
-            _buildTextField(label: 'Door Number *', controller: _doorCtrl, validator: (v)=>v!.isEmpty?'Required':null),
-            const SizedBox(height: 16),
-            _buildTextField(label: 'Street Name *', controller: _streetCtrl, validator: (v)=>v!.isEmpty?'Required':null),
-            const SizedBox(height: 24),
-            _buildPincodeSearch(themeColor),
-            const SizedBox(height: 24),
-            Row(children: [Expanded(child: _buildTextField(label: 'Area *', controller: _areaCtrl, validator: (v)=>v!.isEmpty?'Required':null)), const SizedBox(width: 12), Expanded(child: _buildTextField(label: 'District *', controller: _districtCtrl, validator: (v)=>v!.isEmpty?'Required':null))]),
-            const SizedBox(height: 16),
-            Row(children: [Expanded(child: _buildTextField(label: 'Pincode *', controller: _pincodeCtrl, keyboardType: TextInputType.number, validator: (v)=>(v?.length!=6)?'6 digits':null)), const SizedBox(width: 12), Expanded(child: _buildTextField(label: 'State *', controller: _stateCtrl, validator: (v)=>v!.isEmpty?'Required':null))]),
-          ]),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGenderOption(String label) {
+    final isSelected = _gender == label;
+    return InkWell(
+      onTap: () => setState(() => _gender = label),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(isSelected ? Icons.check_box : Icons.check_box_outline_blank, color: isSelected ? const Color(0xFF3B82F6) : const Color(0xFF94A3B8), size: 20),
+          const SizedBox(width: 6),
+          Text(label, style: const TextStyle(fontSize: 13, color: Color(0xFF334155))),
         ],
       ),
     );
   }
 
-  Widget _buildStep5() {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _buildHeader('Review', Icons.fact_check_rounded),
-      _buildReviewSummary(),
-      const SizedBox(height: 24),
-      _buildUploadedDocumentsSection(),
-      const SizedBox(height: 32),
-      _buildInfoBanner('I hereby confirm that all the information provided is true and correct.', Colors.blue),
-      const SizedBox(height: 12),
-      CheckboxListTile(value: _declarationAccepted, onChanged: (v) => setState(() => _declarationAccepted = v!), title: const Text('I agree to the terms and conditions and confirm accuracy.', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)), controlAffinity: ListTileControlAffinity.leading, contentPadding: EdgeInsets.zero, activeColor: const Color(0xFF8B5CF6))
-    ]);
-  }
-
-  Widget _buildUploadedDocumentsSection() {
-    final docs = [
-      {'label': 'PAN Photo', 'name': _panFileName, 'bytes': _panBytes},
-      {'label': 'Profile Photo', 'name': _profileFileName, 'bytes': _profileBytes},
-      {'label': 'Bank Document', 'name': _bankDocFileName, 'bytes': _bankDocBytes},
-      {'label': 'Address Proof', 'name': _addressProofFileName, 'bytes': _addressProofBytes},
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text("UPLOADED DOCUMENTS", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Color(0xFF8B5CF6))),
-        const SizedBox(height: 16),
-        ...docs.where((d) => d['bytes'] != null).map((d) => _buildFilePreviewCard(d['label'] as String, d['name'] as String?, d['bytes'] as Uint8List?)).toList(),
-      ],
+  Widget _buildStep2(Color color) {
+    return Form(
+      key: _formKey2,
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeader('Bank Account Number', 'Enter your bank account details', Icons.account_balance_rounded),
+            _buildTextField(label: 'Account Number *', hint: 'Enter your bank account number', controller: _accNumberCtrl, keyboardType: TextInputType.number, validator: (v) => (v != null && v.isNotEmpty) ? null : 'Required'),
+            const SizedBox(height: 8),
+            const Row(
+              children: [
+                Icon(Icons.info, color: Color(0xFF64748B), size: 14),
+                SizedBox(width: 6),
+                Expanded(child: Text("Enter the account number as shown in your passbook", style: TextStyle(color: Color(0xFF64748B), fontSize: 11))),
+              ],
+            ),
+            const SizedBox(height: 24),
+            _buildTextField(label: 'Confirm Account Number', hint: 'Re-enter account number', controller: _confirmAccNumberCtrl, keyboardType: TextInputType.number, validator: (v) => (v == _accNumberCtrl.text) ? null : 'Mismatched'),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF737BC5),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 20),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      "Double-check your account number for accuracy",
+                      style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildFilePreviewCard(String label, String? name, Uint8List? bytes) {
-    bool isImage = name != null && (name.toLowerCase().endsWith('.jpg') || name.toLowerCase().endsWith('.png') || name.toLowerCase().endsWith('.jpeg'));
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
+  Widget _buildStep3(Color color) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF334155))),
+          _buildHeader('Bank Document', 'Upload passbook statement or canceled cheque', Icons.receipt_long_rounded),
+          const Text('Document Type', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF334155))),
           const SizedBox(height: 12),
-          if (isImage && bytes != null)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.memory(
-                bytes,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
-            )
-          else
-            Row(
+          Wrap(
+            spacing: 16,
+            runSpacing: 12,
+            children: [
+              _buildRadioOption('Passbook / Bank Statement'),
+              _buildRadioOption('Canceled Cheque Leaf'),
+            ],
+          ),
+          const SizedBox(height: 24),
+          _buildUploadBox('$_bankDocType *', _bankDocFileName, _bankDocBytes, () => _pickFile('bank')),
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF9E42F5),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Row(
               children: [
-                const Icon(Icons.description_rounded, color: Color(0xFF8B5CF6), size: 32),
-                const SizedBox(width: 12),
+                Icon(Icons.info, color: Colors.cyanAccent, size: 20),
+                SizedBox(width: 12),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(name ?? 'Unnamed File', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF0F172A))),
-                      const Text('PDF / Non-Image File', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                    ],
+                  child: Text(
+                    "Ensure account number is clearly visible in the document",
+                    style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
             ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReviewSummary() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFE2E8F0))),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text("SUMMARY", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Color(0xFF8B5CF6))),
-          const SizedBox(height: 20),
-          _buildReviewRow('PAN Number', _panCtrl.text),
-          _buildReviewRow('Bank Account', _maskAcc(_accNumberCtrl.text)),
-          _buildReviewRow('Address Proof', _addressProofDocType),
-          _buildReviewRow('Area', _areaCtrl.text),
-          _buildReviewRow('District', _districtCtrl.text),
-          _buildReviewRow('State', _stateCtrl.text),
-          _buildReviewRow('Pincode', _pincodeCtrl.text),
-          const SizedBox(height: 16),
-          const Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.green, size: 16),
-              SizedBox(width: 8),
-              Text("All documents successfully uploaded", style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold)),
-            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildReviewRow(String l, String v) {
-    return Padding(padding: const EdgeInsets.only(bottom: 12), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(l, style: const TextStyle(color: Color(0xFF64748B), fontSize: 13, fontWeight: FontWeight.w600)), Text(v.isEmpty ? 'N/A' : v, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF0F172A)))]));
+  Widget _buildRadioOption(String label) {
+    final isSelected = _bankDocType == label;
+    return InkWell(
+      onTap: () => setState(() => _bankDocType = label),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked, color: isSelected ? const Color(0xFF3B82F6) : const Color(0xFF94A3B8), size: 20),
+          const SizedBox(width: 6),
+          Text(label, style: const TextStyle(fontSize: 13, color: Color(0xFF334155))),
+        ],
+      ),
+    );
   }
 
-  Widget _buildHeader(String title, IconData icon) {
-    return Padding(padding: const EdgeInsets.only(bottom: 20), child: Row(children: [Icon(icon, color: const Color(0xFF8B5CF6), size: 28), const SizedBox(width: 12), Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)))]));
+  Widget _buildStep4(Color themeColor) {
+    final docs = ['Aadhar Card', 'Passport', 'Voter ID', 'Driving License', 'Utility Bill'];
+    final addrTypes = ['Residential', 'Commercial', 'Office', 'Other'];
+    return Form(
+      key: _formKey4,
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeader('Address Proof & Details', 'Upload address proof and enter address details', Icons.map_rounded),
+            _buildDropdown(label: 'Document Type', hint: 'Select document type', value: _addressProofDocType, items: docs, onChanged: (v) => setState(() => _addressProofDocType = v)),
+            const SizedBox(height: 24),
+            _buildUploadBox('Upload Document *', _addressProofFileName, _addressProofBytes, () => _pickFile('address')),
+            const SizedBox(height: 32),
+            const Divider(height: 1, color: Color(0xFFE2E8F0)),
+            const SizedBox(height: 32),
+            Row(
+              children: const [
+                Icon(Icons.location_on, color: Colors.blue, size: 20),
+                SizedBox(width: 8),
+                Text('Address Details', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+              ],
+            ),
+            const SizedBox(height: 24),
+            const Text('Address Type', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF64748B))),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 16,
+              runSpacing: 12,
+              children: [
+                _buildAddressTypeRadio('Standard Address Type'),
+                _buildAddressTypeRadio('Add Custom Address Type'),
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (_addressTypeSelection == 'Standard Address Type')
+              _buildDropdown(label: '', hint: '-- Select Address Type --', value: _standardAddressTypeValue, items: addrTypes, onChanged: (v) => setState(() => _standardAddressTypeValue = v)),
+            if (_addressTypeSelection == 'Add Custom Address Type')
+              _buildTextField(label: '', hint: 'Enter custom address type', controller: _customAddressTypeCtrl),
+            if (_addressTypeError != null) Padding(padding: const EdgeInsets.only(top: 8, left: 4), child: Text(_addressTypeError!, style: const TextStyle(color: Colors.red, fontSize: 12))),
+            const SizedBox(height: 24),
+            Row(children: [Expanded(child: _buildTextField(label: 'Door Number: *', hint: 'Door Number', controller: _doorCtrl, validator: (v)=>v!.isEmpty?'Required':null)), const SizedBox(width: 16), Expanded(child: _buildTextField(label: 'Street Name: *', hint: 'Street Name', controller: _streetCtrl, validator: (v)=>v!.isEmpty?'Required':null))]),
+            const SizedBox(height: 24),
+            Row(children: [Expanded(child: _buildTextField(label: 'Building Name:', hint: 'Building Name', controller: _buildingCtrl)), const SizedBox(width: 16), Expanded(child: _buildTextField(label: 'Landmark:', hint: 'Landmark', controller: _landmarkCtrl))]),
+            const SizedBox(height: 32),
+            Center(child: _buildPincodeSearch(themeColor)),
+            const SizedBox(height: 32),
+            Row(children: [Expanded(child: _buildTextField(label: 'Area Name: *', hint: 'Enter Area Name', controller: _areaCtrl, validator: (v)=>v!.isEmpty?'Required':null)), const SizedBox(width: 16), Expanded(child: _buildTextField(label: 'District: *', hint: 'District', controller: _districtCtrl, validator: (v)=>v!.isEmpty?'Required':null))]),
+            const SizedBox(height: 24),
+            Row(children: [Expanded(child: _buildTextField(label: 'Pincode: *', hint: 'Pincode', controller: _pincodeCtrl, keyboardType: TextInputType.number, validator: (v)=>(v?.length!=6)?'6 digits':null)), const SizedBox(width: 16), Expanded(child: _buildTextField(label: 'State: *', hint: 'State', controller: _stateCtrl, validator: (v)=>v!.isEmpty?'Required':null))]),
+            const SizedBox(height: 24),
+            Row(children: [Expanded(child: _buildTextField(label: 'Country: *', hint: 'India', controller: _countryCtrl, readOnly: true)), const Spacer()]),
+            const SizedBox(height: 32),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF9E42F5),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.check_circle_outline, color: Colors.cyanAccent, size: 20),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      "Address should match with your address proof document",
+                      style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
-  Widget _buildFormCard(List<Widget> children) {
-    return Container(padding: const EdgeInsets.all(24), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFE2E8F0))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children));
+  Widget _buildAddressTypeRadio(String label) {
+    final isSelected = _addressTypeSelection == label;
+    return InkWell(
+      onTap: () => setState(() => _addressTypeSelection = label),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked, color: isSelected ? const Color(0xFF3B82F6) : const Color(0xFF94A3B8), size: 20),
+          const SizedBox(width: 6),
+          Text(label, style: const TextStyle(fontSize: 13, color: Color(0xFF334155))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStep5() {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeader('Review & Submit', 'Verify all information before submitting', Icons.check_circle),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth > 600;
+              final cards = [
+                _buildReviewCard('Personal Details', Icons.person, _buildPersonalReviewContent()),
+                _buildReviewCard('Bank Details', Icons.account_balance, _buildBankReviewContent()),
+                _buildReviewCard('Address Details', Icons.location_on, _buildAddressReviewContent()),
+                _buildReviewCard('Documents', Icons.description, _buildDocumentsReviewContent()),
+              ];
+
+              if (isWide) {
+                return Column(
+                  children: [
+                    Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: cards[0]), const SizedBox(width: 24), Expanded(child: cards[1])]),
+                    const SizedBox(height: 24),
+                    Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: cards[2]), const SizedBox(width: 24), Expanded(child: cards[3])]),
+                  ],
+                );
+              }
+              return Column(children: cards.map((c) => Padding(padding: const EdgeInsets.only(bottom: 24), child: c)).toList());
+            },
+          ),
+          const SizedBox(height: 32),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: const Color(0xFF8B5CF6).withOpacity(0.8), borderRadius: BorderRadius.circular(8)),
+            child: const Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 20),
+                SizedBox(width: 12),
+                Expanded(child: Text("Declaration: I hereby confirm that all the information provided is true and correct.", style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600))),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          CheckboxListTile(
+            value: _declarationAccepted,
+            onChanged: (v) {
+              setState(() {
+                _declarationAccepted = v!;
+                if (_declarationAccepted) _showDeclarationError = false;
+              });
+            },
+            title: const Text('I agree to the terms and conditions and confirm accuracy.', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF334155))),
+            controlAffinity: ListTileControlAffinity.leading,
+            contentPadding: EdgeInsets.zero,
+            activeColor: const Color(0xFF8B5CF6),
+            visualDensity: VisualDensity.compact,
+          ),
+          if (_showDeclarationError)
+            Container(
+              margin: const EdgeInsets.only(left: 12, top: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: Colors.grey.shade300),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))
+                ]
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.warning, color: Colors.deepOrange, size: 16),
+                  SizedBox(width: 8),
+                  Expanded(child: Text("Please check this box if you want to proceed.", style: TextStyle(fontSize: 11, color: Colors.black87))),
+                ],
+              ),
+            )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewCard(String title, IconData icon, Widget content) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(color: Color(0xFFE11D48), shape: BoxShape.circle),
+                child: Icon(icon, color: Colors.white, size: 16),
+              ),
+              const SizedBox(width: 12),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF0F172A))),
+            ],
+          ),
+          const SizedBox(height: 24),
+          content,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPersonalReviewContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(children: [const Text('PAN: ', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)), Text(_panCtrl.text.isEmpty ? 'N/A' : _panCtrl.text, style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.w600, fontSize: 13))]),
+        const SizedBox(height: 16),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Photo:', style: TextStyle(color: Color(0xFF64748B), fontSize: 12)), const SizedBox(height: 8), _buildMiniPreview(_profileFileName, _profileBytes)])),
+            const SizedBox(width: 16),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('PAN Photo:', style: TextStyle(color: Color(0xFF64748B), fontSize: 12)), const SizedBox(height: 8), _buildMiniPreview(_panFileName, _panBytes)])),
+          ],
+        )
+      ],
+    );
+  }
+
+  Widget _buildBankReviewContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(children: [const Text('Account: ', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)), Text(_maskAcc(_accNumberCtrl.text).isEmpty ? 'N/A' : _maskAcc(_accNumberCtrl.text), style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.w600, fontSize: 13))]),
+        const SizedBox(height: 16),
+        const Text('Document:', style: TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+        const SizedBox(height: 8),
+        _buildMiniPreview(_bankDocFileName, _bankDocBytes),
+      ],
+    );
+  }
+
+  Widget _buildAddressReviewContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildAddrRow('Door No:', _doorCtrl.text),
+        _buildAddrRow('Street:', _streetCtrl.text),
+        _buildAddrRow('Area:', _areaCtrl.text),
+        _buildAddrRow('District:', _districtCtrl.text),
+        _buildAddrRow('Pincode:', _pincodeCtrl.text),
+        _buildAddrRow('State:', _stateCtrl.text),
+        _buildAddrRow('Country:', _countryCtrl.text),
+      ],
+    );
+  }
+
+  Widget _buildDocumentsReviewContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Address Proof:', style: TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+        const SizedBox(height: 8),
+        _buildMiniPreview(_addressProofFileName, _addressProofBytes),
+      ],
+    );
+  }
+
+  Widget _buildAddrRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(width: 80, child: Text(label, style: const TextStyle(color: Color(0xFF64748B), fontSize: 13))),
+          Expanded(child: Text(value.isEmpty ? 'N/A' : value, style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.w600, fontSize: 13))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMiniPreview(String? name, Uint8List? bytes) {
+    if (bytes == null) return Container(height: 80, decoration: BoxDecoration(color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(8)), child: const Center(child: Text('Not Uploaded', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)))));
+    bool isImg = name != null && (name.toLowerCase().endsWith('.jpg') || name.toLowerCase().endsWith('.png') || name.toLowerCase().endsWith('.jpeg'));
+    return GestureDetector(
+      onTap: () {
+        if (isImg) {
+          showDialog(
+            context: context,
+            barrierColor: Colors.black.withOpacity(0.85),
+            builder: (ctx) => Scaffold(
+              backgroundColor: Colors.transparent,
+              body: Stack(
+                children: [
+                  Center(child: InteractiveViewer(child: Image.memory(bytes, fit: BoxFit.contain))),
+                  Positioned(
+                    top: 40,
+                    right: 20,
+                    child: IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white, size: 32),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cannot preview non-image files yet.')));
+        }
+      },
+      child: Container(
+        height: 100,
+        width: double.infinity,
+        decoration: BoxDecoration(border: Border.all(color: const Color(0xFFCBD5E1)), borderRadius: BorderRadius.circular(8), color: Colors.white),
+        child: isImg ? ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.memory(bytes, fit: BoxFit.cover)) : Column(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.description, color: Color(0xFF8B5CF6), size: 24), const SizedBox(height: 4), Text(name ?? 'Doc', style: const TextStyle(fontSize: 10), maxLines: 1, overflow: TextOverflow.ellipsis)]),
+      ),
+    );
+  }
+
+  Widget _buildHeader(String title, String subtitle, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: const BoxDecoration(
+              color: Color(0xFFE11D48),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: Colors.white, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                const SizedBox(height: 4),
+                Text(subtitle, style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildTextField({required String label, String? hint, required TextEditingController controller, List<TextInputFormatter>? inputFormatters, String? Function(String?)? validator, TextInputType keyboardType = TextInputType.text, bool readOnly = false}) {
     final isPan = label.toLowerCase().contains('pan') || controller == _panCtrl;
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF334155))), const SizedBox(height: 8), TextFormField(controller: controller, inputFormatters: inputFormatters, validator: validator, keyboardType: keyboardType, readOnly: readOnly, textCapitalization: isPan ? TextCapitalization.characters : TextCapitalization.none, decoration: InputDecoration(hintText: hint, filled: readOnly, fillColor: readOnly ? const Color(0xFFF1F5F9) : Colors.white, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1)))) )]);
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      if (label.isNotEmpty) ...[Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF64748B))), const SizedBox(height: 8)],
+      TextFormField(controller: controller, inputFormatters: inputFormatters, validator: validator, keyboardType: keyboardType, readOnly: readOnly, textCapitalization: isPan ? TextCapitalization.characters : TextCapitalization.none, decoration: InputDecoration(hintText: hint, filled: true, fillColor: readOnly ? const Color(0xFFE2E8F0) : Colors.white, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1)))))
+    ]);
   }
 
-  Widget _buildDropdown({required String label, required String? value, required List<String> items, required ValueChanged<String?> onChanged}) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF334155))), const SizedBox(height: 8), DropdownButtonFormField<String>(value: value, items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: onChanged, decoration: InputDecoration(contentPadding: const EdgeInsets.symmetric(horizontal: 16), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))) ]);
+  Widget _buildDropdown({required String label, String? hint, required String? value, required List<String> items, required ValueChanged<String?> onChanged}) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      if (label.isNotEmpty) ...[Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF64748B))), const SizedBox(height: 8)],
+      DropdownButtonFormField<String>(value: value, hint: hint != null ? Text(hint) : null, items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: onChanged, decoration: InputDecoration(filled: true, fillColor: Colors.white, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1)))))
+    ]);
   }
 
   Widget _buildUploadBox(String label, String? name, Uint8List? bytes, VoidCallback onTap) {
-    bool isImage = name != null && (name.endsWith('.jpg') || name.endsWith('.png') || name.endsWith('.jpeg'));
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF334155))), const SizedBox(height: 8), InkWell(onTap: onTap, child: Container(width: double.infinity, height: 120, decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFE2E8F0))), child: bytes != null ? (isImage ? ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.memory(bytes, fit: BoxFit.cover)) : Center(child: Text(name!))) : const Center(child: Icon(Icons.cloud_upload_outlined, color: Color(0xFF8B5CF6), size: 32)) ))]);
+    bool isImage = name != null && (name.toLowerCase().endsWith('.jpg') || name.toLowerCase().endsWith('.png') || name.toLowerCase().endsWith('.jpeg'));
+    bool isProfile = label.toLowerCase().contains('profile');
+    bool isPhoto = label.toLowerCase().contains('photo');
+    
+    // Determine the empty state text/icon based on the context
+    IconData emptyIcon = Icons.insert_drive_file_outlined;
+    String emptyTitle = "Click to upload document";
+    String emptySub = "JPG, PNG or PDF (max. 5MB)";
+    if (label.toLowerCase().contains('address') || label.toLowerCase().contains('upload document')) {
+      emptyIcon = Icons.badge_outlined;
+      emptyTitle = "Click to upload address proof";
+      emptySub = "JPG, PNG or PDF (max. 5MB)";
+    } else if (isProfile) {
+      emptyIcon = Icons.account_circle;
+      emptyTitle = "Click to upload";
+      emptySub = "JPG, PNG (max. 2MB)";
+    } else if (isPhoto) {
+      emptyIcon = Icons.cloud_upload_outlined;
+      emptyTitle = "Click to upload";
+      emptySub = "JPG, PNG (max. 5MB)";
+    }
+    
+    // Determine border color (use blue if active/selected, though standard is grey)
+    // For bank documents we use a standard color as per design.
+    Color borderColor = const Color(0xFFE2E8F0);
+    if (label.contains('Passbook') && _bankDocType.contains('Passbook')) {
+       borderColor = const Color(0xFF3B82F6);
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF334155))),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: onTap,
+          child: Container(
+            width: double.infinity,
+            height: bytes != null ? 180 : 160,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: bytes == null ? borderColor : const Color(0xFFE2E8F0), width: bytes == null && borderColor != const Color(0xFFE2E8F0) ? 1.5 : 1),
+            ),
+            child: bytes != null
+                ? (isImage
+                    ? (isProfile
+                        ? Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 80,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 4),
+                                  boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)],
+                                  image: DecorationImage(image: MemoryImage(bytes), fit: BoxFit.cover),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              _buildChangeButton(onTap),
+                            ],
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.memory(bytes, fit: BoxFit.contain),
+                                  ),
+                                ),
+                              ),
+                              _buildChangeButton(onTap),
+                              const SizedBox(height: 12),
+                            ],
+                          ))
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.description_rounded, color: Color(0xFF8B5CF6), size: 40),
+                          const SizedBox(height: 8),
+                          Text(name ?? 'Document', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF0F172A))),
+                          const SizedBox(height: 12),
+                          _buildChangeButton(onTap),
+                        ],
+                      ))
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(emptyIcon, color: const Color(0xFFCBD5E1), size: 40),
+                      const SizedBox(height: 12),
+                      Text(emptyTitle, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      Text(emptySub, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10)),
+                    ],
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildChangeButton(VoidCallback onTap) {
+    return OutlinedButton.icon(
+      onPressed: onTap,
+      icon: const Icon(Icons.sync_rounded, color: Color(0xFFE11D48), size: 16),
+      label: const Text("Change", style: TextStyle(color: Color(0xFFE11D48), fontWeight: FontWeight.w700, fontSize: 12)),
+      style: OutlinedButton.styleFrom(
+        side: const BorderSide(color: Color(0xFFE11D48)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        minimumSize: Size.zero,
+      ),
+    );
   }
 
   Widget _buildInfoBanner(String text, Color color) {
@@ -432,13 +1011,113 @@ class _BusinessUpgradePageState extends State<BusinessUpgradePage> {
   }
 
   Widget _buildPincodeSearch(Color color) {
-    return Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFE2E8F0))), child: Row(children: [Expanded(child: TextField(controller: _pincodeCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(hintText: 'Enter pincode'))), const SizedBox(width: 12), ElevatedButton(onPressed: () => _mockAutofill(_pincodeCtrl.text), style: ElevatedButton.styleFrom(backgroundColor: color), child: const Text('Search', style: TextStyle(color: Colors.white)))]));
+    return Container(
+      width: 400, // Matching the constrained width in mockup
+      child: Column(
+        children: [
+          const Text("Fill Address Using", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF64748B))),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFE2E8F0))),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: const [
+                  Icon(Icons.push_pin, color: Colors.blue, size: 16),
+                  SizedBox(width: 8),
+                  Text('Use Pincode', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600, fontSize: 13)),
+                ]),
+                const SizedBox(height: 16),
+                const Text('Search by 6-digit pincode', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _pincodeCtrl,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(6),
+                        ],
+                        decoration: InputDecoration(
+                          hintText: 'Enter pincode',
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                        )
+                      )
+                    ),
+                    const SizedBox(width: 12),
+                    OutlinedButton.icon(
+                      onPressed: () => _fetchPincodeDetails(_pincodeCtrl.text),
+                      icon: const Icon(Icons.search, size: 16, color: Color(0xFFE11D48)),
+                      label: const Text('Search', style: TextStyle(color: Color(0xFFE11D48))),
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFFF1F2),
+                        side: const BorderSide(color: Color(0xFFE11D48)),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                      )
+                    )
+                  ]
+                )
+              ]
+            )
+          )
+        ]
+      )
+    );
   }
 
   String _maskAcc(String v) => v.length > 4 ? '****${v.substring(v.length - 4)}' : v;
 
   Widget _buildNavigationButtons(Color color) {
-    return Container(padding: const EdgeInsets.all(24), decoration:  BoxDecoration(color: Colors.white), child: Row(children: [Expanded(child: OutlinedButton(onPressed: _prevStep, child: const Text('Previous'))), const SizedBox(width: 16), Expanded(child: ElevatedButton(onPressed: _nextStep, style: ElevatedButton.styleFrom(backgroundColor: color), child: Text(_currentStep == 4 ? 'Create Business User' : 'Next', style: const TextStyle(color: Colors.white))))]));
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+      decoration: const BoxDecoration(color: Colors.transparent),
+      child: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        spacing: 16,
+        runSpacing: 16,
+        children: [
+          OutlinedButton.icon(
+            onPressed: _prevStep,
+            icon: const Icon(Icons.arrow_back, size: 16, color: Color(0xFFE11D48)),
+            label: const Text('Previous', style: TextStyle(color: Color(0xFFE11D48))),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: Color(0xFFE11D48)),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: _nextStep,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _currentStep == 4 ? const Color(0xFF8B5CF6) : const Color(0xFFE11D48),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14), // Reduced padding for better fit
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(_currentStep == 4 ? 'Create Business User' : 'Next', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                if (_currentStep == 4) const Padding(
+                  padding: EdgeInsets.only(left: 8),
+                  child: Icon(Icons.check, size: 16, color: Colors.white),
+                ) else if (_currentStep < 4) const Padding(
+                  padding: EdgeInsets.only(left: 8),
+                  child: Icon(Icons.arrow_forward, size: 16, color: Colors.white),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

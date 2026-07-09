@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
-import 'upgrade/business_welcome_page.dart';
 import 'upgrade/business_created_page.dart';
-import 'upgrade/register_user_page.dart';
-import 'upgrade/employee_upgrade_page.dart';
+import 'features/employee/employee_dashboard_page.dart';
 import 'upgrade/business_user_store.dart';
 import 'upgrade/employee_user_store.dart';
-import 'upgrade/employee_application_preview_page.dart';
 import 'upgrade/job_categories_page.dart';
+import 'upgrade/kovil_categories_page.dart';
 import 'user_service.dart';
 import 'widgets/common_dashboard_app_bar.dart';
 import 'widgets/account_type_card.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum DashboardSection { activities, privilege }
 
@@ -195,15 +194,19 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  bool _isMainBusinessRegistered = false;
+
   Future<void> _loadUserSession() async {
     await UserService().loadSession();
     final data = await UserService().getUserData();
+    final prefs = await SharedPreferences.getInstance();
     if (mounted) {
       setState(() {
         _currentUserName = (data['name'] ?? widget.userName).trim().isEmpty
             ? widget.userName
             : data['name']!;
         _accountType = data['accountType'] ?? widget.accountType;
+        _isMainBusinessRegistered = prefs.getBool('is_main_business_registered') ?? false;
         
         // Initialize dropdown from store if business exists
         if (BusinessUserStore().businesses.isNotEmpty && 
@@ -219,7 +222,7 @@ class _HomePageState extends State<HomePage> {
       return true;
     }
     if (moduleId == "business") {
-      return BusinessUserStore().businesses.isNotEmpty;
+      return _isMainBusinessRegistered || BusinessUserStore().businesses.isNotEmpty;
     }
     if (moduleId == "employee") {
       return EmployeeUserStore().hasData;
@@ -234,41 +237,9 @@ class _HomePageState extends State<HomePage> {
       if (moduleId == "business" || moduleId == "business_career") {
         openBusinessViewPage(context);
       } else if (moduleId == "employee") {
-        final data = EmployeeUserStore().employees.first;
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => EmployeeApplicationPreviewPage(
-              workType: data.workType,
-              resumeName: data.resumeName,
-              resumeBytes: data.resumeBytes,
-              noPanCard: data.noPanCard,
-              panNumber: data.panNumber,
-              addressProofType: data.addressProofType,
-              addressProofName: data.addressProofName,
-              addressProofBytes: null, // Bytes not stored for view
-              salaryAccount: data.salaryAccount,
-              educationBoard: data.educationBoard,
-              primaryStudy: data.primaryStudy,
-              primaryMarksheetName: null,
-              primaryMarksheetBytes: null,
-              after10thPath: data.after10thPath,
-              higherSecondaryClass: null,
-              hsMarksheetName: null,
-              hsMarksheetBytes: null,
-              itiCourse: null,
-              itiCertificateName: null,
-              itiCertificateBytes: null,
-              degrees: data.degrees.map((d) => EmployeePreviewDegreeData(
-                stream: d.stream,
-                degree: d.degree,
-                university: d.university,
-                institute: d.institute,
-                year: d.year,
-              )).toList(),
-              isViewOnly: true,
-            ),
-          ),
+          MaterialPageRoute(builder: (context) => const EmployeeDashboardPage()),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -279,17 +250,22 @@ class _HomePageState extends State<HomePage> {
       if (moduleId == "business") {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const BusinessWelcomePage()),
+          MaterialPageRoute(builder: (context) => const BusinessCreatedPage()),
         ).then((_) => setState(() {}));
       } else if (moduleId == "employee") {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const EmployeeUpgradePage()),
+          MaterialPageRoute(builder: (context) => const EmployeeDashboardPage()),
         ).then((_) => setState(() {}));
       } else if (moduleId == "job_career") {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const JobCategoriesPage()),
+        );
+      } else if (moduleId == "kovil") {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const KovilCategoriesPage()),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

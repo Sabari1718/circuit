@@ -199,8 +199,9 @@ class AuthService {
   Future<Map<String, dynamic>> login({
     required String identifier,
     required String password,
+    bool isPin = false,
   }) async {
-    final Map<String, dynamic> body = {'password': password};
+    final Map<String, dynamic> body = isPin ? {'pin': password} : {'password': password};
     if (identifier.contains('@')) {
       body['email'] = identifier;
     } else {

@@ -1,8 +1,13 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../user_service.dart';
+import '../auth_service.dart';
 import 'apply_job_page.dart';
 import 'applied_list_page.dart';
 
 class JobModel {
+  final String companyId;
   final String initials;
   final Color avatarColor;
   final String title;
@@ -15,6 +20,7 @@ class JobModel {
   final bool isContract;
 
   const JobModel({
+    required this.companyId,
     required this.initials,
     required this.avatarColor,
     required this.title,
@@ -26,6 +32,68 @@ class JobModel {
     required this.postedAgo,
     this.isContract = false,
   });
+
+  factory JobModel.fromJson(Map<String, dynamic> json) {
+    String orgName = json['organization_name']?.toString() ?? 'Unknown Company';
+    String getInitials(String name) {
+      if (name.trim().isEmpty) return 'NA';
+      List<String> words = name.trim().split(' ').where((w) => w.isNotEmpty).toList();
+      if (words.length >= 2) {
+        return '${words[0][0]}${words[1][0]}'.toUpperCase();
+      }
+      return name.substring(0, name.length >= 2 ? 2 : 1).toUpperCase();
+    }
+    
+    // Pick an avatar color based on organization name length/characters
+    final colors = [
+      const Color(0xFF4F46E5), const Color(0xFF10B981), const Color(0xFFF59E0B),
+      const Color(0xFFEF4444), const Color(0xFF8B5CF6), const Color(0xFF0EA5E9),
+    ];
+    int hash = orgName.codeUnits.fold(0, (prev, curr) => prev + curr);
+    Color avatarColor = colors[hash % colors.length];
+
+    String createdAtStr = json['created_at']?.toString() ?? '';
+    String postedAgo = 'Recently';
+    if (createdAtStr.isNotEmpty) {
+      try {
+        DateTime createdAt = DateTime.parse(createdAtStr);
+        Duration diff = DateTime.now().difference(createdAt);
+        if (diff.inDays > 0) {
+          postedAgo = 'Posted ${diff.inDays} days ago';
+        } else if (diff.inHours > 0) {
+          postedAgo = 'Posted ${diff.inHours} hours ago';
+        } else {
+          postedAgo = 'Posted just now';
+        }
+      } catch (e) {
+        // ignore parsing errors
+      }
+    }
+
+    String dist = json['district']?.toString() ?? '';
+    String state = json['state']?.toString() ?? '';
+    String loc = dist.isNotEmpty ? (state.isNotEmpty ? '$dist, $state' : dist) : 'Not Disclosed';
+
+    String jobType = json['job_type']?.toString() ?? 'Full-time';
+    bool isContract = jobType.toLowerCase().contains('contract');
+
+    String monthlySalary = json['monthly_salary']?.toString() ?? '';
+    String salaryStr = monthlySalary.isNotEmpty ? '₹$monthlySalary/month' : 'Not Disclosed';
+
+    return JobModel(
+      companyId: json['business_id']?.toString() ?? json['id']?.toString() ?? '',
+      initials: getInitials(orgName),
+      avatarColor: avatarColor,
+      title: json['job_title']?.toString() ?? json['job_role']?.toString() ?? 'Job Title',
+      company: orgName,
+      type: jobType,
+      description: json['job_description']?.toString() ?? json['company_description']?.toString() ?? 'No description available',
+      location: loc,
+      salary: salaryStr,
+      postedAgo: postedAgo,
+      isContract: isContract,
+    );
+  }
 }
 
 class JobListPage extends StatefulWidget {
@@ -41,81 +109,103 @@ class _JobListPageState extends State<JobListPage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
-  final List<JobModel> _allJobs = const [
-    JobModel(
-      initials: 'TN',
-      avatarColor: Color(0xFF4F46E5),
-      title: 'Senior Frontend Engineer',
-      company: 'TechNova Solutions',
-      type: 'Full-time',
-      description:
-          'Looking for an experienced React developer to lead our frontend architecture and build scalable web applications.',
-      location: 'San Francisco, CA',
-      salary: '\$120k - \$150k',
-      postedAgo: 'Posted 2 days ago',
-    ),
-    JobModel(
-      initials: 'ED',
-      avatarColor: Color(0xFF10B981),
-      title: 'Backend Developer (Node.js)',
-      company: 'EcoDrive Auto',
-      type: 'Full-time',
-      description:
-          'Join our core team to build robust APIs and microservices powering next-generation automotive software.',
-      location: 'Austin, TX',
-      salary: '\$110k - \$140k',
-      postedAgo: 'Posted 5 days ago',
-    ),
-    JobModel(
-      initials: 'FC',
-      avatarColor: Color(0xFFF59E0B),
-      title: 'UI/UX Designer',
-      company: 'FinCore Financial',
-      type: 'Contract',
-      description:
-          'Design modern, intuitive interfaces for our fintech platforms. Must have strong portfolio with finance apps.',
-      location: 'New York, NY',
-      salary: '\$80k - \$100k',
-      postedAgo: 'Posted 1 week ago',
-      isContract: true,
-    ),
-    JobModel(
-      initials: 'HS',
-      avatarColor: Color(0xFFEF4444),
-      title: 'Cloud Infrastructure Architect',
-      company: 'HealthSync',
-      type: 'Full-time',
-      description:
-          'Design and manage secure, HIPAA-compliant cloud infrastructure for our healthcare data platform.',
-      location: 'Boston, MA',
-      salary: '\$140k - \$180k',
-      postedAgo: 'Posted 3 days ago',
-    ),
-    JobModel(
-      initials: 'DL',
-      avatarColor: Color(0xFF8B5CF6),
-      title: 'Commercial Driver',
-      company: 'DriveLine Logistics',
-      type: 'Full-time',
-      description:
-          'Experienced HMV driver needed for inter-state freight transport. Valid commercial license required.',
-      location: 'Chennai, TN',
-      salary: '₹35k - ₹50k',
-      postedAgo: 'Posted 1 day ago',
-    ),
-    JobModel(
-      initials: 'RC',
-      avatarColor: Color(0xFF0EA5E9),
-      title: 'Fleet Driver',
-      company: 'RapidCargo',
-      type: 'Full-time',
-      description:
-          'Looking for reliable LMV drivers to join our growing fleet operations across Tamil Nadu.',
-      location: 'Coimbatore, TN',
-      salary: '₹20k - ₹28k',
-      postedAgo: 'Posted 4 days ago',
-    ),
-  ];
+  List<String> _appliedCompanyIds = [];
+  bool _isLoadingAppliedJobs = true;
+
+  List<JobModel> _allJobs = [];
+  bool _isLoadingJobs = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchJobs();
+    _fetchAppliedJobs();
+  }
+
+  Future<void> _fetchJobs() async {
+    try {
+      final url = Uri.parse('https://user.jobes24x7.com/api/outsideapis/job/all');
+      final response = await http.get(url, headers: {
+        'Accept': 'application/json',
+      });
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final decoded = jsonDecode(response.body);
+        final success = decoded['success'] as bool? ?? false;
+        if (success) {
+          final data = decoded['data'] as List? ?? [];
+          final jobs = data.map((j) {
+            return JobModel.fromJson(j as Map<String, dynamic>);
+          }).toList();
+          if (mounted) {
+            setState(() {
+              _allJobs = jobs;
+              _isLoadingJobs = false;
+            });
+          }
+        } else {
+           if (mounted) {
+            setState(() {
+              _isLoadingJobs = false;
+            });
+          }
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _isLoadingJobs = false;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("Error fetching jobs: $e");
+      if (mounted) {
+        setState(() {
+          _isLoadingJobs = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _fetchAppliedJobs() async {
+    try {
+      final token = await AuthService().getToken();
+      final url = Uri.parse('https://user.jobes24x7.com/api/job-approved/my-records');
+      final response = await http.get(url, headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      });
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final decoded = jsonDecode(response.body);
+        final data = decoded['data'];
+        final list = (data is Map && data.containsKey('data')) ? data['data'] : (data is List ? data : []);
+        final dataList = list as List? ?? [];
+        if (mounted) {
+          setState(() {
+            _appliedCompanyIds = dataList
+                .map((j) => j['company_id']?.toString() ?? '')
+                .where((id) => id.isNotEmpty)
+                .toList();
+            _isLoadingAppliedJobs = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _isLoadingAppliedJobs = false;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("Error fetching applied jobs: $e");
+      if (mounted) {
+        setState(() {
+          _isLoadingAppliedJobs = false;
+        });
+      }
+    }
+  }
+
+
 
   List<JobModel> get _filteredJobs {
     if (_searchQuery.isEmpty) return _allJobs;
@@ -134,12 +224,105 @@ class _JobListPageState extends State<JobListPage> {
     super.dispose();
   }
 
-  void _navigateToApply(JobModel job) {
+  Future<void> _navigateToApply(JobModel job) async {
     debugPrint('Apply Now clicked');
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const ApplyJobPage()),
+    // Show a loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
     );
+
+    try {
+      // 1. Get logged in user data
+      final userData = await UserService().getUserData();
+      final userMainId = userData['user_main_id'] ?? '';
+      final userName = userData['name'] ?? 'Guest';
+      final email = userData['email'] ?? '';
+
+      if (userMainId.isEmpty) {
+        // Pop the loader
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please log in first to apply for jobs.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      // 2. Make the POST request
+      final token = await AuthService().getToken();
+      final url = Uri.parse('https://user.jobes24x7.com/api/job-approved/create');
+      final response = await http.post(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'user_main_id': userMainId,
+          'user_name': userName,
+          'email': email,
+          'company_id': job.companyId,
+          'company_name': job.company,
+          'job_description': job.description,
+          'job_type': job.type,
+          'status': 'pending',
+        }),
+      );
+
+      // Pop the loader
+      if (mounted) Navigator.pop(context);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Show success message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Job application submitted successfully!'),
+              backgroundColor: Color(0xFF10B981),
+            ),
+          );
+        }
+        // Refresh local status
+        _fetchAppliedJobs();
+        
+        // Navigate to AppliedListPage
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AppliedListPage()),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to submit application: ${response.statusCode}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Pop the loader
+      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -225,27 +408,8 @@ class _JobListPageState extends State<JobListPage> {
             ),
           ),
           const SizedBox(width: 16),
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              const Icon(Icons.notifications_none_rounded,
-                  color: Color(0xFF64748B), size: 24),
-              Positioned(
-                top: -2,
-                right: -2,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                      color: Color(0xFFEF4444), shape: BoxShape.circle),
-                  child: const Text('4',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold)),
-                ),
-              ),
-            ],
-          ),
+          const Icon(Icons.notifications_none_rounded,
+              color: Color(0xFF64748B), size: 24),
           const SizedBox(width: 16),
           const Icon(Icons.dark_mode_outlined,
               color: Color(0xFF64748B), size: 22),
@@ -303,6 +467,15 @@ class _JobListPageState extends State<JobListPage> {
   }
 
   Widget _buildJobGrid(bool isDesktop) {
+    if (_isLoadingJobs) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(48),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     final jobs = _filteredJobs;
     if (jobs.isEmpty) {
       return const Center(
@@ -467,20 +640,38 @@ class _JobListPageState extends State<JobListPage> {
                       fontSize: 12, color: Color(0xFF94A3B8))),
               const Spacer(),
               ElevatedButton(
-                onPressed: () => _navigateToApply(job),
+                onPressed: _isLoadingAppliedJobs || _appliedCompanyIds.contains(job.companyId)
+                    ? null
+                    : () => _navigateToApply(job),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF4F46E5),
+                  disabledBackgroundColor: const Color(0xFFE2E8F0),
                   padding: const EdgeInsets.symmetric(
                       horizontal: 20, vertical: 10),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8)),
                   elevation: 0,
                 ),
-                child: const Text('Apply Now',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold)),
+                child: _isLoadingAppliedJobs
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Color(0xFF94A3B8),
+                        ),
+                      )
+                    : Text(
+                        _appliedCompanyIds.contains(job.companyId)
+                            ? 'Applied'
+                            : 'Apply Now',
+                        style: TextStyle(
+                            color: _appliedCompanyIds.contains(job.companyId)
+                                ? const Color(0xFF94A3B8)
+                                : Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold),
+                      ),
               ),
             ],
           ),

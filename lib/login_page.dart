@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'providers.dart';
 import 'otp_page.dart';
 import 'user_service.dart';
 import 'otp_service.dart';
@@ -24,14 +25,14 @@ class AppColors {
   ];
 }
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   final TextEditingController inputController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
@@ -68,7 +69,7 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      final userService = Provider.of<UserService>(context, listen: false);
+      final userService = ref.read(userServiceProvider);
 
       // ======================================================
       // 🔥 1. CHECK FOR EXISTING USER (API + LOCAL FALLBACK)

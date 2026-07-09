@@ -24,7 +24,7 @@ class EmailService {
         body: jsonEncode({
           'email': email.trim(),
         }),
-      );
+      ).timeout(const Duration(seconds: 10));
 
       print("====================================");
       print("EMAIL SEND OTP URL: $uri");
@@ -71,7 +71,7 @@ class EmailService {
           'email': email.trim(),
           'otp': otp.trim(),
         }),
-      );
+      ).timeout(const Duration(seconds: 10));
 
       print("====================================");
       print("EMAIL VERIFY OTP URL: $uri");
@@ -116,7 +116,7 @@ class EmailService {
         body: jsonEncode({
           'email': email.trim(),
         }),
-      );
+      ).timeout(const Duration(seconds: 10));
 
       print("====================================");
       print("EMAIL RESEND OTP URL: $uri");

@@ -615,6 +615,9 @@ class _OtpPageState extends State<OtpPage> {
           onChanged: (value) {
             if (value.isNotEmpty && index < 3) {
               _focusNodes[index + 1].requestFocus();
+            } else if (value.isNotEmpty && index == 3) {
+              FocusScope.of(context).unfocus(); // hide keyboard
+              _verifyOtp(); // Auto submit
             } else if (value.isEmpty && index > 0) {
               _focusNodes[index - 1].requestFocus();
             }

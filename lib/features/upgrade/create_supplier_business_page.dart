@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:circuit/features/upgrade/business_user_model.dart';
 import 'package:circuit/features/upgrade/business_user_store.dart';
+import '../../core/services/api_service.dart';
 
 class CreateSupplierBusinessPage extends StatefulWidget {
   const CreateSupplierBusinessPage({super.key});
@@ -69,65 +70,62 @@ class _CreateSupplierBusinessPageState extends State<CreateSupplierBusinessPage>
   String? _activePrimaryCategory;
   final Set<String> _selectedSubCategories = {};
 
-  // Mock Category Hierarchy Dataset
-  final Map<String, Map<String, Map<String, Map<String, List<String>>>>> _categoriesData = {
-    "Agriculture & Allied": {
-      "Farming": {
-        "Organic Farming": {
-          "Fruits & Veggies": ["Organic Apples", "Organic Berries", "Organic Leafy Greens", "Organic Tomatoes"],
-          "Grains & Pulses": ["Organic Rice", "Organic Wheat", "Organic Lentils", "Organic Oats"],
-        },
-        "Commercial Crops": {
-          "Fibers": ["Cotton", "Jute", "Hemp"],
-          "Beverages": ["Tea Leaves", "Coffee Beans", "Cocoa"],
+  Map<String, Map<String, Map<String, Map<String, List<String>>>>> _categoriesData = {};
+  bool _isCategoriesLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCategories();
+  }
+
+  Future<void> _fetchCategories() async {
+    setState(() => _isCategoriesLoading = true);
+    try {
+      final res = await ApiService().fetchCategories();
+      if (res['success'] == true && res['data'] != null) {
+        final List<dynamic> apiData = res['data'];
+        Map<String, Map<String, Map<String, Map<String, List<String>>>>> newData = {};
+
+        for (var item in apiData) {
+          String title = item['sector_title_name']?.toString().trim() ?? '';
+          if (title == '-' || title.isEmpty) continue;
+
+          String sector = item['sector_name']?.toString().trim() ?? '';
+          String subSector = item['sub_sector_name']?.toString().trim() ?? '';
+          
+          newData.putIfAbsent(title, () => {});
+          newData[title]!.putIfAbsent(sector, () => {});
+          newData[title]![sector]!.putIfAbsent(subSector, () => {});
+
+          String categoryType = item['category_type']?.toString().toLowerCase() ?? '';
+          String categoryName = item['category_name']?.toString().trim() ?? '';
+
+          if (categoryType == 'primary') {
+            newData[title]![sector]![subSector]!.putIfAbsent(categoryName, () => []);
+          } else if (categoryType == 'secondary') {
+            String parentName = item['parent_category_name']?.toString().trim() ?? '';
+            if (parentName != '-' && parentName.isNotEmpty) {
+              newData[title]![sector]![subSector]!.putIfAbsent(parentName, () => []);
+              if (!newData[title]![sector]![subSector]![parentName]!.contains(categoryName)) {
+                newData[title]![sector]![subSector]![parentName]!.add(categoryName);
+              }
+            }
+          }
         }
-      },
-      "Livestock": {
-        "Dairy Farming": {
-          "Milk Products": ["Fresh Milk", "Cheese & Butter", "Yogurt", "Ghee"],
-        },
-        "Poultry": {
-          "Eggs & Meat": ["Broiler Chicken", "Organic Eggs", "Turkey"],
-        }
+        
+        setState(() {
+          _categoriesData = newData;
+          _isCategoriesLoading = false;
+        });
+      } else {
+        setState(() => _isCategoriesLoading = false);
       }
-    },
-    "Manufacturing & Industrial": {
-      "Textiles": {
-        "Apparel": {
-          "Men's Wear": ["Casual Shirts", "Denim Pants", "Formal Suits", "Activewear"],
-          "Women's Wear": ["Ethnic Wear", "Dresses", "Sarees", "Formal Blazers"],
-        },
-        "Home Textiles": {
-          "Bedding": ["Bed Sheets", "Pillows", "Duvets"],
-          "Curtains": ["Blackout Curtains", "Sheer Curtains"],
-        }
-      },
-      "Electronics": {
-        "Consumer Electronics": {
-          "Smartphones": ["Android Phones", "iOS Phones", "Refurbished Devices"],
-          "Home Appliances": ["Smart TVs", "Air Conditioners", "Refrigerators", "Microwaves"],
-        }
-      }
-    },
-    "Service Sector": {
-      "Technology": {
-        "Software Development": {
-          "Web Apps": ["Frontend Projects", "Backend APIs", "Fullstack Systems", "SaaS Platforms"],
-          "Mobile Apps": ["Flutter Apps", "Native iOS Apps", "Native Android Apps", "Hybrid Apps"],
-        },
-        "IT Services": {
-          "Cloud Infrastructure": ["AWS Services", "Google Cloud Projects", "Azure Management", "DevOps Pipelines"],
-          "Cybersecurity": ["Penetration Testing", "Security Audits", "Identity Management"],
-        }
-      },
-      "Healthcare": {
-        "Medical Clinics": {
-          "General Health": ["Consultation Services", "Diagnostic Tests", "Therapy Sessions"],
-          "Pharmacy": ["Prescription Drugs", "OTC Medicines", "Health Supplements"],
-        }
-      }
+    } catch (e) {
+      debugPrint('Error fetching categories: $e');
+      setState(() => _isCategoriesLoading = false);
     }
-  };
+  }
 
   void _nextStep() {
     FocusScope.of(context).unfocus();
@@ -436,6 +434,14 @@ class _CreateSupplierBusinessPageState extends State<CreateSupplierBusinessPage>
 
   // STEP 6: Categories dropdowns and left/right panels
   Widget _buildStep6(Color color, bool isDark) {
+    if (_isCategoriesLoading) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(40.0),
+          child: CircularProgressIndicator(color: color),
+        ),
+      );
+    }
     final sectorTitles = _categoriesData.keys.toList();
     final sectors = _selectedSectorTitle != null ? _categoriesData[_selectedSectorTitle]!.keys.toList() : <String>[];
     final subSectors = (_selectedSectorTitle != null && _selectedSector != null)

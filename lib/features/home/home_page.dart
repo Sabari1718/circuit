@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:circuit/features/upgrade/business_welcome_page.dart';
+import 'package:circuit/features/upgrade/business_created_page.dart';
 import 'package:circuit/features/business/register_user_page.dart';
 import 'package:circuit/features/upgrade/employee_upgrade_page.dart';
 import 'package:circuit/core/services/user_service.dart';
 import 'package:circuit/widgets/common_dashboard_app_bar.dart';
+import 'package:circuit/upgrade/kovil_categories_page.dart';
+
+import '../../upgrade/business_created_page.dart';
 
 class HomePage extends StatefulWidget {
   final String userName;
@@ -314,7 +317,7 @@ class _HomePageState extends State<HomePage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const BusinessWelcomePage(),
+                      builder: (context) => const BusinessCreatedPage(),
                     ),
                   );
                 } else if (title == "REGISTERED") {
@@ -329,6 +332,13 @@ class _HomePageState extends State<HomePage> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => const EmployeeUpgradePage(),
+                    ),
+                  );
+                } else if (title == "KOVIL") {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const KovilCategoriesPage(),
                     ),
                   );
                 }

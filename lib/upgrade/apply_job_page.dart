@@ -27,10 +27,18 @@ class ApplyJobPage extends StatefulWidget {
 class _ApplyJobPageState extends State<ApplyJobPage> {
   bool _isApplyJobExpanded = true;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final TextEditingController _nameController = TextEditingController(text: "Sabari");
-  final TextEditingController _emailController = TextEditingController(text: "sabarishwaran1718@gmail.com");
-  final TextEditingController _phoneController = TextEditingController(text: "8012107626");
-  final TextEditingController _locationController = TextEditingController(text: "Coimbatore");
+  final TextEditingController _nameController = TextEditingController(
+    text: "Sabari",
+  );
+  final TextEditingController _emailController = TextEditingController(
+    text: "sabarishwaran1718@gmail.com",
+  );
+  final TextEditingController _phoneController = TextEditingController(
+    text: "8012107626",
+  );
+  final TextEditingController _locationController = TextEditingController(
+    text: "Coimbatore",
+  );
   final TextEditingController _dobController = TextEditingController();
 
   int _currentStep = 1;
@@ -38,8 +46,10 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
   // Step 2 Controllers
   final TextEditingController _experienceController = TextEditingController();
   final TextEditingController _remarksController = TextEditingController();
-  final TextEditingController _licenseNumberController = TextEditingController();
-  final TextEditingController _licenseExpiryController = TextEditingController();
+  final TextEditingController _licenseNumberController =
+      TextEditingController();
+  final TextEditingController _licenseExpiryController =
+      TextEditingController();
 
   String? _selectedGender;
   String? _selectedVehicleCategory;
@@ -57,8 +67,10 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
   String? _selectedEmploymentType;
   String? _selectedShiftPreference;
   String? _selectedRelocation;
-  final TextEditingController _expectedSalaryController = TextEditingController();
-  final TextEditingController _joiningAvailabilityController = TextEditingController();
+  final TextEditingController _expectedSalaryController =
+      TextEditingController();
+  final TextEditingController _joiningAvailabilityController =
+      TextEditingController();
   String? _resumeFileName;
 
   String? _certificateFileName;
@@ -73,7 +85,7 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
     if (result != null) {
       final file = result.files.first;
       final sizeInMb = file.size / (1024 * 1024);
-      
+
       if (sizeInMb > 5) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -146,7 +158,9 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
           debugPrint("Drawer closed");
         }
       },
-      drawer: !isDesktop ? Drawer(elevation: 0, child: _buildSidebar(context, isDrawer: true)) : null,
+      drawer: !isDesktop
+          ? Drawer(elevation: 0, child: _buildSidebar(context, isDrawer: true))
+          : null,
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -219,7 +233,7 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
                 icon: const Icon(Icons.menu_rounded, color: Color(0xFF1E293B)),
                 onPressed: () => _scaffoldKey.currentState?.openDrawer(),
               ),
-          Expanded(
+            Expanded(
               child: Container(
                 height: 40,
                 decoration: BoxDecoration(
@@ -229,52 +243,69 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
                 child: const TextField(
                   decoration: InputDecoration(
                     hintText: "Search Voxo ..",
-                    hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
-                    prefixIcon: Icon(Icons.search, color: Color(0xFF94A3B8), size: 20),
+                    hintStyle: TextStyle(
+                      color: Color(0xFF94A3B8),
+                      fontSize: 14,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: Color(0xFF94A3B8),
+                      size: 20,
+                    ),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
                   ),
                 ),
               ),
             ),
             const SizedBox(width: 12),
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const Icon(Icons.notifications_none_rounded, color: Color(0xFF64748B), size: 24),
-                Positioned(
-                  top: -2, right: -2,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
-                    child: const Text('4',
-                        style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                  ),
-                ),
-              ],
+            const Icon(
+              Icons.notifications_none_rounded,
+              color: Color(0xFF64748B),
+              size: 24,
             ),
             const SizedBox(width: 12),
-            const Icon(Icons.dark_mode_outlined, color: Color(0xFF64748B), size: 22),
+            const Icon(
+              Icons.dark_mode_outlined,
+              color: Color(0xFF64748B),
+              size: 22,
+            ),
             const SizedBox(width: 12),
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(20)),
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(20),
+              ),
               child: const Row(
                 children: [
                   CircleAvatar(
                     radius: 14,
                     backgroundColor: Color(0xFFE2E8F0),
-                    child: Icon(Icons.person, color: Color(0xFF94A3B8), size: 18),
+                    child: Icon(
+                      Icons.person,
+                      color: Color(0xFF94A3B8),
+                      size: 18,
+                    ),
                   ),
                   SizedBox(width: 6),
-                  Text('Admin',
-                      style: TextStyle(
-                          color: Color(0xFF1E293B),
-                          fontWeight: FontWeight.w500,
-                          fontSize: 13)),
+                  Text(
+                    'Admin',
+                    style: TextStyle(
+                      color: Color(0xFF1E293B),
+                      fontWeight: FontWeight.w500,
+                      fontSize: 13,
+                    ),
+                  ),
                   SizedBox(width: 4),
-                  Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B), size: 16),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: Color(0xFF64748B),
+                    size: 16,
+                  ),
                   SizedBox(width: 4),
                 ],
               ),
@@ -316,10 +347,7 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
               const SizedBox(height: 4),
               const Text(
                 "Complete your application in 3 simple steps.",
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF64748B),
-                ),
+                style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
               ),
             ],
           ),
@@ -332,18 +360,55 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(flex: 3, child: _buildStep(1, "Personal Info", isActive: true, isCompleted: _currentStep > 1)),
+        Expanded(
+          flex: 3,
+          child: _buildStep(
+            1,
+            "Personal Info",
+            isActive: true,
+            isCompleted: _currentStep > 1,
+          ),
+        ),
         _buildStepLine(isActive: _currentStep >= 2),
-        Expanded(flex: 3, child: _buildStep(2, "Driver Details", isActive: _currentStep >= 2, isCompleted: _currentStep > 2)),
+        Expanded(
+          flex: 3,
+          child: _buildStep(
+            2,
+            "Driver Details",
+            isActive: _currentStep >= 2,
+            isCompleted: _currentStep > 2,
+          ),
+        ),
         _buildStepLine(isActive: _currentStep >= 3),
-        Expanded(flex: 3, child: _buildStep(3, "Preferences", isActive: _currentStep >= 3, isCompleted: _currentStep > 3)),
+        Expanded(
+          flex: 3,
+          child: _buildStep(
+            3,
+            "Preferences",
+            isActive: _currentStep >= 3,
+            isCompleted: _currentStep > 3,
+          ),
+        ),
         _buildStepLine(isActive: _currentStep >= 4),
-        Expanded(flex: 3, child: _buildStep(4, "Preview", isActive: _currentStep >= 4, isCompleted: _currentStep > 4)),
+        Expanded(
+          flex: 3,
+          child: _buildStep(
+            4,
+            "Preview",
+            isActive: _currentStep >= 4,
+            isCompleted: _currentStep > 4,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildStep(int step, String title, {required bool isActive, bool isCompleted = false}) {
+  Widget _buildStep(
+    int step,
+    String title, {
+    required bool isActive,
+    bool isCompleted = false,
+  }) {
     return Column(
       children: [
         Container(
@@ -353,7 +418,9 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
             color: isActive ? const Color(0xFF4F46E5) : Colors.white,
             shape: BoxShape.circle,
             border: Border.all(
-              color: isActive ? const Color(0xFF4F46E5) : const Color(0xFFE2E8F0),
+              color: isActive
+                  ? const Color(0xFF4F46E5)
+                  : const Color(0xFFE2E8F0),
               width: 2,
             ),
           ),
@@ -415,11 +482,7 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
 
     return Row(
       children: [
-        Icon(
-          icon,
-          color: const Color(0xFF4F46E5),
-          size: 20,
-        ),
+        Icon(icon, color: const Color(0xFF4F46E5), size: 20),
         const SizedBox(width: 8),
         Text(
           title,
@@ -476,24 +539,40 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
         children: [
           Row(
             children: [
-              Expanded(child: _buildTextField("Full Name", _nameController, isRequired: true)),
+              Expanded(
+                child: _buildTextField(
+                  "Full Name",
+                  _nameController,
+                  isRequired: true,
+                ),
+              ),
               const SizedBox(width: 24),
-              Expanded(child: _buildTextField("Email Address", _emailController, isRequired: true)),
+              Expanded(
+                child: _buildTextField(
+                  "Email Address",
+                  _emailController,
+                  isRequired: true,
+                ),
+              ),
               const SizedBox(width: 24),
-              Expanded(child: _buildTextField("Phone Number", _phoneController, isRequired: true)),
+              Expanded(
+                child: _buildTextField(
+                  "Phone Number",
+                  _phoneController,
+                  isRequired: true,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 24),
           Row(
             children: [
-              Expanded(
-                child: _buildDateField("Date of Birth", _dobController),
-              ),
+              Expanded(child: _buildDateField("Date of Birth", _dobController)),
               const SizedBox(width: 24),
               Expanded(
                 child: _buildDropdownField(
-                  "Gender", 
-                  ["Male", "Female", "Other"], 
+                  "Gender",
+                  ["Male", "Female", "Other"],
                   value: _selectedGender,
                   onChanged: (val) => setState(() => _selectedGender = val),
                   hintText: "Select Gender",
@@ -502,7 +581,11 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
               ),
               const SizedBox(width: 24),
               Expanded(
-                child: _buildTextField("Current Location", _locationController, isRequired: true),
+                child: _buildTextField(
+                  "Current Location",
+                  _locationController,
+                  isRequired: true,
+                ),
               ),
             ],
           ),
@@ -520,15 +603,19 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
           _buildDateField("Date of Birth", _dobController),
           const SizedBox(height: 16),
           _buildDropdownField(
-            "Gender", 
-            ["Male", "Female", "Other"], 
+            "Gender",
+            ["Male", "Female", "Other"],
             value: _selectedGender,
             onChanged: (val) => setState(() => _selectedGender = val),
             hintText: "Select Gender",
             isRequired: true,
           ),
           const SizedBox(height: 16),
-          _buildTextField("Current Location", _locationController, isRequired: true),
+          _buildTextField(
+            "Current Location",
+            _locationController,
+            isRequired: true,
+          ),
         ],
       );
     }
@@ -543,10 +630,11 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
             children: [
               Expanded(
                 child: _buildDropdownField(
-                  "Vehicle Category", 
-                  ["Roadway", "Airway", "Waterway"], 
+                  "Vehicle Category",
+                  ["Roadway", "Airway", "Waterway"],
                   value: _selectedVehicleCategory,
-                  onChanged: (val) => setState(() => _selectedVehicleCategory = val),
+                  onChanged: (val) =>
+                      setState(() => _selectedVehicleCategory = val),
                   hintText: "Select Category",
                   isRequired: true,
                 ),
@@ -558,10 +646,11 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
                     opacity: _hasExperience ? 1.0 : 0.0,
                     duration: const Duration(milliseconds: 300),
                     child: _buildDropdownField(
-                      "Vehicle Usage", 
-                      ["Public (Passenger)", "Carrier (Goods)"], 
+                      "Vehicle Usage",
+                      ["Public (Passenger)", "Carrier (Goods)"],
                       value: _selectedVehicleUsage,
-                      onChanged: (val) => setState(() => _selectedVehicleUsage = val),
+                      onChanged: (val) =>
+                          setState(() => _selectedVehicleUsage = val),
                       hintText: "Select Usage",
                       isRequired: true,
                     ),
@@ -573,10 +662,11 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
                     opacity: _hasExperience ? 1.0 : 0.0,
                     duration: const Duration(milliseconds: 300),
                     child: _buildDropdownField(
-                      "Vehicle Weight", 
-                      ["Light Vehicle", "Heavy Vehicle"], 
+                      "Vehicle Weight",
+                      ["Light Vehicle", "Heavy Vehicle"],
                       value: _selectedVehicleWeight,
-                      onChanged: (val) => setState(() => _selectedVehicleWeight = val),
+                      onChanged: (val) =>
+                          setState(() => _selectedVehicleWeight = val),
                       hintText: "Select Weight",
                       isRequired: true,
                     ),
@@ -594,7 +684,12 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
           Row(
             children: [
               Expanded(
-                child: _buildTextField("Total Experience (Years)", _experienceController, isRequired: true, hintText: "02"),
+                child: _buildTextField(
+                  "Total Experience (Years)",
+                  _experienceController,
+                  isRequired: true,
+                  hintText: "02",
+                ),
               ),
               const SizedBox(width: 24),
               const Expanded(child: SizedBox()),
@@ -616,7 +711,7 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
             children: [
               Expanded(
                 child: _buildUploadBox(
-                  "Experience Certificate (Optional)", 
+                  "Experience Certificate (Optional)",
                   "Click to upload Certificate",
                   fileName: _certificateFileName,
                   onTap: () => _pickFile('certificate'),
@@ -624,7 +719,11 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
               ),
               const SizedBox(width: 24),
               Expanded(
-                child: _buildTextArea("Remarks (Optional)", _remarksController, hintText: "Any additional remarks..."),
+                child: _buildTextArea(
+                  "Remarks (Optional)",
+                  _remarksController,
+                  hintText: "Any additional remarks...",
+                ),
               ),
             ],
           ),
@@ -632,22 +731,32 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
           Row(
             children: [
               Expanded(
-                child: _buildTextField("License Number", _licenseNumberController, isRequired: true, hintText: "Enter License Number"),
+                child: _buildTextField(
+                  "License Number",
+                  _licenseNumberController,
+                  isRequired: true,
+                  hintText: "Enter License Number",
+                ),
               ),
               const SizedBox(width: 24),
               Expanded(
                 child: _buildDropdownField(
-                  "License Type", 
-                  ["LMV", "HMV", "Commercial", "Transport"], 
+                  "License Type",
+                  ["LMV", "HMV", "Commercial", "Transport"],
                   value: _selectedLicenseType,
-                  onChanged: (val) => setState(() => _selectedLicenseType = val),
+                  onChanged: (val) =>
+                      setState(() => _selectedLicenseType = val),
                   hintText: "Select License Type",
                   isRequired: true,
                 ),
               ),
               const SizedBox(width: 24),
               Expanded(
-                child: _buildDateField("License Expiry Date", _licenseExpiryController, isRequired: true),
+                child: _buildDateField(
+                  "License Expiry Date",
+                  _licenseExpiryController,
+                  isRequired: true,
+                ),
               ),
             ],
           ),
@@ -656,10 +765,16 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
             children: [
               Expanded(
                 child: _buildDropdownField(
-                  "Driving Range Preference", 
-                  ["Within City", "District to District", "State to State", "All Over India"], 
+                  "Driving Range Preference",
+                  [
+                    "Within City",
+                    "District to District",
+                    "State to State",
+                    "All Over India",
+                  ],
                   value: _selectedRangePreference,
-                  onChanged: (val) => setState(() => _selectedRangePreference = val),
+                  onChanged: (val) =>
+                      setState(() => _selectedRangePreference = val),
                   hintText: "Select Range Preference",
                   isRequired: true,
                 ),
@@ -670,8 +785,8 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
           ),
           const SizedBox(height: 24),
           _buildUploadBox(
-            "Driving License", 
-            "Click to upload Driving License", 
+            "Driving License",
+            "Click to upload Driving License",
             isRequired: true,
             fileName: _licenseFileName,
             onTap: () => _pickFile('license'),
@@ -682,8 +797,8 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
       return Column(
         children: [
           _buildDropdownField(
-            "Vehicle Category", 
-            ["Roadway", "Airway", "Waterway"], 
+            "Vehicle Category",
+            ["Roadway", "Airway", "Waterway"],
             value: _selectedVehicleCategory,
             onChanged: (val) => setState(() => _selectedVehicleCategory = val),
             hintText: "Select Category",
@@ -695,8 +810,8 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
               opacity: _hasExperience ? 1.0 : 0.0,
               duration: const Duration(milliseconds: 300),
               child: _buildDropdownField(
-                "Vehicle Usage", 
-                ["Public (Passenger)", "Carrier (Goods)"], 
+                "Vehicle Usage",
+                ["Public (Passenger)", "Carrier (Goods)"],
                 value: _selectedVehicleUsage,
                 onChanged: (val) => setState(() => _selectedVehicleUsage = val),
                 hintText: "Select Usage",
@@ -708,17 +823,23 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
               opacity: _hasExperience ? 1.0 : 0.0,
               duration: const Duration(milliseconds: 300),
               child: _buildDropdownField(
-                "Vehicle Weight", 
-                ["Light Vehicle", "Heavy Vehicle"], 
+                "Vehicle Weight",
+                ["Light Vehicle", "Heavy Vehicle"],
                 value: _selectedVehicleWeight,
-                onChanged: (val) => setState(() => _selectedVehicleWeight = val),
+                onChanged: (val) =>
+                    setState(() => _selectedVehicleWeight = val),
                 hintText: "Select Weight",
                 isRequired: true,
               ),
             ),
           ],
           const SizedBox(height: 16),
-          _buildTextField("Total Experience (Years)", _experienceController, isRequired: true, hintText: "02"),
+          _buildTextField(
+            "Total Experience (Years)",
+            _experienceController,
+            isRequired: true,
+            hintText: "02",
+          ),
           if (_hasExperience) ...[
             const SizedBox(height: 16),
             AnimatedOpacity(
@@ -729,30 +850,48 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
           ],
           const SizedBox(height: 16),
           _buildUploadBox(
-            "Experience Certificate (Optional)", 
+            "Experience Certificate (Optional)",
             "Click to upload Certificate",
             fileName: _certificateFileName,
             onTap: () => _pickFile('certificate'),
           ),
           const SizedBox(height: 16),
-          _buildTextArea("Remarks (Optional)", _remarksController, hintText: "Any additional remarks..."),
+          _buildTextArea(
+            "Remarks (Optional)",
+            _remarksController,
+            hintText: "Any additional remarks...",
+          ),
           const SizedBox(height: 16),
-          _buildTextField("License Number", _licenseNumberController, isRequired: true, hintText: "Enter License Number"),
+          _buildTextField(
+            "License Number",
+            _licenseNumberController,
+            isRequired: true,
+            hintText: "Enter License Number",
+          ),
           const SizedBox(height: 16),
           _buildDropdownField(
-            "License Type", 
-            ["LMV", "HMV", "Commercial", "Transport"], 
+            "License Type",
+            ["LMV", "HMV", "Commercial", "Transport"],
             value: _selectedLicenseType,
             onChanged: (val) => setState(() => _selectedLicenseType = val),
             hintText: "Select License Type",
             isRequired: true,
           ),
           const SizedBox(height: 16),
-          _buildDateField("License Expiry Date", _licenseExpiryController, isRequired: true),
+          _buildDateField(
+            "License Expiry Date",
+            _licenseExpiryController,
+            isRequired: true,
+          ),
           const SizedBox(height: 16),
           _buildDropdownField(
-            "Driving Range Preference", 
-            ["Within City", "District to District", "State to State", "All Over India"], 
+            "Driving Range Preference",
+            [
+              "Within City",
+              "District to District",
+              "State to State",
+              "All Over India",
+            ],
             value: _selectedRangePreference,
             onChanged: (val) => setState(() => _selectedRangePreference = val),
             hintText: "Select Range Preference",
@@ -760,8 +899,8 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
           ),
           const SizedBox(height: 16),
           _buildUploadBox(
-            "Driving License", 
-            "Click to upload Driving License", 
+            "Driving License",
+            "Click to upload Driving License",
             isRequired: true,
             fileName: _licenseFileName,
             onTap: () => _pickFile('license'),
@@ -831,7 +970,11 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
               ),
               if (_currentStep < 4) ...[
                 const SizedBox(width: 8),
-                const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 16),
+                const Icon(
+                  Icons.arrow_forward_rounded,
+                  color: Colors.white,
+                  size: 16,
+                ),
               ],
             ],
           ),
@@ -840,7 +983,12 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, {bool isRequired = false, String? hintText}) {
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller, {
+    bool isRequired = false,
+    String? hintText,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -869,7 +1017,10 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
             hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
             filled: true,
             fillColor: const Color(0xFFF8FAFC),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none,
@@ -885,7 +1036,11 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
     );
   }
 
-  Widget _buildDateField(String label, TextEditingController controller, {bool isRequired = false}) {
+  Widget _buildDateField(
+    String label,
+    TextEditingController controller, {
+    bool isRequired = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -926,7 +1081,9 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
                     ),
                     textButtonTheme: TextButtonThemeData(
                       style: TextButton.styleFrom(
-                        foregroundColor: const Color(0xFF10B981), // button text color
+                        foregroundColor: const Color(
+                          0xFF10B981,
+                        ), // button text color
                       ),
                     ),
                   ),
@@ -935,10 +1092,10 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
               },
             );
             if (pickedDate != null) {
-              String formattedDate = 
-                "${pickedDate.day.toString().padLeft(2, '0')}-"
-                "${pickedDate.month.toString().padLeft(2, '0')}-"
-                "${pickedDate.year}";
+              String formattedDate =
+                  "${pickedDate.day.toString().padLeft(2, '0')}-"
+                  "${pickedDate.month.toString().padLeft(2, '0')}-"
+                  "${pickedDate.year}";
               setState(() {
                 controller.text = formattedDate;
               });
@@ -954,7 +1111,10 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
             ),
             filled: true,
             fillColor: const Color(0xFFF8FAFC),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none,
@@ -970,7 +1130,14 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
     );
   }
 
-  Widget _buildDropdownField(String label, List<String> options, {bool isRequired = false, String? value, required Function(String?) onChanged, String? hintText}) {
+  Widget _buildDropdownField(
+    String label,
+    List<String> options, {
+    bool isRequired = false,
+    String? value,
+    required Function(String?) onChanged,
+    String? hintText,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1004,12 +1171,12 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
               value: value,
               hint: Text(
                 hintText ?? "Select",
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF64748B),
-                ),
+                style: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
               ),
-              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B)),
+              icon: const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: Color(0xFF64748B),
+              ),
               items: options.map((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
@@ -1030,7 +1197,11 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
     );
   }
 
-  Widget _buildTextArea(String label, TextEditingController controller, {String? hintText}) {
+  Widget _buildTextArea(
+    String label,
+    TextEditingController controller, {
+    String? hintText,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1051,7 +1222,10 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
             hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
             filled: true,
             fillColor: const Color(0xFFF8FAFC),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none,
@@ -1067,7 +1241,13 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
     );
   }
 
-  Widget _buildUploadBox(String label, String actionText, {bool isRequired = false, String? fileName, VoidCallback? onTap}) {
+  Widget _buildUploadBox(
+    String label,
+    String actionText, {
+    bool isRequired = false,
+    String? fileName,
+    VoidCallback? onTap,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1099,7 +1279,9 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
               color: const Color(0xFFF8FAFC),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: fileName != null ? const Color(0xFF10B981) : const Color(0xFFE2E8F0),
+                color: fileName != null
+                    ? const Color(0xFF10B981)
+                    : const Color(0xFFE2E8F0),
               ),
             ),
             child: Column(
@@ -1129,10 +1311,7 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
                   const SizedBox(height: 4),
                   const Text(
                     "Click to change file",
-                    style: TextStyle(
-                      color: Color(0xFF3B82F6),
-                      fontSize: 11,
-                    ),
+                    style: TextStyle(color: Color(0xFF3B82F6), fontSize: 11),
                   ),
                 ] else ...[
                   const Icon(
@@ -1152,10 +1331,7 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
                   const SizedBox(height: 4),
                   const Text(
                     "PDF, JPG or PNG (max. 5MB)",
-                    style: TextStyle(
-                      color: Color(0xFF94A3B8),
-                      fontSize: 11,
-                    ),
+                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
                   ),
                 ],
               ],
@@ -1176,74 +1352,115 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: EdgeInsets.only(top: isDrawer ? 40 : 24, left: 24, right: 24, bottom: 24),
+            padding: EdgeInsets.only(
+              top: isDrawer ? 40 : 24,
+              left: 24,
+              right: 24,
+              bottom: 24,
+            ),
             child: Row(
               children: [
                 Container(
                   width: 48,
                   height: 28,
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4)),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                   child: const Center(
                     child: Text(
                       "90×25",
-                      style: TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
                 const Spacer(),
-                const Icon(Icons.grid_view_rounded, color: Color(0xFFE11D48), size: 20),
+                const Icon(
+                  Icons.grid_view_rounded,
+                  color: Color(0xFFE11D48),
+                  size: 20,
+                ),
               ],
             ),
           ),
           const SizedBox(height: 8),
-          _sidebarItem(Icons.home_outlined, "Dashboard", onTap: () {
-            debugPrint("Dashboard clicked");
-            if (isDrawer) Navigator.pop(context);
-            Navigator.popUntil(context, (r) => r.isFirst);
-          }),
+          _sidebarItem(
+            Icons.home_outlined,
+            "Dashboard",
+            onTap: () {
+              debugPrint("Dashboard clicked");
+              if (isDrawer) Navigator.pop(context);
+              Navigator.popUntil(context, (r) => r.isFirst);
+            },
+          ),
           const SizedBox(height: 8),
-          _sidebarItem(Icons.widgets_outlined, "Switch Portal", onTap: () {
-            debugPrint("Switch Portal clicked");
-            if (isDrawer) Navigator.pop(context);
-            Navigator.popUntil(context, (r) => r.isFirst);
-          }),
+          _sidebarItem(
+            Icons.widgets_outlined,
+            "Switch Portal",
+            onTap: () {
+              debugPrint("Switch Portal clicked");
+              if (isDrawer) Navigator.pop(context);
+              Navigator.popUntil(context, (r) => r.isFirst);
+            },
+          ),
           const SizedBox(height: 8),
-          _buildApplyJobExpansion(context, isDrawer: isDrawer, pinkColor: pinkColor, activeItem: 'apply_for_job'),
+          _buildApplyJobExpansion(
+            context,
+            isDrawer: isDrawer,
+            pinkColor: pinkColor,
+            activeItem: 'apply_for_job',
+          ),
         ],
       ),
     );
   }
 
-  Widget _sidebarItem(IconData icon, String title, {VoidCallback? onTap}) => ListTile(
+  Widget _sidebarItem(IconData icon, String title, {VoidCallback? onTap}) =>
+      ListTile(
         leading: Icon(icon, color: Colors.white60, size: 20),
-        title: Text(title, style: const TextStyle(color: Colors.white60, fontSize: 14)),
-        onTap: onTap,
-        dense: true,
-      );
-
-  Widget _sidebarSubItem(String title, {Color? textColor, VoidCallback? onTap}) => ListTile(
-        contentPadding: const EdgeInsets.only(left: 54),
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              "-",
-              style: TextStyle(color: Colors.white30, fontSize: 14, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              title,
-              style: TextStyle(
-                color: textColor ?? Colors.white60,
-                fontSize: 13,
-                fontWeight: FontWeight.normal,
-              ),
-            ),
-          ],
+        title: Text(
+          title,
+          style: const TextStyle(color: Colors.white60, fontSize: 14),
         ),
         onTap: onTap,
         dense: true,
       );
+
+  Widget _sidebarSubItem(
+    String title, {
+    Color? textColor,
+    VoidCallback? onTap,
+  }) => ListTile(
+    contentPadding: const EdgeInsets.only(left: 54),
+    title: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text(
+          "-",
+          style: TextStyle(
+            color: Colors.white30,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: TextStyle(
+            color: textColor ?? Colors.white60,
+            fontSize: 13,
+            fontWeight: FontWeight.normal,
+          ),
+        ),
+      ],
+    ),
+    onTap: onTap,
+    dense: true,
+  );
 
   Widget _buildApplyJobExpansion(
     BuildContext context, {
@@ -1259,33 +1476,45 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(24),
-                bottomLeft: Radius.circular(24)),
+              topLeft: Radius.circular(24),
+              bottomLeft: Radius.circular(24),
+            ),
           ),
           child: ListTile(
-            leading: const Icon(Icons.send_outlined,
-                color: Color(0xFF1E293B), size: 20),
-            title: const Text('Apply Job',
-                style: TextStyle(
-                    color: Color(0xFF1E293B),
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold)),
+            leading: const Icon(
+              Icons.send_outlined,
+              color: Color(0xFF1E293B),
+              size: 20,
+            ),
+            title: const Text(
+              'Apply Job',
+              style: TextStyle(
+                color: Color(0xFF1E293B),
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             trailing: Padding(
               padding: const EdgeInsets.only(right: 8.0),
               child: AnimatedRotation(
                 turns: _isApplyJobExpanded ? 0.5 : 0,
                 duration: const Duration(milliseconds: 250),
-                child: const Icon(Icons.keyboard_arrow_down_rounded,
-                    color: Color(0xFF1E293B), size: 20),
+                child: const Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: Color(0xFF1E293B),
+                  size: 20,
+                ),
               ),
             ),
             dense: true,
             onTap: () {
               setState(() {
                 _isApplyJobExpanded = !_isApplyJobExpanded;
-                debugPrint(_isApplyJobExpanded
-                    ? 'Apply Job menu expanded'
-                    : 'Apply Job menu collapsed');
+                debugPrint(
+                  _isApplyJobExpanded
+                      ? 'Apply Job menu expanded'
+                      : 'Apply Job menu collapsed',
+                );
               });
             },
           ),
@@ -1303,44 +1532,72 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
               const SizedBox(height: 6),
               // Job List
               activeItem == 'job_list'
-                  ? _activeSubItem('Job List', onTap: () {
-                      debugPrint('Job List clicked');
-                      if (isDrawer) Navigator.pop(context);
-                    })
-                  : _sidebarSubItem('Job List', onTap: () {
-                      debugPrint('Job List clicked');
-                      if (isDrawer) Navigator.pop(context);
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (_) => const JobListPage()));
-                    }),
+                  ? _activeSubItem(
+                      'Job List',
+                      onTap: () {
+                        debugPrint('Job List clicked');
+                        if (isDrawer) Navigator.pop(context);
+                      },
+                    )
+                  : _sidebarSubItem(
+                      'Job List',
+                      onTap: () {
+                        debugPrint('Job List clicked');
+                        if (isDrawer) Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const JobListPage(),
+                          ),
+                        );
+                      },
+                    ),
               // Applied List
               activeItem == 'applied_list'
-                  ? _activeSubItem('Applied List', onTap: () {
-                      debugPrint('Applied List clicked');
-                      if (isDrawer) Navigator.pop(context);
-                    })
-                  : _sidebarSubItem('Applied List', onTap: () {
-                      debugPrint('Applied List clicked');
-                      if (isDrawer) Navigator.pop(context);
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (_) => const AppliedListPage()));
-                    }),
+                  ? _activeSubItem(
+                      'Applied List',
+                      onTap: () {
+                        debugPrint('Applied List clicked');
+                        if (isDrawer) Navigator.pop(context);
+                      },
+                    )
+                  : _sidebarSubItem(
+                      'Applied List',
+                      onTap: () {
+                        debugPrint('Applied List clicked');
+                        if (isDrawer) Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AppliedListPage(),
+                          ),
+                        );
+                      },
+                    ),
               // Apply for Job
               activeItem == 'apply_for_job'
-                  ? _activeSubItem('Apply for Job',
+                  ? _activeSubItem(
+                      'Apply for Job',
                       textColor: pinkColor,
                       onTap: () {
                         debugPrint('Apply For Job clicked');
                         if (isDrawer) Navigator.pop(context);
-                      })
-                  : _sidebarSubItem('Apply for Job',
+                      },
+                    )
+                  : _sidebarSubItem(
+                      'Apply for Job',
                       textColor: pinkColor,
                       onTap: () {
                         debugPrint('Apply For Job clicked');
                         if (isDrawer) Navigator.pop(context);
-                        Navigator.push(context,
-                            MaterialPageRoute(builder: (_) => const ApplyJobPage()));
-                      }),
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ApplyJobPage(),
+                          ),
+                        );
+                      },
+                    ),
             ],
           ),
           secondChild: const SizedBox(width: double.infinity),
@@ -1350,26 +1607,33 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
   }
 
   /// Highlighted active sub-item
-  Widget _activeSubItem(String title,
-          {Color? textColor, VoidCallback? onTap}) =>
-      Container(
-        margin: const EdgeInsets.only(left: 12, right: 0),
-        decoration: const BoxDecoration(
-          color: Color(0xFF334155),
-          borderRadius:
-              BorderRadius.only(topLeft: Radius.circular(8), bottomLeft: Radius.circular(8)),
+  Widget _activeSubItem(
+    String title, {
+    Color? textColor,
+    VoidCallback? onTap,
+  }) => Container(
+    margin: const EdgeInsets.only(left: 12, right: 0),
+    decoration: const BoxDecoration(
+      color: Color(0xFF334155),
+      borderRadius: BorderRadius.only(
+        topLeft: Radius.circular(8),
+        bottomLeft: Radius.circular(8),
+      ),
+    ),
+    child: ListTile(
+      contentPadding: const EdgeInsets.only(left: 42),
+      dense: true,
+      title: Text(
+        title,
+        style: TextStyle(
+          color: textColor ?? Colors.white,
+          fontSize: 13,
+          fontWeight: FontWeight.bold,
         ),
-        child: ListTile(
-          contentPadding: const EdgeInsets.only(left: 42),
-          dense: true,
-          title: Text(title,
-              style: TextStyle(
-                  color: textColor ?? Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold)),
-          onTap: onTap,
-        ),
-      );
+      ),
+      onTap: onTap,
+    ),
+  );
 
   Widget _buildPastExperiencesSection(bool isDesktop) {
     return Column(
@@ -1390,7 +1654,12 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
           physics: const NeverScrollableScrollPhysics(),
           initialItemCount: _pastExperiences.length,
           itemBuilder: (context, index, animation) {
-            return _buildPastExperienceItem(_pastExperiences[index], index, animation, isDesktop);
+            return _buildPastExperienceItem(
+              _pastExperiences[index],
+              index,
+              animation,
+              isDesktop,
+            );
           },
         ),
         const SizedBox(height: 8),
@@ -1400,7 +1669,10 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
             onTap: () {
               final newExp = PastExperience();
               _pastExperiences.add(newExp);
-              _listKey.currentState?.insertItem(_pastExperiences.length - 1, duration: const Duration(milliseconds: 300));
+              _listKey.currentState?.insertItem(
+                _pastExperiences.length - 1,
+                duration: const Duration(milliseconds: 300),
+              );
             },
             borderRadius: BorderRadius.circular(4),
             child: Container(
@@ -1431,7 +1703,12 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
     );
   }
 
-  Widget _buildPastExperienceItem(PastExperience exp, int index, Animation<double> animation, bool isDesktop) {
+  Widget _buildPastExperienceItem(
+    PastExperience exp,
+    int index,
+    Animation<double> animation,
+    bool isDesktop,
+  ) {
     return SizeTransition(
       sizeFactor: animation,
       child: FadeTransition(
@@ -1446,17 +1723,29 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFF3B82F6).withOpacity(0.3)),
+                  border: Border.all(
+                    color: const Color(0xFF3B82F6).withOpacity(0.3),
+                  ),
                 ),
                 child: isDesktop
                     ? Row(
                         children: [
                           Expanded(
-                            child: _buildTextField("Company Name", exp.companyController, isRequired: true, hintText: "e.g. ABC Logistics"),
+                            child: _buildTextField(
+                              "Company Name",
+                              exp.companyController,
+                              isRequired: true,
+                              hintText: "e.g. ABC Logistics",
+                            ),
                           ),
                           const SizedBox(width: 24),
                           Expanded(
-                            child: _buildTextField("Vehicle Driven", exp.vehicleController, isRequired: true, hintText: "e.g. Ashok Leyland, Tata Ace"),
+                            child: _buildTextField(
+                              "Vehicle Driven",
+                              exp.vehicleController,
+                              isRequired: true,
+                              hintText: "e.g. Ashok Leyland, Tata Ace",
+                            ),
                           ),
                           const SizedBox(width: 24),
                           Expanded(
@@ -1464,8 +1753,14 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _buildDropdownField(
-                                  "Past Driving Range", 
-                                  ["Within City", "District to District", "State to State", "All Over India", "Other"], 
+                                  "Past Driving Range",
+                                  [
+                                    "Within City",
+                                    "District to District",
+                                    "State to State",
+                                    "All Over India",
+                                    "Other",
+                                  ],
                                   value: exp.drivingRange,
                                   onChanged: (val) {
                                     setState(() {
@@ -1477,20 +1772,27 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
                                 ),
                                 AnimatedSize(
                                   duration: const Duration(milliseconds: 300),
-                                  child: (exp.drivingRange == "Within City" || 
-                                          exp.drivingRange == "District to District" || 
+                                  child:
+                                      (exp.drivingRange == "Within City" ||
+                                          exp.drivingRange ==
+                                              "District to District" ||
                                           exp.drivingRange == "State to State")
                                       ? Padding(
-                                          padding: const EdgeInsets.only(top: 16.0),
+                                          padding: const EdgeInsets.only(
+                                            top: 16.0,
+                                          ),
                                           child: _buildTextField(
-                                            "City/District & Area", 
-                                            exp.rangeDetailsController, 
-                                            isRequired: true, 
-                                            hintText: exp.drivingRange == "Within City" 
+                                            "City/District & Area",
+                                            exp.rangeDetailsController,
+                                            isRequired: true,
+                                            hintText:
+                                                exp.drivingRange ==
+                                                    "Within City"
                                                 ? "e.g. T Nagar, Anna Nagar"
-                                                : exp.drivingRange == "District to District"
-                                                    ? "e.g. Coimbatore to Erode"
-                                                    : "e.g. Tamil Nadu to Kerala",
+                                                : exp.drivingRange ==
+                                                      "District to District"
+                                                ? "e.g. Coimbatore to Erode"
+                                                : "e.g. Tamil Nadu to Kerala",
                                           ),
                                         )
                                       : const SizedBox(width: double.infinity),
@@ -1502,13 +1804,29 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
                       )
                     : Column(
                         children: [
-                          _buildTextField("Company Name", exp.companyController, isRequired: true, hintText: "e.g. ABC Logistics"),
+                          _buildTextField(
+                            "Company Name",
+                            exp.companyController,
+                            isRequired: true,
+                            hintText: "e.g. ABC Logistics",
+                          ),
                           const SizedBox(height: 16),
-                          _buildTextField("Vehicle Driven", exp.vehicleController, isRequired: true, hintText: "e.g. Ashok Leyland, Tata Ace"),
+                          _buildTextField(
+                            "Vehicle Driven",
+                            exp.vehicleController,
+                            isRequired: true,
+                            hintText: "e.g. Ashok Leyland, Tata Ace",
+                          ),
                           const SizedBox(height: 16),
                           _buildDropdownField(
-                            "Past Driving Range", 
-                            ["Within City", "District to District", "State to State", "All Over India", "Other"], 
+                            "Past Driving Range",
+                            [
+                              "Within City",
+                              "District to District",
+                              "State to State",
+                              "All Over India",
+                              "Other",
+                            ],
                             value: exp.drivingRange,
                             onChanged: (val) {
                               setState(() {
@@ -1520,20 +1838,24 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
                           ),
                           AnimatedSize(
                             duration: const Duration(milliseconds: 300),
-                            child: (exp.drivingRange == "Within City" || 
-                                    exp.drivingRange == "District to District" || 
+                            child:
+                                (exp.drivingRange == "Within City" ||
+                                    exp.drivingRange ==
+                                        "District to District" ||
                                     exp.drivingRange == "State to State")
                                 ? Padding(
                                     padding: const EdgeInsets.only(top: 16.0),
                                     child: _buildTextField(
-                                      "City/District & Area", 
-                                      exp.rangeDetailsController, 
-                                      isRequired: true, 
-                                      hintText: exp.drivingRange == "Within City" 
+                                      "City/District & Area",
+                                      exp.rangeDetailsController,
+                                      isRequired: true,
+                                      hintText:
+                                          exp.drivingRange == "Within City"
                                           ? "e.g. T Nagar, Anna Nagar"
-                                          : exp.drivingRange == "District to District"
-                                              ? "e.g. Coimbatore to Erode"
-                                              : "e.g. Tamil Nadu to Kerala",
+                                          : exp.drivingRange ==
+                                                "District to District"
+                                          ? "e.g. Coimbatore to Erode"
+                                          : "e.g. Tamil Nadu to Kerala",
                                     ),
                                   )
                                 : const SizedBox(width: double.infinity),
@@ -1548,10 +1870,17 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
                   onTap: () {
                     final removedIndex = _pastExperiences.indexOf(exp);
                     if (removedIndex != -1) {
-                      final removedItem = _pastExperiences.removeAt(removedIndex);
+                      final removedItem = _pastExperiences.removeAt(
+                        removedIndex,
+                      );
                       _listKey.currentState?.removeItem(
                         removedIndex,
-                        (context, animation) => _buildPastExperienceItem(removedItem, removedIndex, animation, isDesktop),
+                        (context, animation) => _buildPastExperienceItem(
+                          removedItem,
+                          removedIndex,
+                          animation,
+                          isDesktop,
+                        ),
                         duration: const Duration(milliseconds: 300),
                       );
                       Future.delayed(const Duration(milliseconds: 350), () {
@@ -1592,7 +1921,8 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
                   "Employment Type",
                   ["Full Time", "Part Time", "Contract", "Permanent"],
                   value: _selectedEmploymentType,
-                  onChanged: (val) => setState(() => _selectedEmploymentType = val),
+                  onChanged: (val) =>
+                      setState(() => _selectedEmploymentType = val),
                   hintText: "Select Type",
                   isRequired: true,
                 ),
@@ -1603,7 +1933,8 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
                   "Shift Preference",
                   ["Day Shift", "Night Shift", "Flexible"],
                   value: _selectedShiftPreference,
-                  onChanged: (val) => setState(() => _selectedShiftPreference = val),
+                  onChanged: (val) =>
+                      setState(() => _selectedShiftPreference = val),
                   hintText: "Select Shift",
                 ),
               ),
@@ -1624,11 +1955,19 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: _buildTextField("Expected Salary", _expectedSalaryController, hintText: "e.g. ₹25,000 / month"),
+                child: _buildTextField(
+                  "Expected Salary",
+                  _expectedSalaryController,
+                  hintText: "e.g. ₹25,000 / month",
+                ),
               ),
               const SizedBox(width: 24),
               Expanded(
-                child: _buildTextField("Joining Availability", _joiningAvailabilityController, hintText: "e.g. Immediate, 15 Days"),
+                child: _buildTextField(
+                  "Joining Availability",
+                  _joiningAvailabilityController,
+                  hintText: "e.g. Immediate, 15 Days",
+                ),
               ),
               const SizedBox(width: 24),
               const Expanded(child: SizedBox()),
@@ -1660,9 +1999,17 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
             hintText: "Select",
           ),
           const SizedBox(height: 16),
-          _buildTextField("Expected Salary", _expectedSalaryController, hintText: "e.g. ₹25,000 / month"),
+          _buildTextField(
+            "Expected Salary",
+            _expectedSalaryController,
+            hintText: "e.g. ₹25,000 / month",
+          ),
           const SizedBox(height: 16),
-          _buildTextField("Joining Availability", _joiningAvailabilityController, hintText: "e.g. Immediate, 15 Days"),
+          _buildTextField(
+            "Joining Availability",
+            _joiningAvailabilityController,
+            hintText: "e.g. Immediate, 15 Days",
+          ),
         ],
         const SizedBox(height: 32),
         const Text(
@@ -1685,20 +2032,24 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
   }
 
   void _submitApplication() {
-    if (_nameController.text.trim().isEmpty || _experienceController.text.trim().isEmpty) {
+    if (_nameController.text.trim().isEmpty ||
+        _experienceController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill all required fields"), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text("Please fill all required fields"),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text("Application Submitted Successfully"),
         backgroundColor: Color(0xFF10B981),
       ),
     );
-    
+
     Future.delayed(const Duration(seconds: 1), () {
       if (mounted) {
         setState(() {
@@ -1734,7 +2085,7 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
           _pastExperiences.add(PastExperience());
         });
       }
-    });
+    }  );
   }
 
   Widget _buildStep4Fields(bool isDesktop) {
@@ -1750,76 +2101,173 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
         children: [
           _buildPreviewTitle("1. Personal Information"),
           const SizedBox(height: 16),
-          _buildPreviewRow("Full Name", _nameController.text, "Email", _emailController.text, "Phone", _phoneController.text, isDesktop),
+          _buildPreviewRow(
+            "Full Name",
+            _nameController.text,
+            "Email",
+            _emailController.text,
+            "Phone",
+            _phoneController.text,
+            isDesktop,
+          ),
           const SizedBox(height: 12),
-          _buildPreviewRow("DOB", _dobController.text, "Gender", _selectedGender ?? "N/A", "Location", _locationController.text, isDesktop),
-          
+          _buildPreviewRow(
+            "DOB",
+            _dobController.text,
+            "Gender",
+            _selectedGender ?? "N/A",
+            "Location",
+            _locationController.text,
+            isDesktop,
+          ),
+
           const SizedBox(height: 32),
           _buildPreviewTitle("2. Driver Details"),
           const SizedBox(height: 16),
-          _buildPreviewRow("Category", _selectedVehicleCategory ?? "N/A", "Experience", _experienceController.text.isNotEmpty ? "${_experienceController.text} Years" : "N/A", "License No", _licenseNumberController.text, isDesktop),
+          _buildPreviewRow(
+            "Category",
+            _selectedVehicleCategory ?? "N/A",
+            "Experience",
+            _experienceController.text.isNotEmpty
+                ? "${_experienceController.text} Years"
+                : "N/A",
+            "License No",
+            _licenseNumberController.text,
+            isDesktop,
+          ),
           const SizedBox(height: 12),
-          _buildPreviewRow("License Type", _selectedLicenseType ?? "N/A", "License Expiry", _licenseExpiryController.text, "Driving Range", _selectedRangePreference ?? "N/A", isDesktop),
-          
-          if (_hasExperience && _pastExperiences.any((e) => e.companyController.text.isNotEmpty)) ...[
+          _buildPreviewRow(
+            "License Type",
+            _selectedLicenseType ?? "N/A",
+            "License Expiry",
+            _licenseExpiryController.text,
+            "Driving Range",
+            _selectedRangePreference ?? "N/A",
+            isDesktop,
+          ),
+
+          if (_hasExperience &&
+              _pastExperiences.any(
+                (e) => e.companyController.text.isNotEmpty,
+              )) ...[
             const SizedBox(height: 16),
-            ..._pastExperiences.where((e) => e.companyController.text.isNotEmpty).map((exp) {
-              return Padding(
-                padding: const EdgeInsets.only(top: 12.0),
-                child: isDesktop 
-                  ? Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(child: _buildPreviewItem("Company", exp.companyController.text)),
-                        const SizedBox(width: 24),
-                        Expanded(child: _buildPreviewItem("Vehicle", exp.vehicleController.text)),
-                        const SizedBox(width: 24),
-                        Expanded(
-                          child: Column(
+            ..._pastExperiences
+                .where((e) => e.companyController.text.isNotEmpty)
+                .map((exp) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 12.0),
+                    child: isDesktop
+                        ? Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _buildPreviewItem("Range", exp.drivingRange ?? "N/A"),
-                              if (exp.drivingRange == "Within City" || exp.drivingRange == "District to District" || exp.drivingRange == "State to State")
+                              Expanded(
+                                child: _buildPreviewItem(
+                                  "Company",
+                                  exp.companyController.text,
+                                ),
+                              ),
+                              const SizedBox(width: 24),
+                              Expanded(
+                                child: _buildPreviewItem(
+                                  "Vehicle",
+                                  exp.vehicleController.text,
+                                ),
+                              ),
+                              const SizedBox(width: 24),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _buildPreviewItem(
+                                      "Range",
+                                      exp.drivingRange ?? "N/A",
+                                    ),
+                                    if (exp.drivingRange == "Within City" ||
+                                        exp.drivingRange ==
+                                            "District to District" ||
+                                        exp.drivingRange == "State to State")
+                                      Padding(
+                                        padding: const EdgeInsets.only(
+                                          top: 4.0,
+                                        ),
+                                        child: _buildPreviewItem(
+                                          "Area",
+                                          exp.rangeDetailsController.text,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          )
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildPreviewItem(
+                                "Company",
+                                exp.companyController.text,
+                              ),
+                              const SizedBox(height: 8),
+                              _buildPreviewItem(
+                                "Vehicle",
+                                exp.vehicleController.text,
+                              ),
+                              const SizedBox(height: 8),
+                              _buildPreviewItem(
+                                "Range",
+                                exp.drivingRange ?? "N/A",
+                              ),
+                              if (exp.drivingRange == "Within City" ||
+                                  exp.drivingRange == "District to District" ||
+                                  exp.drivingRange == "State to State")
                                 Padding(
-                                  padding: const EdgeInsets.only(top: 4.0),
-                                  child: _buildPreviewItem("Area", exp.rangeDetailsController.text),
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: _buildPreviewItem(
+                                    "Area",
+                                    exp.rangeDetailsController.text,
+                                  ),
                                 ),
                             ],
                           ),
-                        ),
-                      ],
-                    )
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildPreviewItem("Company", exp.companyController.text),
-                        const SizedBox(height: 8),
-                        _buildPreviewItem("Vehicle", exp.vehicleController.text),
-                        const SizedBox(height: 8),
-                        _buildPreviewItem("Range", exp.drivingRange ?? "N/A"),
-                        if (exp.drivingRange == "Within City" || exp.drivingRange == "District to District" || exp.drivingRange == "State to State")
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8.0),
-                            child: _buildPreviewItem("Area", exp.rangeDetailsController.text),
-                          ),
-                      ],
-                    ),
-              );
-            }).toList(),
+                  );
+                })
+                .toList(),
           ],
 
           const SizedBox(height: 32),
           _buildPreviewTitle("3. Preferences & Uploads"),
           const SizedBox(height: 16),
-          _buildPreviewRow("Employment Type", _selectedEmploymentType ?? "N/A", "Shift Preference", _selectedShiftPreference ?? "N/A", "Relocation Ready", _selectedRelocation ?? "N/A", isDesktop),
+          _buildPreviewRow(
+            "Employment Type",
+            _selectedEmploymentType ?? "N/A",
+            "Shift Preference",
+            _selectedShiftPreference ?? "N/A",
+            "Relocation Ready",
+            _selectedRelocation ?? "N/A",
+            isDesktop,
+          ),
           const SizedBox(height: 12),
-          _buildPreviewRow("Expected Salary", _expectedSalaryController.text, "Joining Availability", _joiningAvailabilityController.text, "", "", isDesktop),
-          
-          if (_licenseFileName != null || _resumeFileName != null || _certificateFileName != null) ...[
+          _buildPreviewRow(
+            "Expected Salary",
+            _expectedSalaryController.text,
+            "Joining Availability",
+            _joiningAvailabilityController.text,
+            "",
+            "",
+            isDesktop,
+          ),
+
+          if (_licenseFileName != null ||
+              _resumeFileName != null ||
+              _certificateFileName != null) ...[
             const SizedBox(height: 32),
             Row(
               children: [
-                const Icon(Icons.insert_drive_file, color: Color(0xFF3B82F6), size: 18),
+                const Icon(
+                  Icons.insert_drive_file,
+                  color: Color(0xFF3B82F6),
+                  size: 18,
+                ),
                 const SizedBox(width: 8),
                 _buildPreviewTitle("Uploaded Documents:"),
               ],
@@ -1827,9 +2275,12 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
             const SizedBox(height: 16),
             Wrap(
               children: [
-                if (_licenseFileName != null) _buildDocPreviewCard("Driving License"),
-                if (_resumeFileName != null) _buildDocPreviewCard("Resume / CV"),
-                if (_certificateFileName != null) _buildDocPreviewCard("Exp. Certificate"),
+                if (_licenseFileName != null)
+                  _buildDocPreviewCard("Driving License"),
+                if (_resumeFileName != null)
+                  _buildDocPreviewCard("Resume / CV"),
+                if (_certificateFileName != null)
+                  _buildDocPreviewCard("Exp. Certificate"),
               ],
             ),
           ],
@@ -1844,7 +2295,11 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
             ),
             child: const Text(
               "Please review your details before submitting. You can go back to edit any information.",
-              style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],
@@ -1863,7 +2318,15 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
     );
   }
 
-  Widget _buildPreviewRow(String title1, String value1, String title2, String value2, String title3, String value3, bool isDesktop) {
+  Widget _buildPreviewRow(
+    String title1,
+    String value1,
+    String title2,
+    String value2,
+    String title3,
+    String value3,
+    bool isDesktop,
+  ) {
     if (isDesktop) {
       return Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1872,7 +2335,11 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
           const SizedBox(width: 24),
           Expanded(child: _buildPreviewItem(title2, value2)),
           const SizedBox(width: 24),
-          Expanded(child: title3.isNotEmpty ? _buildPreviewItem(title3, value3) : const SizedBox()),
+          Expanded(
+            child: title3.isNotEmpty
+                ? _buildPreviewItem(title3, value3)
+                : const SizedBox(),
+          ),
         ],
       );
     } else {
@@ -1898,7 +2365,10 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
       text: TextSpan(
         style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B)),
         children: [
-          TextSpan(text: "$title: ", style: const TextStyle(fontWeight: FontWeight.bold)),
+          TextSpan(
+            text: "$title: ",
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
           TextSpan(text: value.trim().isEmpty ? "N/A" : value),
         ],
       ),
@@ -1928,7 +2398,11 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
                   borderRadius: BorderRadius.circular(4),
                   border: Border.all(color: const Color(0xFFCBD5E1)),
                 ),
-                child: const Icon(Icons.insert_drive_file_outlined, color: Color(0xFF94A3B8), size: 24),
+                child: const Icon(
+                  Icons.insert_drive_file_outlined,
+                  color: Color(0xFF94A3B8),
+                  size: 24,
+                ),
               ),
               Positioned(
                 top: -8,
@@ -1938,7 +2412,11 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
                     color: Colors.white,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.check_circle, color: Color(0xFF10B981), size: 20),
+                  child: const Icon(
+                    Icons.check_circle,
+                    color: Color(0xFF10B981),
+                    size: 20,
+                  ),
                 ),
               ),
             ],

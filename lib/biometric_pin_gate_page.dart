@@ -61,7 +61,7 @@ class _BiometricPinGatePageState extends State<BiometricPinGatePage>
   int _pinAttempts = 0;
   static const int _maxPinAttempts = 5;
 
-  String _errorMessage = '';
+  String _errorMessage =    '';
 
   // ── Animation ───────────────────────────────────────────────────────────────
   late AnimationController _shakeController;
@@ -201,6 +201,7 @@ class _BiometricPinGatePageState extends State<BiometricPinGatePage>
       await _authService.login(
         identifier: identifier,
         password: pin,
+        isPin: true,
       );
 
       if (!mounted) return;
