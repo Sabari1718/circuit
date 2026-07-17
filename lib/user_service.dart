@@ -108,23 +108,10 @@ class UserService extends ChangeNotifier {
     required String pin,
     required String secretImage,
   }) async {
-    final users = await _getUsersMap();
-
-    final userData = {
-      'mobile': mobile,
-      'email': email,
-      'password': password,
-      'pin': pin,
-      'secretImage': secretImage,
-      'isRegistered': true,
-    };
-
-    if (mobile.isNotEmpty) users[mobile] = userData;
-    if (email.isNotEmpty) users[email] = userData;
-
-    await _saveUsersMap(users);
+    // As per request, user details are now only saved in the backend API database.
+    // Local storage saving (SharedPreferences) has been disabled for security and consistency.
     debugPrint(
-      "USER SAVED LOCALLY => Mobile: $mobile, Email: $email, SecretImage: $secretImage",
+      "USER SAVE BYPASSED LOCALLY (DB ONLY) => Mobile: $mobile, Email: $email",
     );
   }
 
