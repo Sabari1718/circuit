@@ -20,18 +20,18 @@ class _SecretImageVerificationPageState
   bool _isVerifying = false;
 
   final List<String> _images = [
-    'https://loremflickr.com/200/200/animal?lock=1',
-    'https://loremflickr.com/200/200/car?lock=1',
-    'https://loremflickr.com/200/200/bike?lock=1',
-    'https://loremflickr.com/200/200/bird?lock=1',
-    'https://loremflickr.com/200/200/dog?lock=1',
-    'https://loremflickr.com/200/200/cat?lock=1',
-    'https://loremflickr.com/200/200/flower?lock=1',
-    'https://loremflickr.com/200/200/tree?lock=1',
-    'https://loremflickr.com/200/200/house?lock=1',
-    'https://loremflickr.com/200/200/boat?lock=1',
-    'https://loremflickr.com/200/200/plane?lock=1',
-    'https://loremflickr.com/200/200/train?lock=1',
+    'https://picsum.photos/id/237/200', // dog
+    'https://picsum.photos/id/1025/200', // pug
+    'https://picsum.photos/id/1074/200', // lion
+    'https://picsum.photos/id/219/200', // tiger
+    'https://picsum.photos/id/200/200', // cow
+    'https://picsum.photos/id/1071/200', // car
+    'https://picsum.photos/id/1072/200', // car 2
+    'https://picsum.photos/id/146/200', // bike
+    'https://picsum.photos/id/1080/200', // strawberry
+    'https://picsum.photos/id/43/200', // coffee
+    'https://picsum.photos/id/1040/200', // castle
+    'https://picsum.photos/id/250/200', // camera
   ];
 
   Future<void> _verify() async {
