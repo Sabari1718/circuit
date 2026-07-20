@@ -90,7 +90,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       }
 
       if (userExists) {
-        debugPrint("EXISTING USER DETECTED LOCALLY => Redirecting to Password Page");
+        debugPrint("EXISTING USER DETECTED (API or Local) => Redirecting to Password Page");
         
         final userData = await userService.getUserByInput(input);
 

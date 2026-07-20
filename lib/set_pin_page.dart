@@ -8,6 +8,7 @@ import 'home_page.dart';
 import 'user_service.dart';
 import 'app_lock_service.dart';
 import 'auth_service.dart';
+import 'secret_image_setup_page.dart';
 
 class SetPinPage extends ConsumerStatefulWidget {
   final String password;
@@ -96,15 +97,7 @@ class _SetPinPageState extends ConsumerState<SetPinPage> {
       }
 
       try {
-        // Save user locally (bypassing secret image)
-        await userService.saveRegisteredUser(
-          mobile: mobile,
-          email: email,
-          password: widget.password,
-          pin: pin,
-          secretImage: 'bypassed',
-        );
-
+        // Only save session data. Registration data is stored securely in DB.
         // Set user session data with isLoggedIn: true
         await userService.saveUserData(
           phone: mobile,
@@ -122,7 +115,7 @@ class _SetPinPageState extends ConsumerState<SetPinPage> {
 
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => const HomePage()),
+        MaterialPageRoute(builder: (context) => SecretImageSetupPage(identifier: mobile.isNotEmpty ? mobile : email)),
         (route) => false,
       );
     } catch (e) {
@@ -291,7 +284,10 @@ class _SetPinPageState extends ConsumerState<SetPinPage> {
                                         obscureText: _obscurePin,
                                         keyboardType: TextInputType.number,
                                         maxLength: 6,
-                                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter
+                                              .digitsOnly,
+                                        ],
                                         decoration: _inputDecoration(
                                           'Enter 6-digit PIN',
                                           Icons.pin_outlined,
@@ -340,7 +336,10 @@ class _SetPinPageState extends ConsumerState<SetPinPage> {
                                         obscureText: _obscureConfirmPin,
                                         keyboardType: TextInputType.number,
                                         maxLength: 6,
-                                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter
+                                              .digitsOnly,
+                                        ],
                                         decoration: _inputDecoration(
                                           'Re-enter 6-digit PIN',
                                           Icons.lock_reset_rounded,

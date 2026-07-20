@@ -90,11 +90,9 @@ class _PasswordPageState extends ConsumerState<PasswordPage> {
 
           if (!mounted) return;
 
-          // Bypassing SecretImageVerificationPage
+          // Navigate to SecretImageVerificationPage for existing user
           final userData = response['data']?['data'];
-          final String userName = userData?['user_name'] ?? 'User';
-          final String email = userData?['email'] ?? '';
-
+          
           if (userData != null) {
             await ref.read(userServiceProvider).saveFromApiUser(userData);
           }
@@ -102,7 +100,7 @@ class _PasswordPageState extends ConsumerState<PasswordPage> {
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
-              builder: (context) => HomePage(userName: userName, email: email),
+              builder: (context) => SecretImageVerificationPage(identifier: identifier),
             ),
             (route) => false,
           );

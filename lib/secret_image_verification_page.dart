@@ -1,12 +1,11 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'user_service.dart';
 import 'providers.dart';
 import 'home_page.dart';
-import 'user_service.dart';
 
 class SecretImageVerificationPage extends ConsumerStatefulWidget {
-  final String identifier; // email or mobile
+  final String identifier;
 
   const SecretImageVerificationPage({super.key, required this.identifier});
 
@@ -20,10 +19,20 @@ class _SecretImageVerificationPageState
   String? _selectedImage;
   bool _isVerifying = false;
 
-  final List<String> _images = List.generate(
-    15,
-    (index) => 'https://robohash.org/secret_${index + 10}.png?size=200x200',
-  );
+  final List<String> _images = [
+    'https://loremflickr.com/200/200/animal?lock=1',
+    'https://loremflickr.com/200/200/car?lock=1',
+    'https://loremflickr.com/200/200/bike?lock=1',
+    'https://loremflickr.com/200/200/bird?lock=1',
+    'https://loremflickr.com/200/200/dog?lock=1',
+    'https://loremflickr.com/200/200/cat?lock=1',
+    'https://loremflickr.com/200/200/flower?lock=1',
+    'https://loremflickr.com/200/200/tree?lock=1',
+    'https://loremflickr.com/200/200/house?lock=1',
+    'https://loremflickr.com/200/200/boat?lock=1',
+    'https://loremflickr.com/200/200/plane?lock=1',
+    'https://loremflickr.com/200/200/train?lock=1',
+  ];
 
   Future<void> _verify() async {
     if (_selectedImage == null) {
@@ -37,212 +46,141 @@ class _SecretImageVerificationPageState
 
     try {
       final userService = ref.read(userServiceProvider);
-      final userData = await userService.getUserByInput(widget.identifier);
+      final savedImage = await userService.getUserSecretImage(widget.identifier);
 
-      if (userData == null) {
-        throw 'User data not found';
-      }
+      if (!mounted) return;
 
-      final String storedImage = userData['secretImage'] ?? '';
-
-      if (storedImage == _selectedImage) {
-        // Success!
-        await userService.saveUserData(
-          phone: userData['mobile'],
-          email: userData['email'],
-          isLoggedIn: true,
-        );
-
-        if (!mounted) return;
-
+      if (savedImage == _selectedImage) {
+        // Success
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(
-            builder: (context) => HomePage(
-              userName: userData['name'] ?? 'User',
-              email: userData['email'] ?? '',
-            ),
-          ),
+          MaterialPageRoute(builder: (context) => const HomePage()),
           (route) => false,
         );
       } else {
-        if (!mounted) return;
+        // Failed
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Incorrect secret image. Please try again.'),
+            content: Text('Incorrect secret image! Access denied.'),
             backgroundColor: Colors.redAccent,
           ),
         );
-        setState(() => _isVerifying = false);
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Verification failed: $e')));
-      setState(() => _isVerifying = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error verifying image: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isVerifying = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    const Color themeColor = Color(0xFF6366F1);
-
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      body: Stack(
-        children: [
-          Positioned(
-            top: -100,
-            right: -50,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                color: themeColor.withOpacity(0.12),
-                shape: BoxShape.circle,
+      appBar: AppBar(
+        title: const Text(
+          "Verify Identity",
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+              child: Text(
+                "Please select your secret image to proceed.",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16, color: Colors.black54),
               ),
             ),
-          ),
-          SafeArea(
-            child: Column(
-              children: [
-                const SizedBox(height: 40),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    children: [
-                      Text(
-                        'Identify Secret Image',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF1E293B),
-                        ),
-                      ),
-                      SizedBox(height: 12),
-                      Text(
-                        'To log in, please select the same secret image you chose during registration.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: Color(0xFF64748B),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
+            Expanded(
+              child: GridView.builder(
+                padding: const EdgeInsets.all(24),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
                 ),
-                const SizedBox(height: 32),
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    margin: const EdgeInsets.symmetric(horizontal: 24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(32),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
+                itemCount: _images.length,
+                itemBuilder: (context, index) {
+                  final imageUrl = _images[index];
+                  final isSelected = _selectedImage == imageUrl;
+
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _selectedImage = imageUrl;
+                      });
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isSelected
+                              ? const Color(0xFF6366F1)
+                              : Colors.transparent,
+                          width: 3,
                         ),
-                      ],
-                    ),
-                    child: GridView.builder(
-                      itemCount: _images.length,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            mainAxisSpacing: 12,
-                            crossAxisSpacing: 12,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
                           ),
-                      itemBuilder: (context, index) {
-                        final img = _images[index];
-                        final isSelected = _selectedImage == img;
-                        return GestureDetector(
-                          onTap: () => setState(() => _selectedImage = img),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: isSelected
-                                    ? themeColor
-                                    : Colors.transparent,
-                                width: 3,
-                              ),
-                              boxShadow: isSelected
-                                  ? [
-                                      BoxShadow(
-                                        color: themeColor.withOpacity(0.3),
-                                        blurRadius: 10,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ]
-                                  : null,
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(13),
-                              child: Image.network(
-                                img,
-                                fit: BoxFit.cover,
-                                loadingBuilder: (context, child, progress) {
-                                  if (progress == null) return child;
-                                  return Container(color: Colors.grey.shade100);
-                                },
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Container(
-                    width: double.infinity,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      gradient: const LinearGradient(
-                        colors: [themeColor, Color(0xFF4F46E5)],
+                        ],
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: themeColor.withOpacity(0.3),
-                          blurRadius: 15,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: ElevatedButton(
-                      onPressed: _isVerifying ? null : _verify,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(13),
+                        child: Image.network(
+                          imageUrl,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, progress) {
+                            if (progress == null) return child;
+                            return const Center(child: CircularProgressIndicator());
+                          },
                         ),
                       ),
-                      child: _isVerifying
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text(
-                              'Verify & Login',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
                     ),
-                  ),
-                ),
-              ],
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: _isVerifying ? null : _verify,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6366F1),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: _isVerifying
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          "Verify & Login",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

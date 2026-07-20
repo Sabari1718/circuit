@@ -167,7 +167,10 @@ class UserService extends ChangeNotifier {
   Future<void> saveFromApiUser(Map<String, dynamic> user) async {
     final prefs = await SharedPreferences.getInstance();
 
-    String? apiName = user['name']?.toString() ?? user['fullName']?.toString() ?? user['user_name']?.toString();
+    String? apiName =
+        user['name']?.toString() ??
+        user['fullName']?.toString() ??
+        user['user_name']?.toString();
     String name = (apiName != null && apiName.isNotEmpty)
         ? apiName
         : (prefs.getString(keyName) ?? 'User');
@@ -175,7 +178,10 @@ class UserService extends ChangeNotifier {
     String email =
         user['email']?.toString() ?? user['emailId']?.toString() ?? '';
     String phone =
-        user['phone']?.toString() ?? user['mobile']?.toString() ?? user['phone_number']?.toString() ?? '';
+        user['phone']?.toString() ??
+        user['mobile']?.toString() ??
+        user['phone_number']?.toString() ??
+        '';
 
     String? apiAddress = user['address']?.toString();
     String address = (apiAddress != null && apiAddress.isNotEmpty)
@@ -205,17 +211,20 @@ class UserService extends ChangeNotifier {
   Future<void> fetchAndUpdateProfileFromApi() async {
     final prefs = await SharedPreferences.getInstance();
     final String? userMainId = prefs.getString(keyUserMainId);
-    
+
     if (userMainId != null && userMainId.isNotEmpty) {
       try {
         final token = await AuthService().getToken();
-        final response = await http.get(
-          Uri.parse('https://user.jobes24x7.com/api/login/$userMainId'),
-          headers: {
-            if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
-            'Accept': 'application/json',
-          },
-        ).timeout(const Duration(seconds: 10));
+        final response = await http
+            .get(
+              Uri.parse('https://user.jobes24x7.com/api/login/$userMainId'),
+              headers: {
+                if (token != null && token.isNotEmpty)
+                  'Authorization': 'Bearer $token',
+                'Accept': 'application/json',
+              },
+            )
+            .timeout(const Duration(seconds: 10));
         if (response.statusCode == 200 || response.statusCode == 201) {
           final apiData = jsonDecode(response.body);
           if (apiData['data'] != null && apiData['data']['data'] != null) {
@@ -418,5 +427,23 @@ class UserService extends ChangeNotifier {
     await prefs.clear();
     _profilePhotoBytes = null;
     notifyListeners();
+  }
+
+  // ===========================================================================
+  // SECRET IMAGE CAPTCHA
+  // ===========================================================================
+  
+  Future<void> saveUserSecretImage({
+    required String identifier,
+    required String imageUrl,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('secret_img_$identifier', imageUrl);
+    debugPrint("Saved secret image for $identifier");
+  }
+
+  Future<String?> getUserSecretImage(String identifier) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('secret_img_$identifier');
   }
 }
