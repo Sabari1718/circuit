@@ -53,13 +53,9 @@ class _ReLoginSelectionPageState extends ConsumerState<ReLoginSelectionPage> {
     try {
       // 1. Check if account already exists
       bool exists = false;
-      if (isMobileInput(input)) {
-        final apiExists = await AuthService().checkUserExists(input);
-        if (apiExists != null) {
-          exists = apiExists;
-        } else {
-          exists = await userService.checkUserExists(input);
-        }
+      final apiExists = await AuthService().checkUserExists(input);
+      if (apiExists != null) {
+        exists = apiExists;
       } else {
         exists = await userService.checkUserExists(input);
       }
@@ -119,98 +115,147 @@ class _ReLoginSelectionPageState extends ConsumerState<ReLoginSelectionPage> {
 
   @override
   Widget build(BuildContext context) {
+    const Color themeColor = Color(0xFF00E5FF);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF1E293B), // Dark background matching design
-      body: Stack(
-        children: [
-          // Dynamic background elements
-          Positioned(
-            top: -100,
-            right: -50,
-            child: _buildBlob(const Color(0xFF6366F1).withOpacity(0.1), 300),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF0A0F24), Color(0xFF10193E), Color(0xFF0A0F24)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          Positioned(
-            bottom: -50,
-            left: -100,
-            child: _buildBlob(const Color(0xFF8B5CF6).withOpacity(0.1), 350),
-          ),
-          Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Container(
-                width: double.infinity,
-                constraints: const BoxConstraints(maxWidth: 400),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 40,
-                      offset: const Offset(0, 20),
-                    )
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
-                  child: Form(
-                    key: _formKey,
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              top: -100,
+              right: -50,
+              child: _buildBlob(themeColor.withOpacity(0.15), 300),
+            ),
+            Positioned(
+              bottom: -50,
+              left: -100,
+              child: _buildBlob(const Color(0xFF7000FF).withOpacity(0.15), 350),
+            ),
+            SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 400),
                     child: Column(
-                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text(
-                          'Sign In',
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF1E293B),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Choose your login method to continue',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade600,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 48),
-                        
-                        // Login Method Dropdown
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Login Method',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF1E293B),
+                        const SizedBox(height: 30),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(32),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(32),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.1),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 40,
+                                      horizontal: 32,
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(16),
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            gradient: const LinearGradient(
+                                              colors: [
+                                                Color(0xFF00E5FF),
+                                                Color(0xFF7000FF),
+                                              ],
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: themeColor.withOpacity(0.4),
+                                                blurRadius: 20,
+                                                offset: const Offset(0, 10),
+                                              ),
+                                            ],
+                                          ),
+                                          child: const Icon(
+                                            Icons.login_rounded,
+                                            color: Colors.white,
+                                            size: 36,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 24),
+                                        const Text(
+                                          'Sign In',
+                                          style: TextStyle(
+                                            fontSize: 26,
+                                            fontWeight: FontWeight.w800,
+                                            color: Colors.white,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'Choose your login method to continue',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.white.withOpacity(0.6),
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 32, right: 32, bottom: 40),
+                                    child: Form(
+                                      key: _formKey,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'LOGIN METHOD',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white.withOpacity(0.5),
+                                              letterSpacing: 1.2,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          _buildDropdown(),
+                                          const SizedBox(height: 24),
+                                          _buildInputField(),
+                                          const SizedBox(height: 40),
+                                          _buildButton(),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(height: 12),
-                            _buildDropdown(),
-                          ],
+                          ),
                         ),
-                        const SizedBox(height: 24),
-                        
-                        // Input Field
-                        _buildInputField(),
-                        
-                        const SizedBox(height: 40),
-                        
-                        // Continue Button
-                        _buildButton(),
                       ],
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -218,25 +263,26 @@ class _ReLoginSelectionPageState extends ConsumerState<ReLoginSelectionPage> {
   Widget _buildDropdown() {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: Colors.black.withOpacity(0.2),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: _selectedMethod,
           isExpanded: true,
-          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B)),
+          dropdownColor: const Color(0xFF10193E),
+          icon: Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white.withOpacity(0.7)),
           items: _methods.map((String value) {
             return DropdownMenuItem<String>(
               value: value,
               child: Text(
                 value,
                 style: const TextStyle(
-                  fontSize: 15,
+                  fontSize: 16,
                   fontWeight: FontWeight.w500,
-                  color: Color(0xFF1E293B),
+                  color: Colors.white,
                 ),
               ),
             );
@@ -259,49 +305,70 @@ class _ReLoginSelectionPageState extends ConsumerState<ReLoginSelectionPage> {
     TextInputType keyboard = TextInputType.text;
     List<TextInputFormatter>? formatters;
     TextCapitalization textCap = TextCapitalization.none;
+    IconData prefixIcon = Icons.person_outline_rounded;
     
     if (_selectedMethod == 'Phone Number') {
       keyboard = TextInputType.phone;
       formatters = [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)];
-    }
-    if (_selectedMethod == 'Email Address') {
+      prefixIcon = Icons.phone_android_rounded;
+    } else if (_selectedMethod == 'Email Address') {
       keyboard = TextInputType.emailAddress;
-    }
-    if (_selectedMethod == 'PAN Number') {
+      prefixIcon = Icons.email_outlined;
+    } else if (_selectedMethod == 'PAN Number') {
       textCap = TextCapitalization.characters;
       formatters = [
         TextInputFormatter.withFunction((oldValue, newValue) => 
             TextEditingValue(text: newValue.text.toUpperCase(), selection: newValue.selection)),
         LengthLimitingTextInputFormatter(10)
       ];
+      prefixIcon = Icons.credit_card_rounded;
+    } else if (_selectedMethod == 'User ID (10 Digits)' || _selectedMethod == 'Employee ID') {
+      prefixIcon = Icons.badge_outlined;
     }
 
-    return TextFormField(
-      controller: _inputController,
-      keyboardType: keyboard,
-      inputFormatters: formatters,
-      textCapitalization: textCap,
-      style: const TextStyle(fontWeight: FontWeight.w600),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-        filled: true,
-        fillColor: const Color(0xFFF8FAFC),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          _selectedMethod.toUpperCase(),
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Colors.white.withOpacity(0.5),
+            letterSpacing: 1.2,
+          ),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: _inputController,
+          keyboardType: keyboard,
+          inputFormatters: formatters,
+          textCapitalization: textCap,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 15),
+            prefixIcon: Icon(prefixIcon, size: 22, color: Colors.white.withOpacity(0.7)),
+            filled: true,
+            fillColor: Colors.black.withOpacity(0.2),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Color(0xFF00E5FF), width: 2),
+            ),
+            errorStyle: const TextStyle(color: Color(0xFFFF4B4B)),
+          ),
+          validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
-        ),
-      ),
-      validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+      ],
     );
   }
 
@@ -312,12 +379,12 @@ class _ReLoginSelectionPageState extends ConsumerState<ReLoginSelectionPage> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         gradient: const LinearGradient(
-          colors: [Color(0xFF6366F1), Color(0xFF4F46E5)],
+          colors: [Color(0xFF00E5FF), Color(0xFF7000FF)],
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6366F1).withOpacity(0.3),
-            blurRadius: 15,
+            color: const Color(0xFF00E5FF).withOpacity(0.3),
+            blurRadius: 20,
             offset: const Offset(0, 8),
           )
         ],
@@ -327,13 +394,15 @@ class _ReLoginSelectionPageState extends ConsumerState<ReLoginSelectionPage> {
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
+          disabledBackgroundColor: Colors.transparent,
+          disabledForegroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
         child: _isLoading
-            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
             : const Text(
                 'Continue',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 0.5),
               ),
       ),
     );
@@ -343,7 +412,17 @@ class _ReLoginSelectionPageState extends ConsumerState<ReLoginSelectionPage> {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      decoration: BoxDecoration(
+        color: color, 
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: color,
+            blurRadius: 100,
+            spreadRadius: 20,
+          )
+        ]
+      ),
     );
   }
 }

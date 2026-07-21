@@ -278,9 +278,11 @@ class AuthService {
   // Check User Exists (Phone Only)
   // ──────────────────────────────────────────────
 
-  Future<bool?> checkUserExists(String phoneNumber) async {
+  Future<bool?> checkUserExists(String identifier) async {
+    final bool isEmail = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w+$').hasMatch(identifier);
+    final String endpoint = isEmail ? 'check-email' : 'check-phone';
     final String url =
-        'https://user.jobes24x7.com/api/login/check-phone/$phoneNumber';
+        'https://user.jobes24x7.com/api/login/$endpoint/$identifier';
     debugPrint('[AuthService] CHECK USER → $url');
     try {
       final response = await http

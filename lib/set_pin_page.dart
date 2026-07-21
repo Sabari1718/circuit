@@ -151,256 +151,240 @@ class _SetPinPageState extends ConsumerState<SetPinPage> {
 
   @override
   Widget build(BuildContext context) {
-    const Color themeColor = Color(0xFF6366F1);
+    const Color themeColor = Color(0xFF00E5FF);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: Stack(
-        children: [
-          Positioned(
-            top: -100,
-            right: -50,
-            child: _buildBlob(themeColor.withOpacity(0.12), 300),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF0A0F24), Color(0xFF10193E), Color(0xFF0A0F24)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          Positioned(
-            bottom: -50,
-            left: -100,
-            child: _buildBlob(const Color(0xFFEC4899).withOpacity(0.08), 350),
-          ),
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-              child: Column(
-                children: [
-                  const SizedBox(height: 30),
-                  Container(
-                    width: double.infinity,
-                    constraints: const BoxConstraints(maxWidth: 420),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(32),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.85),
-                            borderRadius: BorderRadius.circular(32),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.5),
-                              width: 1.5,
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              top: -100,
+              right: -50,
+              child: _buildBlob(themeColor.withOpacity(0.15), 300),
+            ),
+            Positioned(
+              bottom: -50,
+              left: -100,
+              child: _buildBlob(const Color(0xFF7000FF).withOpacity(0.15), 350),
+            ),
+            SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 400),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 30),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(32),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(32),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.1),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 40,
+                                      horizontal: 32,
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(16),
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            gradient: const LinearGradient(
+                                              colors: [
+                                                Color(0xFF00E5FF),
+                                                Color(0xFF7000FF),
+                                              ],
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: themeColor.withOpacity(0.4),
+                                                blurRadius: 20,
+                                                offset: const Offset(0, 10),
+                                              ),
+                                            ],
+                                          ),
+                                          child: const Icon(
+                                            Icons.pin_outlined,
+                                            color: Colors.white,
+                                            size: 36,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 24),
+                                        const Text(
+                                          'Set App Lock PIN',
+                                          style: TextStyle(
+                                            fontSize: 26,
+                                            fontWeight: FontWeight.w800,
+                                            color: Colors.white,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'Create your own 6-digit PIN for app unlock',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.white.withOpacity(0.6),
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 32, right: 32, bottom: 40),
+                                    child: Form(
+                                      key: _formKey,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'NEW PIN',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white.withOpacity(0.5),
+                                              letterSpacing: 1.2,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          TextFormField(
+                                            controller: pinController,
+                                            obscureText: _obscurePin,
+                                            keyboardType: TextInputType.number,
+                                            maxLength: 6,
+                                            inputFormatters: [
+                                              FilteringTextInputFormatter.digitsOnly,
+                                            ],
+                                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
+                                            decoration: _inputDecoration(
+                                              'Enter 6-digit PIN',
+                                              Icons.pin_outlined,
+                                              themeColor,
+                                              suffix: IconButton(
+                                                icon: Icon(
+                                                  _obscurePin
+                                                      ? Icons.visibility_outlined
+                                                      : Icons.visibility_off_outlined,
+                                                  size: 20,
+                                                  color: Colors.white.withOpacity(0.5),
+                                                ),
+                                                onPressed: () => setState(
+                                                  () => _obscurePin = !_obscurePin,
+                                                ),
+                                              ),
+                                            ),
+                                            validator: (val) {
+                                              final pin = val?.trim() ?? '';
+                                              if (pin.length != 6) {
+                                                return 'PIN must be exactly 6 digits';
+                                              }
+                                              if (!RegExp(r'^\d{6}$').hasMatch(pin)) {
+                                                return 'Only 6 digits allowed';
+                                              }
+                                              return null;
+                                            },
+                                          ),
+                                          const SizedBox(height: 20),
+                                          Text(
+                                            'CONFIRM PIN',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white.withOpacity(0.5),
+                                              letterSpacing: 1.2,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          TextFormField(
+                                            controller: confirmPinController,
+                                            obscureText: _obscureConfirmPin,
+                                            keyboardType: TextInputType.number,
+                                            maxLength: 6,
+                                            inputFormatters: [
+                                              FilteringTextInputFormatter.digitsOnly,
+                                            ],
+                                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
+                                            decoration: _inputDecoration(
+                                              'Re-enter 6-digit PIN',
+                                              Icons.lock_reset_rounded,
+                                              themeColor,
+                                              suffix: IconButton(
+                                                icon: Icon(
+                                                  _obscureConfirmPin
+                                                      ? Icons.visibility_outlined
+                                                      : Icons.visibility_off_outlined,
+                                                  size: 20,
+                                                  color: Colors.white.withOpacity(0.5),
+                                                ),
+                                                onPressed: () => setState(
+                                                  () => _obscureConfirmPin = !_obscureConfirmPin,
+                                                ),
+                                              ),
+                                            ),
+                                            validator: (val) {
+                                              final confirmPin = val?.trim() ?? '';
+                                              final originalPin = pinController.text.trim();
+                                              if (confirmPin.length != 6) {
+                                                return 'Confirm PIN must be 6 digits';
+                                              }
+                                              if (confirmPin != originalPin) {
+                                                return 'PINs do not match';
+                                              }
+                                              return null;
+                                            },
+                                          ),
+                                          const SizedBox(height: 32),
+                                          _buildGradientButton(
+                                            text: _isSaving
+                                                ? 'Saving...'
+                                                : 'Save PIN & Continue',
+                                            colors: const [
+                                              Color(0xFF00E5FF),
+                                              Color(0xFF7000FF),
+                                            ],
+                                            onPressed: _isSaving ? null : _submit,
+                                            isLoading: _isSaving,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 30,
-                                offset: const Offset(0, 15),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 40,
-                                ),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      themeColor.withOpacity(0.05),
-                                      themeColor.withOpacity(0.01),
-                                    ],
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                  ),
-                                ),
-                                child: Column(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(20),
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        gradient: const LinearGradient(
-                                          colors: [
-                                            themeColor,
-                                            Color(0xFF4F46E5),
-                                          ],
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: themeColor.withOpacity(0.3),
-                                            blurRadius: 20,
-                                            offset: const Offset(0, 10),
-                                          ),
-                                        ],
-                                      ),
-                                      child: const Icon(
-                                        Icons.pin_outlined,
-                                        color: Colors.white,
-                                        size: 36,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 24),
-                                    const Text(
-                                      'Set App Lock PIN',
-                                      style: TextStyle(
-                                        fontSize: 26,
-                                        fontWeight: FontWeight.w900,
-                                        color: Color(0xFF1E293B),
-                                        letterSpacing: -0.5,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    const Text(
-                                      'Create your own 6-digit PIN for app unlock',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        color: Color(0xFF64748B),
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(32),
-                                child: Form(
-                                  key: _formKey,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'New PIN',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFF1E293B),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      TextFormField(
-                                        controller: pinController,
-                                        obscureText: _obscurePin,
-                                        keyboardType: TextInputType.number,
-                                        maxLength: 6,
-                                        inputFormatters: [
-                                          FilteringTextInputFormatter
-                                              .digitsOnly,
-                                        ],
-                                        decoration: _inputDecoration(
-                                          'Enter 6-digit PIN',
-                                          Icons.pin_outlined,
-                                          themeColor,
-                                          suffix: IconButton(
-                                            icon: Icon(
-                                              _obscurePin
-                                                  ? Icons.visibility_outlined
-                                                  : Icons
-                                                        .visibility_off_outlined,
-                                              size: 20,
-                                            ),
-                                            onPressed: () => setState(
-                                              () => _obscurePin = !_obscurePin,
-                                            ),
-                                          ),
-                                        ),
-                                        validator: (val) {
-                                          final pin = val?.trim() ?? '';
-
-                                          if (pin.length != 6) {
-                                            return 'PIN must be exactly 6 digits';
-                                          }
-
-                                          if (!RegExp(
-                                            r'^\d{6}$',
-                                          ).hasMatch(pin)) {
-                                            return 'Only 6 digits allowed';
-                                          }
-
-                                          return null;
-                                        },
-                                      ),
-                                      const SizedBox(height: 20),
-                                      const Text(
-                                        'Confirm PIN',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFF1E293B),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      TextFormField(
-                                        controller: confirmPinController,
-                                        obscureText: _obscureConfirmPin,
-                                        keyboardType: TextInputType.number,
-                                        maxLength: 6,
-                                        inputFormatters: [
-                                          FilteringTextInputFormatter
-                                              .digitsOnly,
-                                        ],
-                                        decoration: _inputDecoration(
-                                          'Re-enter 6-digit PIN',
-                                          Icons.lock_reset_rounded,
-                                          themeColor,
-                                          suffix: IconButton(
-                                            icon: Icon(
-                                              _obscureConfirmPin
-                                                  ? Icons.visibility_outlined
-                                                  : Icons
-                                                        .visibility_off_outlined,
-                                              size: 20,
-                                            ),
-                                            onPressed: () => setState(
-                                              () => _obscureConfirmPin =
-                                                  !_obscureConfirmPin,
-                                            ),
-                                          ),
-                                        ),
-                                        validator: (val) {
-                                          final confirmPin = val?.trim() ?? '';
-                                          final originalPin = pinController.text
-                                              .trim();
-
-                                          if (confirmPin.length != 6) {
-                                            return 'Confirm PIN must be 6 digits';
-                                          }
-
-                                          if (confirmPin != originalPin) {
-                                            return 'PINs do not match';
-                                          }
-
-                                          return null;
-                                        },
-                                      ),
-                                      const SizedBox(height: 32),
-                                      _buildGradientButton(
-                                        text: _isSaving
-                                            ? 'Saving...'
-                                            : 'Save PIN & Continue',
-                                        colors: const [
-                                          themeColor,
-                                          Color(0xFF4F46E5),
-                                        ],
-                                        onPressed: _isSaving ? null : _submit,
-                                        isLoading: _isSaving,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
                           ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -413,24 +397,26 @@ class _SetPinPageState extends ConsumerState<SetPinPage> {
   }) {
     return InputDecoration(
       hintText: hint,
+      hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 15),
       counterText: '',
-      prefixIcon: Icon(icon, size: 20),
+      prefixIcon: Icon(icon, size: 22, color: Colors.white.withOpacity(0.7)),
       suffixIcon: suffix,
       filled: true,
-      fillColor: const Color(0xFFF1F5F9),
+      fillColor: Colors.black.withOpacity(0.2),
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(20),
-        borderSide: BorderSide.none,
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(20),
-        borderSide: BorderSide.none,
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(20),
-        borderSide: BorderSide(color: color, width: 1.5),
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: color, width: 2),
       ),
+      errorStyle: const TextStyle(color: Color(0xFFFF4B4B)),
     );
   }
 
@@ -438,7 +424,17 @@ class _SetPinPageState extends ConsumerState<SetPinPage> {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: color,
+            blurRadius: 100,
+            spreadRadius: 20,
+          )
+        ]
+      ),
     );
   }
 
@@ -452,12 +448,12 @@ class _SetPinPageState extends ConsumerState<SetPinPage> {
       width: double.infinity,
       height: 60,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         gradient: LinearGradient(colors: colors),
         boxShadow: [
           BoxShadow(
             color: colors[0].withOpacity(0.3),
-            blurRadius: 15,
+            blurRadius: 20,
             offset: const Offset(0, 8),
           ),
         ],
@@ -470,15 +466,15 @@ class _SetPinPageState extends ConsumerState<SetPinPage> {
           disabledBackgroundColor: Colors.transparent,
           disabledForegroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
           ),
         ),
         child: isLoading
             ? const SizedBox(
-                width: 22,
-                height: 22,
+                width: 24,
+                height: 24,
                 child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
+                  strokeWidth: 3,
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               )
@@ -486,7 +482,7 @@ class _SetPinPageState extends ConsumerState<SetPinPage> {
                 text,
                 style: const TextStyle(
                   fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w700,
                   color: Colors.white,
                   letterSpacing: 0.5,
                 ),

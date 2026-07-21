@@ -103,229 +103,217 @@ class _EmailPageState extends State<EmailPage> {
 
   @override
   Widget build(BuildContext context) {
-    const Color themeColor = Color(0xFFF59E0B);
+    const Color themeColor = Color(0xFF00E5FF);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: Stack(
-        children: [
-          Positioned(
-            top: -100,
-            right: -50,
-            child: _buildBlob(themeColor.withOpacity(0.12), 300),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF0A0F24), Color(0xFF10193E), Color(0xFF0A0F24)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          Positioned(
-            bottom: -50,
-            left: -100,
-            child: _buildBlob(
-              const Color(0xFF6366F1).withOpacity(0.08),
-              350,
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              top: -100,
+              right: -50,
+              child: _buildBlob(themeColor.withOpacity(0.15), 300),
             ),
-          ),
-          SafeArea(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _progressDot(true, color: const Color(0xFF6366F1)),
-                      _progressLine(true, const Color(0xFF6366F1)),
-                      _progressDot(true, color: const Color(0xFF6366F1)),
-                      _progressLine(true, themeColor),
-                      _progressDot(true, color: themeColor),
-                      _progressLine(false, themeColor),
-                      _progressDot(false),
-                    ],
-                  ),
-                  const SizedBox(height: 40),
-                  Container(
-                    width: double.infinity,
-                    constraints: const BoxConstraints(maxWidth: 420),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(32),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.85),
-                            borderRadius: BorderRadius.circular(32),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.5),
-                              width: 1.5,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 30,
-                                offset: const Offset(0, 15),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.symmetric(vertical: 40),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      themeColor.withOpacity(0.05),
-                                      themeColor.withOpacity(0.01),
-                                    ],
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                  ),
-                                ),
-                                child: Column(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(20),
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        gradient: const LinearGradient(
-                                          colors: [themeColor, Color(0xFFD97706)],
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: themeColor.withOpacity(0.3),
-                                            blurRadius: 20,
-                                            offset: const Offset(0, 10),
-                                          ),
-                                        ],
-                                      ),
-                                      child: const Icon(
-                                        Icons.alternate_email_rounded,
-                                        color: Colors.white,
-                                        size: 36,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 24),
-                                    const Text(
-                                      'Enter Email',
-                                      style: TextStyle(
-                                        fontSize: 26,
-                                        fontWeight: FontWeight.w900,
-                                        color: Color(0xFF1E293B),
-                                        letterSpacing: -0.5,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    const Text(
-                                      'Enter your email to receive verification code',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        color: Color(0xFF64748B),
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
+            Positioned(
+              bottom: -50,
+              left: -100,
+              child: _buildBlob(
+                const Color(0xFF7000FF).withOpacity(0.15),
+                350,
+              ),
+            ),
+            SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 400),
+                    child: Column(
+                      children: [
+                        _buildProgressIndicator(themeColor),
+                        const SizedBox(height: 40),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(32),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                            child: Container(
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(32),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.1),
+                                  width: 1.5,
                                 ),
                               ),
-                              Padding(
-                                padding: const EdgeInsets.all(32),
-                                child: Form(
-                                  key: _formKey,
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'Email Address',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFF1E293B),
-                                          letterSpacing: 0.5,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      TextFormField(
-                                        controller: emailController,
-                                        keyboardType: TextInputType.emailAddress,
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                        decoration: InputDecoration(
-                                          hintText: 'example@gmail.com',
-                                          prefixIcon: const Icon(
-                                            Icons.email_outlined,
-                                            size: 20,
-                                          ),
-                                          filled: true,
-                                          fillColor: const Color(0xFFF1F5F9),
-                                          contentPadding: const EdgeInsets.symmetric(
-                                            horizontal: 20,
-                                            vertical: 20,
-                                          ),
-                                          border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(20),
-                                            borderSide: BorderSide.none,
-                                          ),
-                                          enabledBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(20),
-                                            borderSide: BorderSide.none,
-                                          ),
-                                          focusedBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(20),
-                                            borderSide: const BorderSide(
-                                              color: themeColor,
-                                              width: 1.5,
+                              child: Column(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 32),
+                                    child: Column(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(16),
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            gradient: const LinearGradient(
+                                              colors: [Color(0xFF00E5FF), Color(0xFF7000FF)],
                                             ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: themeColor.withOpacity(0.4),
+                                                blurRadius: 20,
+                                                offset: const Offset(0, 10),
+                                              ),
+                                            ],
+                                          ),
+                                          child: const Icon(
+                                            Icons.alternate_email_rounded,
+                                            color: Colors.white,
+                                            size: 36,
                                           ),
                                         ),
-                                        validator: (value) {
-                                          if (value == null || value.trim().isEmpty) {
-                                            return 'Email required';
-                                          }
-                                          if (!RegExp(
-                                            r'^[\w\.-]+@[\w\.-]+\.\w+$',
-                                          ).hasMatch(value.trim())) {
-                                            return 'Invalid email format';
-                                          }
-                                          return null;
-                                        },
-                                      ),
-                                      const SizedBox(height: 40),
-                                      _buildGradientButton(
-                                        text: _isSending
-                                            ? 'Sending...'
-                                            : 'Send Verification Code',
-                                        colors: const [
-                                          themeColor,
-                                          Color(0xFFD97706),
-                                        ],
-                                        onPressed: _isSending ? null : _continueAction,
-                                      ),
-                                      const SizedBox(height: 24),
-                                      const Center(
-                                        child: Text(
-                                          'We value your privacy',
+                                        const SizedBox(height: 24),
+                                        const Text(
+                                          'Enter Email',
                                           style: TextStyle(
-                                            fontSize: 12,
-                                            color: Color(0xFF64748B),
+                                            fontSize: 26,
+                                            fontWeight: FontWeight.w800,
+                                            color: Colors.white,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'Enter your email to receive verification code',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.white.withOpacity(0.6),
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 32, right: 32, bottom: 40),
+                                    child: Form(
+                                      key: _formKey,
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'EMAIL ADDRESS',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white.withOpacity(0.5),
+                                              letterSpacing: 1.2,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          TextFormField(
+                                            controller: emailController,
+                                            keyboardType: TextInputType.emailAddress,
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.white,
+                                            ),
+                                            decoration: InputDecoration(
+                                              hintText: 'example@gmail.com',
+                                              hintStyle: TextStyle(
+                                                color: Colors.white.withOpacity(0.3),
+                                                fontSize: 15,
+                                              ),
+                                              prefixIcon: Icon(
+                                                Icons.email_outlined,
+                                                size: 22,
+                                                color: Colors.white.withOpacity(0.7),
+                                              ),
+                                              filled: true,
+                                              fillColor: Colors.black.withOpacity(0.2),
+                                              contentPadding: const EdgeInsets.symmetric(
+                                                horizontal: 20,
+                                                vertical: 20,
+                                              ),
+                                              border: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(16),
+                                                borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+                                              ),
+                                              enabledBorder: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(16),
+                                                borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+                                              ),
+                                              focusedBorder: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(16),
+                                                borderSide: const BorderSide(
+                                                  color: themeColor,
+                                                  width: 2,
+                                                ),
+                                              ),
+                                              errorStyle: const TextStyle(color: Color(0xFFFF4B4B)),
+                                            ),
+                                            validator: (value) {
+                                              if (value == null || value.trim().isEmpty) {
+                                                return 'Email required';
+                                              }
+                                              if (!RegExp(
+                                                r'^[\w\.-]+@[\w\.-]+\.\w+$',
+                                              ).hasMatch(value.trim())) {
+                                                return 'Invalid email format';
+                                              }
+                                              return null;
+                                            },
+                                          ),
+                                          const SizedBox(height: 32),
+                                          _buildGradientButton(
+                                            text: _isSending
+                                                ? 'Sending...'
+                                                : 'Send Verification Code',
+                                            colors: const [
+                                              Color(0xFF00E5FF),
+                                              Color(0xFF7000FF),
+                                            ],
+                                            onPressed: _isSending ? null : _continueAction,
+                                          ),
+                                          const SizedBox(height: 24),
+                                          Center(
+                                            child: Text(
+                                              'We value your privacy',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.white.withOpacity(0.4),
+                                                letterSpacing: 0.3,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -337,6 +325,13 @@ class _EmailPageState extends State<EmailPage> {
       decoration: BoxDecoration(
         color: color,
         shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: color,
+            blurRadius: 100,
+            spreadRadius: 20,
+          )
+        ]
       ),
     );
   }
@@ -350,12 +345,12 @@ class _EmailPageState extends State<EmailPage> {
       width: double.infinity,
       height: 60,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         gradient: LinearGradient(colors: colors),
         boxShadow: [
           BoxShadow(
             color: colors[0].withOpacity(0.3),
-            blurRadius: 15,
+            blurRadius: 20,
             offset: const Offset(0, 8),
           ),
         ],
@@ -366,15 +361,15 @@ class _EmailPageState extends State<EmailPage> {
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
           ),
         ),
         child: _isSending
             ? const SizedBox(
-          width: 22,
-          height: 22,
+          width: 24,
+          height: 24,
           child: CircularProgressIndicator(
-            strokeWidth: 2.5,
+            strokeWidth: 3,
             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
           ),
         )
@@ -382,7 +377,7 @@ class _EmailPageState extends State<EmailPage> {
           text,
           style: const TextStyle(
             fontSize: 18,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w700,
             color: Colors.white,
             letterSpacing: 0.5,
           ),
@@ -391,25 +386,44 @@ class _EmailPageState extends State<EmailPage> {
     );
   }
 
-  Widget _progressDot(
-      bool active, {
-        Color color = const Color(0xFF6366F1),
-      }) {
-    return Container(
-      width: 10,
-      height: 10,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: active ? color : Colors.black12,
-      ),
-    );
-  }
-
-  Widget _progressLine(bool active, Color color) {
-    return Container(
-      width: 30,
-      height: 2,
-      color: active ? color.withOpacity(0.3) : Colors.black12,
+  Widget _buildProgressIndicator(Color color) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 8,
+          height: 4,
+          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
+        ),
+        const SizedBox(width: 6),
+        Container(
+          width: 8,
+          height: 4,
+          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
+        ),
+        const SizedBox(width: 6),
+        Container(
+          width: 28,
+          height: 4,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+            boxShadow: [BoxShadow(color: color.withOpacity(0.5), blurRadius: 8)],
+          ),
+        ),
+        const SizedBox(width: 6),
+        Container(
+          width: 8,
+          height: 4,
+          decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
+        ),
+        const SizedBox(width: 6),
+        Container(
+          width: 8,
+          height: 4,
+          decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
+        ),
+      ],
     );
   }
 }

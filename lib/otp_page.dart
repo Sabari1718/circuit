@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'profile_details_page.dart';
@@ -425,140 +426,155 @@ class _OtpPageState extends State<OtpPage> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: Stack(
-        children: [
-          Positioned(
-            top: -50,
-            left: -50,
-            child: _buildBlob(modeColor.withOpacity(0.08), 200),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF0A0F24), Color(0xFF10193E), Color(0xFF0A0F24)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          Positioned(
-            bottom: -50,
-            right: -50,
-            child: _buildBlob(
-              const Color(0xFFA855F7).withOpacity(0.05),
-              250,
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              top: -50,
+              left: -50,
+              child: _buildBlob(modeColor.withOpacity(0.15), 200),
             ),
-          ),
-          SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 16,
-                ),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 420),
-                  child: Column(
-                    children: [
-                      _buildProgressIndicator(modeColor),
-                      const SizedBox(height: 32),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(16),
+            Positioned(
+              bottom: -50,
+              right: -50,
+              child: _buildBlob(
+                const Color(0xFF00E5FF).withOpacity(0.1),
+                250,
+              ),
+            ),
+            SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 20,
+                  ),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 400),
+                    child: Column(
+                      children: [
+                        _buildProgressIndicator(const Color(0xFF00E5FF)),
+                        const SizedBox(height: 40),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(32),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(32),
                               decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: modeColor.withOpacity(0.1),
-                              ),
-                              child: Icon(
-                                modeIcon,
-                                color: modeColor,
-                                size: 32,
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            Text(
-                              modeTitle,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFF1E293B),
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              modeSubtitle,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF64748B),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            Wrap(
-                              alignment: WrapAlignment.center,
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                _buildChip(
-                                  Icons.refresh,
-                                  "$modeName Attempt $_attempts/3",
-                                  modeColor,
-                                ),
-                                _buildChip(
-                                  Icons.timer_outlined,
-                                  "${_secondsRemaining}s",
-                                  _secondsRemaining < 10
-                                      ? Colors.red
-                                      : modeColor,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 32),
-                            _buildOtpInputRow(modeColor),
-                            const SizedBox(height: 32),
-                            _buildGradientButton(
-                              text: _isVerifying ? 'Verifying...' : 'Verify Code',
-                              color: modeColor,
-                              onPressed: _isVerifying ? null : _verifyOtp,
-                              isLoading: _isVerifying,
-                            ),
-                            const SizedBox(height: 16),
-                            TextButton(
-                              onPressed: (_secondsRemaining == 0 && !_isResending)
-                                  ? () => _resendOtp()
-                                  : null,
-                              child: Text(
-                                _isResending ? "Resending..." : "Resend Code",
-                                style: TextStyle(
-                                  color: (_secondsRemaining == 0 && !_isResending)
-                                      ? modeColor
-                                      : Colors.grey,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 14,
+                                color: Colors.white.withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(32),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.1),
+                                  width: 1.5,
                                 ),
                               ),
+                              child: Column(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: modeColor.withOpacity(0.15),
+                                      border: Border.all(
+                                        color: modeColor.withOpacity(0.3),
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    child: Icon(
+                                      modeIcon,
+                                      color: modeColor,
+                                      size: 32,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Text(
+                                    modeTitle,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      fontSize: 26,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    modeSubtitle,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.white.withOpacity(0.6),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Wrap(
+                                    alignment: WrapAlignment.center,
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: [
+                                      _buildChip(
+                                        Icons.refresh,
+                                        "$modeName Attempt $_attempts/3",
+                                        modeColor,
+                                      ),
+                                      _buildChip(
+                                        Icons.timer_outlined,
+                                        "${_secondsRemaining}s",
+                                        _secondsRemaining < 10
+                                            ? const Color(0xFFFF4B4B)
+                                            : modeColor,
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 32),
+                                  _buildOtpInputRow(modeColor),
+                                  const SizedBox(height: 32),
+                                  _buildGradientButton(
+                                    text: _isVerifying ? 'Verifying...' : 'Verify Code',
+                                    color: modeColor,
+                                    onPressed: _isVerifying ? null : _verifyOtp,
+                                    isLoading: _isVerifying,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  TextButton(
+                                    onPressed: (_secondsRemaining == 0 && !_isResending)
+                                        ? () => _resendOtp()
+                                        : null,
+                                    child: Text(
+                                      _isResending ? "Resending..." : "Resend Code",
+                                      style: TextStyle(
+                                        color: (_secondsRemaining == 0 && !_isResending)
+                                            ? modeColor
+                                            : Colors.white.withOpacity(0.3),
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -594,21 +610,21 @@ class _OtpPageState extends State<OtpPage> {
           textAlign: TextAlign.center,
           keyboardType: TextInputType.number,
           maxLength: 1,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
-            color: color,
+            color: Colors.white,
           ),
           decoration: InputDecoration(
             counterText: "",
             filled: true,
-            fillColor: const Color(0xFFF1F5F9),
+            fillColor: Colors.black.withOpacity(0.2),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.transparent),
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide(color: color, width: 2),
             ),
           ),
@@ -634,6 +650,13 @@ class _OtpPageState extends State<OtpPage> {
       decoration: BoxDecoration(
         color: color,
         shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: color,
+            blurRadius: 100,
+            spreadRadius: 20,
+          )
+        ]
       ),
     );
   }
@@ -642,54 +665,50 @@ class _OtpPageState extends State<OtpPage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _dot(true, color),
-        _line(true, color),
-        _dot(true, color),
-        _line(false, color),
-        _dot(false, color),
+        Container(
+          width: 8,
+          height: 4,
+          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
+        ),
+        const SizedBox(width: 6),
+        Container(
+          width: 28,
+          height: 4,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+            boxShadow: [BoxShadow(color: color.withOpacity(0.5), blurRadius: 8)],
+          ),
+        ),
+        const SizedBox(width: 6),
+        Container(
+          width: 8,
+          height: 4,
+          decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
+        ),
       ],
-    );
-  }
-
-  Widget _dot(bool active, Color color) {
-    return Container(
-      width: 10,
-      height: 10,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: active ? color : Colors.black12,
-      ),
-    );
-  }
-
-  Widget _line(bool active, Color color) {
-    return Container(
-      width: 30,
-      height: 2,
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      color: active ? color.withOpacity(0.3) : Colors.black12,
     );
   }
 
   Widget _buildChip(IconData icon, String label, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color.withOpacity(0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 6),
           Text(
             label,
             style: TextStyle(
               color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
@@ -705,17 +724,17 @@ class _OtpPageState extends State<OtpPage> {
   }) {
     return Container(
       width: double.infinity,
-      height: 56,
+      height: 60,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         gradient: LinearGradient(
-          colors: [color, color.withOpacity(0.8)],
+          colors: [color, color.withOpacity(0.7)],
         ),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+            color: color.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -730,19 +749,20 @@ class _OtpPageState extends State<OtpPage> {
         ),
         child: isLoading
             ? const SizedBox(
-          width: 22,
-          height: 22,
+          width: 24,
+          height: 24,
           child: CircularProgressIndicator(
-            strokeWidth: 2.5,
+            strokeWidth: 3,
             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
           ),
         )
             : Text(
           text,
           style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
             color: Colors.white,
+            letterSpacing: 0.5,
           ),
         ),
       ),

@@ -9,6 +9,7 @@ import 'home_page.dart';
 import 'user_service.dart';
 import 'set_pin_page.dart';
 import 'secret_image_verification_page.dart';
+import 'secret_image_setup_page.dart';
 
 class PasswordPage extends ConsumerStatefulWidget {
   final String phoneNumber;
@@ -92,18 +93,61 @@ class _PasswordPageState extends ConsumerState<PasswordPage> {
 
           // Navigate to SecretImageVerificationPage for existing user
           final userData = response['data']?['data'];
-          
+
           if (userData != null) {
             await ref.read(userServiceProvider).saveFromApiUser(userData);
           }
 
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(
-              builder: (context) => SecretImageVerificationPage(identifier: identifier),
-            ),
-            (route) => false,
-          );
+          // Check if local secret image exists (handles fresh app install scenario)
+          final localData = await ref.read(userServiceProvider).getUserData();
+          final String localPhone = localData['phone'] ?? '';
+          final String localEmail = localData['email'] ?? '';
+          final String localUserMainId = localData['user_main_id'] ?? '';
+
+          final List<String> possibleIdentifiers = [
+            identifier, // Exact input user typed
+            if (localPhone.isNotEmpty) localPhone, // API formatted phone
+            if (localEmail.isNotEmpty) localEmail, // API formatted email
+            if (localUserMainId.isNotEmpty) localUserMainId, // Invariant ID
+          ];
+
+          String? savedImage;
+          String? correctIdentifier;
+
+          for (final id in possibleIdentifiers) {
+            savedImage = await ref
+                .read(userServiceProvider)
+                .getUserSecretImage(id);
+            if (savedImage != null) {
+              correctIdentifier = id;
+              break;
+            }
+          }
+
+          if (!mounted) return;
+
+          if (savedImage == null) {
+            // Fresh install or cleared data -> route to setup
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    SecretImageSetupPage(identifier: identifier),
+              ),
+              (route) => false,
+            );
+          } else {
+            // Secret image exists -> route to verify
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(
+                builder: (context) => SecretImageVerificationPage(
+                  identifier: correctIdentifier ?? identifier,
+                ),
+              ),
+              (route) => false,
+            );
+          }
           return;
         } catch (e) {
           if (!mounted) return;
@@ -230,336 +274,380 @@ class _PasswordPageState extends ConsumerState<PasswordPage> {
 
   @override
   Widget build(BuildContext context) {
-    const Color themeColor = Color(0xFF8B5CF6);
+    const Color themeColor = Color(0xFF00E5FF);
+    final isExistingUser = widget.isExistingUser;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: Stack(
-        children: [
-          Positioned(
-            top: -100,
-            right: -50,
-            child: _buildBlob(themeColor.withOpacity(0.12), 300),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF0A0F24), Color(0xFF10193E), Color(0xFF0A0F24)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          Positioned(
-            bottom: -50,
-            left: -100,
-            child: _buildBlob(const Color(0xFFEC4899).withOpacity(0.08), 350),
-          ),
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _progressDot(true, color: const Color(0xFF6366F1)),
-                      _progressLine(true, const Color(0xFF6366F1)),
-                      _progressDot(true, color: const Color(0xFF6366F1)),
-                      _progressLine(true, const Color(0xFF10B981)),
-                      _progressDot(true, color: const Color(0xFF10B981)),
-                      _progressLine(true, themeColor),
-                      _progressDot(true, color: themeColor),
-                    ],
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              top: -100,
+              right: -50,
+              child: _buildBlob(themeColor.withOpacity(0.15), 300),
+            ),
+            Positioned(
+              bottom: -50,
+              left: -100,
+              child: _buildBlob(const Color(0xFF7000FF).withOpacity(0.15), 350),
+            ),
+            SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 20,
                   ),
-                  const SizedBox(height: 40),
-                  Container(
-                    width: double.infinity,
-                    constraints: const BoxConstraints(maxWidth: 420),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(32),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.85),
-                            borderRadius: BorderRadius.circular(32),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.5),
-                              width: 1.5,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 30,
-                                offset: const Offset(0, 15),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 40,
-                                ),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      themeColor.withOpacity(0.05),
-                                      themeColor.withOpacity(0.01),
-                                    ],
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                  ),
-                                ),
-                                child: Column(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(20),
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        gradient: const LinearGradient(
-                                          colors: [
-                                            themeColor,
-                                            Color(0xFF7C3AED),
-                                          ],
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: themeColor.withOpacity(0.3),
-                                            blurRadius: 20,
-                                            offset: const Offset(0, 10),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Icon(
-                                        widget.isExistingUser
-                                            ? Icons.lock_open_rounded
-                                            : Icons.lock_person_rounded,
-                                        color: Colors.white,
-                                        size: 36,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 24),
-                                    Text(
-                                      widget.isExistingUser
-                                          ? 'Welcome Back'
-                                          : 'Secure Vault',
-                                      style: const TextStyle(
-                                        fontSize: 26,
-                                        fontWeight: FontWeight.w900,
-                                        color: Color(0xFF1E293B),
-                                        letterSpacing: -0.5,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      widget.isExistingUser
-                                          ? 'Enter your password to continue'
-                                          : 'Choose a master password for your account',
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        color: Color(0xFF64748B),
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 400),
+                    child: Column(
+                      children: [
+                        if (!isExistingUser) ...[
+                          _buildProgressIndicator(themeColor),
+                          const SizedBox(height: 40),
+                        ],
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(32),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(32),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.1),
+                                  width: 1.5,
                                 ),
                               ),
-                              Padding(
-                                padding: const EdgeInsets.all(32),
-                                child: Form(
-                                  key: _formKey,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      if (widget.isExistingUser) ...[
+                              child: Column(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 40,
+                                      horizontal: 32,
+                                    ),
+                                    child: Column(
+                                      children: [
                                         Container(
-                                          width: double.infinity,
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 14,
-                                            vertical: 12,
-                                          ),
+                                          padding: const EdgeInsets.all(16),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFFF8FAFC),
-                                            borderRadius: BorderRadius.circular(
-                                              14,
+                                            shape: BoxShape.circle,
+                                            gradient: const LinearGradient(
+                                              colors: [
+                                                Color(0xFF00E5FF),
+                                                Color(0xFF7000FF),
+                                              ],
                                             ),
-                                          ),
-                                          child: Text(
-                                            widget.passedIdentifier.isNotEmpty
-                                                ? widget.passedIdentifier
-                                                : (widget.phoneNumber.isNotEmpty
-                                                      ? widget.phoneNumber
-                                                      : widget.email),
-                                            style: const TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w600,
-                                              color: Color(0xFF475569),
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 18),
-                                      ],
-                                      Text(
-                                        widget.isExistingUser
-                                            ? 'Password'
-                                            : 'New Password',
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFF1E293B),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      TextFormField(
-                                        controller: passwordController,
-                                        obscureText: _obscurePassword,
-                                        onChanged: widget.isExistingUser
-                                            ? null
-                                            : _onPasswordChanged,
-                                        decoration: _inputDecoration(
-                                          widget.isExistingUser
-                                              ? 'Enter your password'
-                                              : 'Create a strong password',
-                                          Icons.lock_outline_rounded,
-                                          themeColor,
-                                          suffix: IconButton(
-                                            icon: Icon(
-                                              _obscurePassword
-                                                  ? Icons.visibility_outlined
-                                                  : Icons
-                                                        .visibility_off_outlined,
-                                              size: 20,
-                                            ),
-                                            onPressed: () => setState(
-                                              () => _obscurePassword =
-                                                  !_obscurePassword,
-                                            ),
-                                          ),
-                                        ),
-                                        validator: (val) {
-                                          if (val == null ||
-                                              val.trim().isEmpty) {
-                                            return 'Password required';
-                                          }
-                                          if (!widget.isExistingUser &&
-                                              val.trim().length < 6) {
-                                            return 'Min 6 characters required';
-                                          }
-                                          return null;
-                                        },
-                                      ),
-                                      if (!widget.isExistingUser) ...[
-                                        const SizedBox(height: 12),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: LinearProgressIndicator(
-                                                value: _strength,
-                                                backgroundColor: Colors.black12,
-                                                valueColor:
-                                                    AlwaysStoppedAnimation<
-                                                      Color
-                                                    >(
-                                                      _strength < 0.4
-                                                          ? Colors.red
-                                                          : (_strength < 0.7
-                                                                ? Colors.orange
-                                                                : themeColor),
-                                                    ),
-                                                minHeight: 4,
-                                                borderRadius:
-                                                    BorderRadius.circular(2),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: themeColor.withOpacity(
+                                                  0.4,
+                                                ),
+                                                blurRadius: 20,
+                                                offset: const Offset(0, 10),
                                               ),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Text(
-                                              _strength < 0.4
-                                                  ? 'Weak'
-                                                  : (_strength < 0.7
-                                                        ? 'Fair'
-                                                        : 'Strong'),
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w800,
-                                                color: _strength < 0.4
-                                                    ? Colors.red
-                                                    : (_strength < 0.7
-                                                          ? Colors.orange
-                                                          : themeColor),
-                                              ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
+                                          child: Icon(
+                                            isExistingUser
+                                                ? Icons.lock_open_rounded
+                                                : Icons.lock_person_rounded,
+                                            color: Colors.white,
+                                            size: 36,
+                                          ),
                                         ),
                                         const SizedBox(height: 24),
-                                        const Text(
-                                          'Confirm Password',
+                                        Text(
+                                          isExistingUser
+                                              ? 'Welcome Back'
+                                              : 'Secure Vault',
+                                          style: const TextStyle(
+                                            fontSize: 26,
+                                            fontWeight: FontWeight.w800,
+                                            color: Colors.white,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          isExistingUser
+                                              ? 'Enter your password to continue'
+                                              : 'Choose a master password for your account',
+                                          textAlign: TextAlign.center,
                                           style: TextStyle(
                                             fontSize: 14,
-                                            fontWeight: FontWeight.w700,
-                                            color: Color(0xFF1E293B),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 12),
-                                        TextFormField(
-                                          controller: confirmPasswordController,
-                                          obscureText: _obscureConfirmPassword,
-                                          decoration: _inputDecoration(
-                                            'Repeat your password',
-                                            Icons.lock_reset_rounded,
-                                            themeColor,
-                                            suffix: IconButton(
-                                              icon: Icon(
-                                                _obscureConfirmPassword
-                                                    ? Icons.visibility_outlined
-                                                    : Icons
-                                                          .visibility_off_outlined,
-                                                size: 20,
-                                              ),
-                                              onPressed: () => setState(
-                                                () => _obscureConfirmPassword =
-                                                    !_obscureConfirmPassword,
-                                              ),
+                                            color: Colors.white.withOpacity(
+                                              0.6,
                                             ),
+                                            fontWeight: FontWeight.w500,
                                           ),
-                                          validator: (val) {
-                                            if (val == null ||
-                                                val.trim().isEmpty) {
-                                              return 'Confirm password required';
-                                            }
-                                            if (val !=
-                                                passwordController.text) {
-                                              return 'Passwords do not match';
-                                            }
-                                            return null;
-                                          },
                                         ),
                                       ],
-                                      const SizedBox(height: 40),
-                                      _buildGradientButton(
-                                        text: _isSubmitting
-                                            ? 'Please wait...'
-                                            : (widget.isExistingUser
-                                                  ? 'Login'
-                                                  : 'Finalize Account'),
-                                        colors: const [
-                                          themeColor,
-                                          Color(0xFF7C3AED),
-                                        ],
-                                        onPressed: _isSubmitting
-                                            ? null
-                                            : _submit,
-                                        isLoading: _isSubmitting,
-                                      ),
-                                    ],
+                                    ),
                                   ),
-                                ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                      left: 32,
+                                      right: 32,
+                                      bottom: 40,
+                                    ),
+                                    child: Form(
+                                      key: _formKey,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          if (isExistingUser) ...[
+                                            Container(
+                                              width: double.infinity,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 14,
+                                                    vertical: 12,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.black.withOpacity(
+                                                  0.2,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                                border: Border.all(
+                                                  color: Colors.white
+                                                      .withOpacity(0.1),
+                                                ),
+                                              ),
+                                              child: Text(
+                                                widget
+                                                        .passedIdentifier
+                                                        .isNotEmpty
+                                                    ? widget.passedIdentifier
+                                                    : (widget
+                                                              .phoneNumber
+                                                              .isNotEmpty
+                                                          ? widget.phoneNumber
+                                                          : widget.email),
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Colors.white
+                                                      .withOpacity(0.7),
+                                                ),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 24),
+                                          ],
+                                          Text(
+                                            isExistingUser
+                                                ? 'PASSWORD'
+                                                : 'NEW PASSWORD',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white.withOpacity(
+                                                0.5,
+                                              ),
+                                              letterSpacing: 1.2,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          TextFormField(
+                                            controller: passwordController,
+                                            obscureText: _obscurePassword,
+                                            onChanged: isExistingUser
+                                                ? null
+                                                : _onPasswordChanged,
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.white,
+                                            ),
+                                            decoration: _inputDecoration(
+                                              isExistingUser
+                                                  ? 'Enter your password'
+                                                  : 'Create a strong password',
+                                              Icons.lock_outline_rounded,
+                                              themeColor,
+                                              suffix: IconButton(
+                                                icon: Icon(
+                                                  _obscurePassword
+                                                      ? Icons
+                                                            .visibility_outlined
+                                                      : Icons
+                                                            .visibility_off_outlined,
+                                                  size: 20,
+                                                  color: Colors.white
+                                                      .withOpacity(0.5),
+                                                ),
+                                                onPressed: () => setState(
+                                                  () => _obscurePassword =
+                                                      !_obscurePassword,
+                                                ),
+                                              ),
+                                            ),
+                                            validator: (val) {
+                                              if (val == null ||
+                                                  val.trim().isEmpty) {
+                                                return 'Password required';
+                                              }
+                                              if (!isExistingUser &&
+                                                  val.trim().length < 6) {
+                                                return 'Min 6 characters required';
+                                              }
+                                              return null;
+                                            },
+                                          ),
+                                          if (!isExistingUser) ...[
+                                            const SizedBox(height: 12),
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: LinearProgressIndicator(
+                                                    value: _strength,
+                                                    backgroundColor: Colors
+                                                        .white
+                                                        .withOpacity(0.1),
+                                                    valueColor:
+                                                        AlwaysStoppedAnimation<
+                                                          Color
+                                                        >(
+                                                          _strength < 0.4
+                                                              ? const Color(
+                                                                  0xFFFF4B4B,
+                                                                )
+                                                              : (_strength < 0.7
+                                                                    ? const Color(
+                                                                        0xFFF59E0B,
+                                                                      )
+                                                                    : themeColor),
+                                                        ),
+                                                    minHeight: 4,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          2,
+                                                        ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 12),
+                                                Text(
+                                                  _strength < 0.4
+                                                      ? 'Weak'
+                                                      : (_strength < 0.7
+                                                            ? 'Fair'
+                                                            : 'Strong'),
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w800,
+                                                    color: _strength < 0.4
+                                                        ? const Color(
+                                                            0xFFFF4B4B,
+                                                          )
+                                                        : (_strength < 0.7
+                                                              ? const Color(
+                                                                  0xFFF59E0B,
+                                                                )
+                                                              : themeColor),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 24),
+                                            Text(
+                                              'CONFIRM PASSWORD',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.white.withOpacity(
+                                                  0.5,
+                                                ),
+                                                letterSpacing: 1.2,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 12),
+                                            TextFormField(
+                                              controller:
+                                                  confirmPasswordController,
+                                              obscureText:
+                                                  _obscureConfirmPassword,
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w500,
+                                                color: Colors.white,
+                                              ),
+                                              decoration: _inputDecoration(
+                                                'Repeat your password',
+                                                Icons.lock_reset_rounded,
+                                                themeColor,
+                                                suffix: IconButton(
+                                                  icon: Icon(
+                                                    _obscureConfirmPassword
+                                                        ? Icons
+                                                              .visibility_outlined
+                                                        : Icons
+                                                              .visibility_off_outlined,
+                                                    size: 20,
+                                                    color: Colors.white
+                                                        .withOpacity(0.5),
+                                                  ),
+                                                  onPressed: () => setState(
+                                                    () => _obscureConfirmPassword =
+                                                        !_obscureConfirmPassword,
+                                                  ),
+                                                ),
+                                              ),
+                                              validator: (val) {
+                                                if (val == null ||
+                                                    val.trim().isEmpty) {
+                                                  return 'Confirm password required';
+                                                }
+                                                if (val !=
+                                                    passwordController.text) {
+                                                  return 'Passwords do not match';
+                                                }
+                                                return null;
+                                              },
+                                            ),
+                                          ],
+                                          const SizedBox(height: 40),
+                                          _buildGradientButton(
+                                            text: _isSubmitting
+                                                ? 'Please wait...'
+                                                : (isExistingUser
+                                                      ? 'Login'
+                                                      : 'Finalize Account'),
+                                            colors: const [
+                                              Color(0xFF00E5FF),
+                                              Color(0xFF7000FF),
+                                            ],
+                                            onPressed: _isSubmitting
+                                                ? null
+                                                : _submit,
+                                            isLoading: _isSubmitting,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -572,23 +660,25 @@ class _PasswordPageState extends ConsumerState<PasswordPage> {
   }) {
     return InputDecoration(
       hintText: hint,
-      prefixIcon: Icon(icon, size: 20),
+      hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 15),
+      prefixIcon: Icon(icon, size: 22, color: Colors.white.withOpacity(0.7)),
       suffixIcon: suffix,
       filled: true,
-      fillColor: const Color(0xFFF1F5F9),
+      fillColor: Colors.black.withOpacity(0.2),
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(20),
-        borderSide: BorderSide.none,
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(20),
-        borderSide: BorderSide.none,
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(20),
-        borderSide: BorderSide(color: color, width: 1.5),
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: color, width: 2),
       ),
+      errorStyle: const TextStyle(color: Color(0xFFFF4B4B)),
     );
   }
 
@@ -596,7 +686,11 @@ class _PasswordPageState extends ConsumerState<PasswordPage> {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        boxShadow: [BoxShadow(color: color, blurRadius: 100, spreadRadius: 20)],
+      ),
     );
   }
 
@@ -610,12 +704,12 @@ class _PasswordPageState extends ConsumerState<PasswordPage> {
       width: double.infinity,
       height: 60,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         gradient: LinearGradient(colors: colors),
         boxShadow: [
           BoxShadow(
             color: colors[0].withOpacity(0.3),
-            blurRadius: 15,
+            blurRadius: 20,
             offset: const Offset(0, 8),
           ),
         ],
@@ -628,15 +722,15 @@ class _PasswordPageState extends ConsumerState<PasswordPage> {
           disabledBackgroundColor: Colors.transparent,
           disabledForegroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
           ),
         ),
         child: isLoading
             ? const SizedBox(
-                width: 22,
-                height: 22,
+                width: 24,
+                height: 24,
                 child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
+                  strokeWidth: 3,
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               )
@@ -644,7 +738,7 @@ class _PasswordPageState extends ConsumerState<PasswordPage> {
                 text,
                 style: const TextStyle(
                   fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w700,
                   color: Colors.white,
                   letterSpacing: 0.5,
                 ),
@@ -653,22 +747,58 @@ class _PasswordPageState extends ConsumerState<PasswordPage> {
     );
   }
 
-  Widget _progressDot(bool active, {required Color color}) {
-    return Container(
-      width: 8,
-      height: 8,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: active ? color : Colors.black12,
-      ),
-    );
-  }
-
-  Widget _progressLine(bool active, Color color) {
-    return Container(
-      width: 20,
-      height: 2,
-      color: active ? color.withOpacity(0.3) : Colors.black12,
+  Widget _buildProgressIndicator(Color color) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 8,
+          height: 4,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Container(
+          width: 8,
+          height: 4,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Container(
+          width: 8,
+          height: 4,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Container(
+          width: 8,
+          height: 4,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Container(
+          width: 28,
+          height: 4,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+            boxShadow: [
+              BoxShadow(color: color.withOpacity(0.5), blurRadius: 8),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
