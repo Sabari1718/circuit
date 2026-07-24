@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'verified_upgrade_intro_page.dart';
 
 class UserUpgradePage extends StatelessWidget {
   const UserUpgradePage({super.key});
@@ -15,7 +16,10 @@ class UserUpgradePage extends StatelessWidget {
             children: [
               // Guest User Banner
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 20,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFF4D8D),
                   borderRadius: BorderRadius.circular(12),
@@ -42,7 +46,9 @@ class UserUpgradePage extends StatelessWidget {
               // Desktop/Mobile Responsive Grid
               LayoutBuilder(
                 builder: (context, constraints) {
-                  int crossAxisCount = constraints.maxWidth > 900 ? 4 : (constraints.maxWidth > 600 ? 2 : 1);
+                  int crossAxisCount = constraints.maxWidth > 900
+                      ? 4
+                      : (constraints.maxWidth > 600 ? 2 : 1);
                   return GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -125,11 +131,19 @@ class UserUpgradePage extends StatelessWidget {
           const SizedBox(height: 20),
           Text(
             item['title'],
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF1E293B)),
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              color: Color(0xFF1E293B),
+            ),
           ),
           const Text(
             "USER",
-            style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: Colors.grey,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 16),
           Container(
@@ -149,16 +163,28 @@ class UserUpgradePage extends StatelessWidget {
             onPressed: () {
               if (item['title'] == "BUSINESS") {
                 Navigator.pushNamed(context, '/business');
+              } else if (item['title'] == "VERIFIED") {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const VerifiedUpgradeIntroPage(),
+                  ),
+                );
               }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF6366F1),
               foregroundColor: Colors.white,
               minimumSize: const Size(double.infinity, 48),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               elevation: 0,
             ),
-            child: Text(item['btnText'], style: const TextStyle(fontWeight: FontWeight.w600)),
+            child: Text(
+              item['btnText'],
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
           ),
         ],
       ),

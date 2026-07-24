@@ -8,6 +8,8 @@ import 'employee_resume_selection_page.dart';
 import 'employee_application_preview_page.dart';
 import 'employee_user_store.dart';
 import 'employee_user_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../home_page.dart';
 
 class DegreeQualification {
   String? stream;
@@ -37,6 +39,25 @@ class EmployeeUpgradePage extends StatefulWidget {
 class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
   int _currentStep = 1;
 
+  String _userName = '';
+  String _userEmail = '';
+  String _userPhone = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userName = prefs.getString('user_name') ?? 'John Doe';
+      _userEmail = prefs.getString('user_email') ?? 'john.doe@example.com';
+      _userPhone = prefs.getString('user_phone') ?? '+91 00000 00000';
+    });
+  }
+
   // Data
   String? _workType;
 
@@ -60,12 +81,12 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
 
   // Physical Work Specific State
   bool _noPanCard = false;
-  String? _addressProofType;
+  String? _addressProofType = '-- Select Document Type --';
   String? _addressProofName;
   Uint8List? _addressProofBytes;
 
-  String? _educationBoard;
-  String? _primaryStudy;
+  String? _educationBoard = '-- Select Board --';
+  String? _primaryStudy = '-- Select Class --';
   String? _primaryMarksheetName;
   Uint8List? _primaryMarksheetBytes;
 
@@ -81,12 +102,14 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
   final List<DegreeQualification> _degrees = [];
 
   final List<String> _addressProofTypes = [
+    '-- Select Document Type --',
     'Aadhar Card',
     'Driving License',
     'Voter ID Card',
     'Passport'
   ];
   final List<String> _educationBoards = [
+    '-- Select Board --',
     'CBSE',
     'State Board',
     'Matriculation',
@@ -94,6 +117,7 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
     'IB / IGCSE'
   ];
   final List<String> _primaryStudyList = [
+    '-- Select Class --',
     '5th Standard',
     '6th Standard',
     '7th Standard',
@@ -453,17 +477,133 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
     
     EmployeeUserStore().addEmployee(employee);
 
-    Navigator.pop(context);
+    _showSuccessDialog();
+  }
 
-    _showSnackBar(
-      "Employee registration submitted successfully",
-      isError: false,
+  void _showSuccessDialog() {
+    // Top-right success notification (Snackbar)
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.check, color: Color(0xFF10B981), size: 16),
+            ),
+            const SizedBox(width: 12),
+            const Text("Employee registration successful!", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+          ],
+        ),
+        backgroundColor: const Color(0xFF10B981),
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.only(
+          bottom: MediaQuery.of(context).size.height - 100, // Show at top
+          right: 20,
+          left: MediaQuery.of(context).size.width > 600 ? MediaQuery.of(context).size.width - 400 : 20,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        duration: const Duration(seconds: 4),
+      ),
     );
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const EmployeeResumeSelectionPage(),
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Container(
+          padding: const EdgeInsets.all(40),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+              )
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFEFF6FF),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.check, color: Color(0xFF2563EB), size: 48),
+              ),
+              const SizedBox(height: 32),
+              const Text(
+                "Registration Submitted Successfully",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF1E293B)),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                "Employee Registration Completed",
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
+              ),
+              const SizedBox(height: 32),
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: const Column(
+                  children: [
+                    Text("Onboarding Profile Created", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B))),
+                    SizedBox(height: 12),
+                    Text(
+                      "Your records have been uploaded to secure ISO-27001 data stores. The HR administration department has been notified of your submission status.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.6),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 40),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HomePage()), (route) => false),
+                      icon: const Icon(Icons.home, color: Color(0xFF475569), size: 18),
+                      label: const Text("Go to Dashboard", style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.bold)),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const EmployeeResumeSelectionPage())),
+                      icon: const Icon(Icons.person, color: Colors.white, size: 18),
+                      label: const Text("View Profile", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2563EB),
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -492,7 +632,63 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
             children: [
               _buildStepIndicator(),
               const SizedBox(height: 32),
-              _currentStep == 1 ? _buildStep1() : _buildStep2(),
+              if (_currentStep == 1) _buildWorkStep(),
+              if (_currentStep == 2) _buildPersonalStep(),
+              if (_currentStep == 3) _buildEducationStep(),
+              if (_currentStep == 4) _buildStep2(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDocumentPreview(String fileName, Uint8List fileBytes) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Document Preview",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2563EB),
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () => Navigator.pop(context),
+                      child: const Icon(Icons.close, color: Color(0xFF64748B)),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1, thickness: 1, color: Color(0xFFE2E8F0)),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Image.memory(
+                      fileBytes,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -501,36 +697,39 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
   }
 
   Widget _buildStepIndicator() {
-    return Row(
+    return Column(
       children: [
-        _indicatorDot(1, "Fill Details", _currentStep >= 1),
-        Expanded(
-          child: Container(
-            height: 2,
-            color: _currentStep >= 2
-                ? const Color(0xFF6366F1)
-                : const Color(0xFFE2E8F0),
-          ),
+        _buildWelcomeHeader(),
+        const SizedBox(height: 32),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _indicatorDot(1, "Work", _currentStep >= 1),
+            Expanded(child: Divider(color: _currentStep >= 2 ? const Color(0xFF6366F1) : const Color(0xFFE2E8F0), thickness: 1.5)),
+            _indicatorDot(2, "Personal", _currentStep >= 2),
+            Expanded(child: Divider(color: _currentStep >= 3 ? const Color(0xFF6366F1) : const Color(0xFFE2E8F0), thickness: 1.5)),
+            _indicatorDot(3, "Education", _currentStep >= 3),
+            Expanded(child: Divider(color: _currentStep >= 4 ? const Color(0xFF6366F1) : const Color(0xFFE2E8F0), thickness: 1.5)),
+            _indicatorDot(4, "Preview", _currentStep >= 4),
+          ],
         ),
-        _indicatorDot(2, "Preview Section", _currentStep >= 2),
       ],
     );
   }
 
   Widget _indicatorDot(int step, String label, bool active) {
-    return Column(
+    return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 32,
-          height: 32,
+          width: 24,
+          height: 24,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: active ? const Color(0xFF6366F1) : Colors.white,
             border: Border.all(
-              color: active
-                  ? const Color(0xFF6366F1)
-                  : const Color(0xFFE2E8F0),
-              width: 2,
+              color: active ? const Color(0xFF6366F1) : const Color(0xFF94A3B8),
+              width: 1.5,
             ),
           ),
           child: Center(
@@ -539,230 +738,474 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
               style: TextStyle(
                 color: active ? Colors.white : const Color(0xFF94A3B8),
                 fontWeight: FontWeight.bold,
+                fontSize: 12,
               ),
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(width: 8),
         Text(
           label,
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w700,
-            color: active ? const Color(0xFF1E293B) : const Color(0xFF94A3B8),
+            color: active ? const Color(0xFF6366F1) : const Color(0xFF64748B),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildStep1() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ListenableBuilder(
-          listenable: UserService(),
-          builder: (context, _) {
-            return FutureBuilder<Map<String, String>>(
-              future: UserService().getUserData(),
-              builder: (context, snapshot) {
-                final name = snapshot.data?['name'] ?? "User";
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Welcome, $name! 👋",
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF1E293B),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      "Complete your employee registration profile",
-                      style: TextStyle(
-                        color: Color(0xFF64748B),
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                );
-              },
+  Widget _buildWelcomeHeader() {
+    return ListenableBuilder(
+      listenable: UserService(),
+      builder: (context, _) {
+        return FutureBuilder<Map<String, String>>(
+          future: UserService().getUserData(),
+          builder: (context, snapshot) {
+            return Column(
+              children: [
+                Container(
+                   width: 64,
+                   height: 64,
+                   decoration: const BoxDecoration(color: Color(0xFFF1F5F9), shape: BoxShape.circle),
+                   child: const Icon(Icons.work_rounded, color: Color(0xFF2563EB), size: 32),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  "Welcome, Employee! 👋",
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF1E293B)),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  "Complete your employee registration profile",
+                  style: TextStyle(color: Color(0xFF64748B), fontSize: 16),
+                ),
+              ],
             );
           },
-        ),
-        const SizedBox(height: 32),
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.03),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
+        );
+      },
+    );
+  }
+
+  Widget _buildWorkStep() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(color: Color(0xFFF1F5F9), shape: BoxShape.circle),
+                child: const Icon(Icons.work_outline, color: Color(0xFF3B82F6), size: 20),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("SELECT YOUR WORK TYPE", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+                    Text("Please choose the type of work you will be performing.", style: TextStyle(fontSize: 14, color: Color(0xFF64748B))),
+                  ],
+                ),
               )
             ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(height: 24),
+          Column(
             children: [
-              _sectionTitle("Work Type"),
+              Row(
+                children: [
+                  Expanded(child: _buildWorkTypeBox("Physical Work", "Manual labor or on-site physical tasks.", Icons.engineering_rounded, const Color(0xFF3B82F6))),
+                  const SizedBox(width: 16),
+                  Expanded(child: _buildWorkTypeBox("Technical Work", "IT, engineering or specialized technical roles.", Icons.memory_rounded, const Color(0xFF10B981))),
+                ],
+              ),
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Expanded(
-                    child: _workTypeCard(
-                      "Physical Work",
-                      Icons.engineering_rounded,
-                    ),
-                  ),
+                  Expanded(child: _buildWorkTypeBox("Physical & Technical Both", "Roles requiring both manual and technical skills.", Icons.build_rounded, const Color(0xFF8B5CF6))),
                   const SizedBox(width: 16),
-                  Expanded(
-                    child: _workTypeCard(
-                      "Other Work",
-                      Icons.work_outline_rounded,
-                    ),
-                  ),
+                  Expanded(child: _buildWorkTypeBox("Other Work", "Office, administrative, or other roles.", Icons.desktop_windows_rounded, const Color(0xFFF59E0B))),
                 ],
               ),
-              const SizedBox(height: 32),
-              _sectionTitle("Upload Resume (Optional)"),
-              const SizedBox(height: 12),
-              _buildUploadCard(
-                fileName: _resumeName,
-                label: "Browse Files",
-                helperText: "PDF, JPG, PNG accepted",
-                onTap: () => _pickFile(isResume: true),
-              ),
-              const SizedBox(height: 32),
-              _sectionTitle("Personal Information"),
-              const SizedBox(height: 12),
-              // Unified PAN Logic
-              if (!_noPanCard) ...[
-                const Text(
-                  "PAN Number *",
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF475569),
-                  ),
+            ],
+          ),
+          if (_workType != null) ...[
+            const SizedBox(height: 24),
+            const Divider(),
+            const SizedBox(height: 16),
+            const Text("Upload Resume (Optional)", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF3B82F6))),
+            const SizedBox(height: 4),
+            const Text("Upload your resume in PDF or DOC format (Max 5MB)", style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+            const SizedBox(height: 12),
+            _buildUploadCard(
+              fileName: _resumeName,
+              label: "Browse Files",
+              helperText: "",
+              onTap: () => _pickFile(isResume: true),
+            ),
+          ],
+          const SizedBox(height: 32),
+          Row(
+            children: [
+              OutlinedButton(
+                onPressed: () {
+                  setState(() {
+                    _workType = null;
+                    _resumeName = null;
+                    _resumeBytes = null;
+                  });
+                },
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  side: const BorderSide(color: Color(0xFFE2E8F0)),
                 ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _panController,
-                  textCapitalization: TextCapitalization.characters,
-                  decoration:
-                  _inputDecoration("e.g. ABCDE1234F", Icons.badge_outlined),
+                child: const Text("Reset", style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
+              ),
+              const SizedBox(width: 16),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Cancel", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+              ),
+              const Spacer(),
+              ElevatedButton(
+                onPressed: () {
+                  if (_workType == null) {
+                    _showSnackBar("Please select a work type");
+                    return;
+                  }
+                  setState(() => _currentStep = 2);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2563EB),
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: const Row(
+                  children: [
+                    Text("Next", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    SizedBox(width: 8),
+                    Icon(Icons.arrow_forward, color: Colors.white, size: 16),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWorkTypeBox(String title, String desc, IconData icon, Color color) {
+    bool isSelected = _workType == title;
+    return GestureDetector(
+      onTap: () => setState(() => _workType = title),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0), width: isSelected ? 2 : 1),
+        ),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Icon(
+                  isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                  color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFCBD5E1),
                 ),
               ],
-              const SizedBox(height: 8),
-              Row(
+            ),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+              child: Icon(icon, color: color, size: 28),
+            ),
+            const SizedBox(height: 16),
+            Text(title, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+            const SizedBox(height: 8),
+            Text(desc, textAlign: TextAlign.center, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPersonalStep() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(color: Color(0xFFF1F5F9), shape: BoxShape.circle),
+                child: const Icon(Icons.person_outline, color: Color(0xFF3B82F6), size: 20),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("PERSONAL INFORMATION", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+                    Text("Enter your personal details to continue.", style: TextStyle(fontSize: 14, color: Color(0xFF64748B))),
+                  ],
+                ),
+              )
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Checkbox(
+                value: _noPanCard,
+                onChanged: (val) {
+                  setState(() {
+                    _noPanCard = val ?? false;
+                    if (_noPanCard) _panController.clear();
+                  });
+                },
+                activeColor: const Color(0xFF2563EB),
+              ),
+              const Text("I don't have a PAN card", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+            ],
+          ),
+          const SizedBox(height: 16),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              bool isSmall = constraints.maxWidth < 600;
+              final leftField = _noPanCard ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Checkbox(
-                    value: _noPanCard,
-                    onChanged: (val) {
-                      setState(() {
-                        _noPanCard = val ?? false;
-                        if (_noPanCard) {
-                          _panController.clear();
-                        }
-                      });
-                    },
-                  ),
-                  const Text(
-                    "I don't have a PAN card",
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF475569),
+                  const Text("Select Address Proof Type *", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: const Color(0xFF2563EB)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _addressProofType,
+                        hint: const Text("-- Select Document Type --"),
+                        isExpanded: true,
+                        items: _addressProofTypes.map((val) => DropdownMenuItem(value: val, child: Text(val))).toList(),
+                        onChanged: (val) => setState(() => _addressProofType = val),
+                      ),
                     ),
                   ),
                 ],
-              ),
-              if (_noPanCard) ...[
-                const SizedBox(height: 16),
-                const Text(
-                  "Select Address Proof Type *",
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF475569),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _addressProofType,
-                      hint: const Text(
-                        "Select Proof Type",
-                        style: TextStyle(
-                          color: Color(0xFF94A3B8),
-                          fontSize: 14,
-                        ),
-                      ),
-                      isExpanded: true,
-                      items: _addressProofTypes
-                          .map<DropdownMenuItem<String>>((String val) {
-                        return DropdownMenuItem<String>(
-                          value: val,
-                          child: Text(val),
-                        );
-                      }).toList(),
-                      onChanged: (val) =>
-                          setState(() => _addressProofType = val),
+              ) : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("PAN Number *", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _panController,
+                    textCapitalization: TextCapitalization.characters,
+                    decoration: InputDecoration(
+                      hintText: "e.g. ABCDE1234F",
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                      suffixIcon: const Icon(Icons.info_outline, size: 16),
                     ),
                   ),
-                ),
-                if (_addressProofType != null) ...[
-                  const SizedBox(height: 16),
-                  const Text(
-                    "Upload Address Proof Document *",
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF475569),
-                    ),
+                  const SizedBox(height: 4),
+                  const Text("Enter a valid 10-character PAN number.", style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                ],
+              );
+
+              final rightField = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: const [
+                      Text("Salary Account Number", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                      Text("Optional", style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8), backgroundColor: Color(0xFFF1F5F9))),
+                    ],
                   ),
                   const SizedBox(height: 8),
-                  _buildUploadCard(
-                    fileName: _addressProofName,
-                    label: "Upload Document",
-                    helperText: "PDF, JPG, PNG accepted",
+                  TextFormField(
+                    controller: _salaryAccountController,
+                    decoration: InputDecoration(
+                      hintText: "1234567890123456",
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text("Used only for salary disbursement.", style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                ],
+              );
+
+              if (isSmall) return Column(children: [leftField, const SizedBox(height: 24), rightField]);
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: leftField),
+                  const SizedBox(width: 24),
+                  Expanded(child: rightField),
+                ],
+              );
+            },
+          ),
+          if (_noPanCard && _addressProofType != null) ...[
+            const SizedBox(height: 24),
+            const Text("Upload Address Proof Document *", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+            const SizedBox(height: 8),
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  InkWell(
                     onTap: () => _pickProfileFile('address_proof'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: const BoxDecoration(
+                        border: Border(right: BorderSide(color: Color(0xFFE2E8F0))),
+                      ),
+                      child: const Text("Choose File", style: TextStyle(color: Color(0xFF1E293B))),
+                    ),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(_addressProofName ?? "No file chosen", maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF64748B))),
+                    ),
                   ),
                 ],
-              ],
-              const SizedBox(height: 16),
-              const Text(
-                "Salary Account (Optional)",
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF475569),
+              ),
+            ),
+            if (_addressProofName != null && _addressProofBytes != null) ...[
+              const SizedBox(height: 12),
+              GestureDetector(
+                onTap: () => _showDocumentPreview(_addressProofName!, _addressProofBytes!),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: Image.memory(_addressProofBytes!, width: 40, height: 40, fit: BoxFit.cover),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(Icons.check, color: Color(0xFF10B981), size: 16),
+                                SizedBox(width: 4),
+                                Text("Uploaded", style: TextStyle(color: Color(0xFF10B981), fontSize: 12, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                            Text(_addressProofName!, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _salaryAccountController,
-                decoration: _inputDecoration(
-                  "e.g. 1234567890",
-                  Icons.account_balance_outlined,
+            ],
+          ],
+          const SizedBox(height: 32),
+          Row(
+            children: [
+              TextButton.icon(
+                onPressed: () => setState(() => _currentStep = 1),
+                icon: const Icon(Icons.arrow_back, color: Color(0xFF64748B), size: 16),
+                label: const Text("Back", style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
+              ),
+              const Spacer(),
+              ElevatedButton(
+                onPressed: () {
+                  if (!_noPanCard) {
+                    if (_panController.text.isEmpty) { _showSnackBar("Please enter PAN number"); return; }
+                  } else {
+                    if (_addressProofType == null || _addressProofType == '-- Select Document Type --') { _showSnackBar("Please select address proof type"); return; }
+                    if (_addressProofName == null) { _showSnackBar("Please upload document"); return; }
+                  }
+                  setState(() => _currentStep = 3);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2563EB),
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: const Row(
+                  children: [
+                    Text("Next", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    SizedBox(width: 8),
+                    Icon(Icons.arrow_forward, color: Colors.white, size: 16),
+                  ],
                 ),
               ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
-              // Unified Educational Qualifications Section
-              const SizedBox(height: 32),
-              _sectionTitle("Educational Qualifications (Optional)"),
+  Widget _buildEducationStep() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(color: Color(0xFFF1F5F9), shape: BoxShape.circle),
+                child: const Icon(Icons.school_outlined, color: Color(0xFF3B82F6), size: 20),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("EDUCATIONAL QUALIFICATIONS", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+                    Text("Enter your educational details.", style: TextStyle(fontSize: 14, color: Color(0xFF64748B))),
+                  ],
+                ),
+              )
+            ],
+          ),
+          const SizedBox(height: 24),
               const SizedBox(height: 16),
               const Text(
                 "Education Board",
@@ -1064,211 +1507,511 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                   ),
                 ],
               ],
-              const SizedBox(height: 40),
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: _goToPreview,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6366F1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(100),
-                    ),
-                    elevation: 0,
+              const SizedBox(height: 32),
+              Row(
+                children: [
+                  TextButton.icon(
+                    onPressed: () => setState(() => _currentStep = 2),
+                    icon: const Icon(Icons.arrow_back, color: Color(0xFF64748B), size: 16),
+                    label: const Text("Back", style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
                   ),
-                  child: const Text(
-                    "Preview Application",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.5,
+                  const Spacer(),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (_primaryStudy == '10th Standard' && _primaryMarksheetName == null) {
+                        _showSnackBar("Please upload 10th marksheet");
+                        return;
+                      }
+                      if (_primaryStudy == '10th Standard' && _after10thPath == "Higher Secondary") {
+                        if (_higherSecondaryClass == null) { _showSnackBar("Please select Higher Secondary class"); return; }
+                        if (_higherSecondaryClass == '12th Standard' && _hsMarksheetName == null) { _showSnackBar("Please upload 12th marksheet"); return; }
+                      }
+                      if (_primaryStudy == '10th Standard' && _after10thPath == "ITI") {
+                        if (_itiCourse == null) { _showSnackBar("Please select ITI course"); return; }
+                        if (_itiCertificateName == null) { _showSnackBar("Please upload ITI certificate"); return; }
+                      }
+                      setState(() => _currentStep = 4);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2563EB),
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Text("Next", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        SizedBox(width: 8),
+                        Icon(Icons.arrow_forward, color: Colors.white, size: 16),
+                      ],
                     ),
                   ),
-                ),
+                ],
               ),
             ],
           ),
+        );
+  }
+
+  Widget _buildStep2() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        bool isWide = constraints.maxWidth > 800;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (!isWide) ...[
+              _buildPreviewHeader(),
+              const SizedBox(height: 24),
+              _buildProfileCompletionCard(),
+              const SizedBox(height: 24),
+              _buildPersonalAndWorkProfileCard(),
+              const SizedBox(height: 24),
+              _buildEducationSummaryCard(),
+              const SizedBox(height: 24),
+              _buildUploadedDocumentsCard(),
+              const SizedBox(height: 24),
+              _buildDocumentOverviewCard(),
+            ] else ...[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildPreviewHeader(),
+                        const SizedBox(height: 24),
+                        _buildPersonalAndWorkProfileCard(),
+                        const SizedBox(height: 24),
+                        _buildEducationSummaryCard(),
+                        const SizedBox(height: 24),
+                        _buildUploadedDocumentsCard(),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 32),
+                  Expanded(
+                    flex: 1,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildProfileCompletionCard(),
+                        const SizedBox(height: 24),
+                        _buildDocumentOverviewCard(),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 32),
+            _buildPreviewActionButtons(),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildPreviewHeader() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+            child: const Icon(Icons.document_scanner, color: Color(0xFF3B82F6)),
+          ),
+          const SizedBox(width: 16),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Review Your Application", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                SizedBox(height: 4),
+                Text("Please review all the information below for final submission.", style: TextStyle(fontSize: 14, color: Color(0xFF64748B))),
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileCompletionCard() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              const SizedBox(
+                width: 80,
+                height: 80,
+                child: CircularProgressIndicator(value: 1.0, strokeWidth: 8, backgroundColor: Color(0xFFE2E8F0), valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB))),
+              ),
+              const Text("100%", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF2563EB))),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Text("Profile Completion", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B))),
+          const SizedBox(height: 4),
+          const Text("Great! You have completed all steps.", textAlign: TextAlign.center, style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+          const SizedBox(height: 24),
+          _buildCompletionStep("Work Type", true),
+          const SizedBox(height: 12),
+          _buildCompletionStep("Personal Info", true),
+          const SizedBox(height: 12),
+          _buildCompletionStep("Education", true),
+          const SizedBox(height: 12),
+          _buildCompletionStep("Review & Submit", false, isCurrent: true),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompletionStep(String title, bool completed, {bool isCurrent = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.assignment_turned_in, size: 16, color: completed ? const Color(0xFF10B981) : const Color(0xFF6366F1)),
+            const SizedBox(width: 8),
+            Text(title, style: TextStyle(fontSize: 14, color: isCurrent ? const Color(0xFF1E293B) : const Color(0xFF64748B), fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal)),
+          ],
         ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: completed ? const Color(0xFF10B981).withOpacity(0.1) : const Color(0xFFEFF6FF),
+            borderRadius: BorderRadius.circular(100),
+          ),
+          child: Text(
+            completed ? "Completed" : "Current Step",
+            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: completed ? const Color(0xFF10B981) : const Color(0xFF2563EB)),
+          ),
+        )
       ],
     );
   }
 
-  Widget _buildStep2() {
+  Widget _buildPersonalAndWorkProfileCard() {
+    return _buildPreviewSectionCard(
+      title: "Personal & Work Profile",
+      icon: Icons.person,
+      iconColor: const Color(0xFF3B82F6),
+      onEdit: () => setState(() => _currentStep = 1),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(child: _buildDataField("FULL NAME", _userName)),
+              Expanded(child: _buildDataField("WORK TYPE", _workType ?? "Not Selected", isPill: true)),
+              Expanded(child: _buildDataField("EMAIL ADDRESS", _userEmail)),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(child: _buildDataField("ADDRESS PROOF", _noPanCard ? (_addressProofType ?? "Not Selected") : "PAN Card")),
+              Expanded(child: _buildDataField("MOBILE NUMBER", _userPhone)),
+              Expanded(child: _buildDataField("SALARY A/C NUMBER", _salaryAccountController.text.isNotEmpty ? _salaryAccountController.text : "Not Provided")),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDataField(String label, String value, {bool isPill = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          "Review Application",
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w900,
-            color: Color(0xFF1E293B),
+        Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+        const SizedBox(height: 4),
+        if (isPill)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(100),
+                border: Border.all(color: const Color(0xFFBFDBFE)),
+              ),
+              child: Text(value, style: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.w600, fontSize: 13)),
+            ),
+          )
+        else
+          Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+      ],
+    );
+  }
+
+  Widget _buildEducationSummaryCard() {
+    return _buildPreviewSectionCard(
+      title: "Education Summary",
+      icon: Icons.school,
+      iconColor: const Color(0xFF6366F1),
+      onEdit: () => setState(() => _currentStep = 3),
+      child: Column(
+        children: [
+          if (_primaryStudy != null && _primaryStudy != '-- Select Class --')
+            _buildEducationEntry(
+              title: _primaryStudy!,
+              board: _educationBoard,
+              year: "N/A",
+            ),
+          if (_after10thPath != null)
+             _buildEducationEntry(
+              title: _after10thPath!,
+              board: _higherSecondaryClass ?? _itiCourse,
+              year: "N/A",
+            ),
+          ..._degrees.map((d) => _buildEducationEntry(
+            title: d.degree ?? "Degree",
+            board: d.instituteController.text,
+            year: d.yearOfPassingController.text.isNotEmpty ? d.yearOfPassingController.text : "N/A",
+          )),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEducationEntry({required String title, String? board, required String year}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B))),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(Icons.account_balance, size: 14, color: Color(0xFF64748B)),
+              const SizedBox(width: 4),
+              Text(board ?? "N/A", style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+              const SizedBox(width: 16),
+              const Icon(Icons.calendar_today, size: 14, color: Color(0xFF64748B)),
+              const SizedBox(width: 4),
+              Text("Passed: $year", style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUploadedDocumentsCard() {
+    return _buildPreviewSectionCard(
+      title: "Uploaded Documents",
+      icon: Icons.insert_drive_file,
+      iconColor: const Color(0xFFF97316),
+      onEdit: () => setState(() => _currentStep = 2),
+      child: Wrap(
+        spacing: 16,
+        runSpacing: 16,
+        children: [
+          if (_addressProofName != null) _buildDocumentTile(_addressProofName!, _addressProofBytes, true),
+          if (_resumeName != null) _buildDocumentTile(_resumeName!, _resumeBytes, true),
+          if (_primaryMarksheetName != null) _buildDocumentTile(_primaryMarksheetName!, _primaryMarksheetBytes, false),
+          if (_hsMarksheetName != null) _buildDocumentTile(_hsMarksheetName!, _hsMarksheetBytes, false),
+          if (_itiCertificateName != null) _buildDocumentTile(_itiCertificateName!, _itiCertificateBytes, false),
+          ..._degrees.where((d) => d.certificateName != null).map((d) => _buildDocumentTile(d.certificateName!, d.certificateBytes, false)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDocumentTile(String fileName, Uint8List? bytes, bool isPDF) {
+    return Container(
+      width: 250,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFECACA)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(8)),
+            child: const Icon(Icons.picture_as_pdf, color: Color(0xFFEF4444)),
           ),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          "Verify your details before final submission",
-          style: TextStyle(
-            color: Color(0xFF64748B),
-            fontSize: 16,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(fileName, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                const Text("PDF - 450 KB", style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+              ],
+            ),
           ),
+          if (bytes != null)
+            TextButton.icon(
+              onPressed: () => _showDocumentPreview(fileName, bytes),
+              icon: const Icon(Icons.zoom_in, size: 16, color: Color(0xFF2563EB)),
+              label: const Text("View", style: TextStyle(color: Color(0xFF2563EB), fontSize: 12, fontWeight: FontWeight.bold)),
+              style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 0)),
+            )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDocumentOverviewCard() {
+    int eduCount = (_primaryMarksheetName != null ? 1 : 0) + (_hsMarksheetName != null || _itiCertificateName != null ? 1 : 0);
+    int idCount = (_addressProofName != null ? 1 : 0) + (_resumeName != null ? 1 : 0);
+    int degreeCount = _degrees.where((d) => d.certificateName != null).length;
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("Document Overview", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B))),
+          const SizedBox(height: 24),
+          _buildDocCount("Educational", eduCount, 2),
+          const SizedBox(height: 16),
+          _buildDocCount("ID Proof", idCount, 2),
+          const SizedBox(height: 16),
+          _buildDocCount("Degree Certificate", degreeCount, _degrees.length > 0 ? _degrees.length : 1),
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.security, color: Color(0xFF3B82F6)),
+                SizedBox(width: 12),
+                Expanded(child: Text("All your information is securely verified and protected with industry standard encryption.", style: TextStyle(fontSize: 12, color: Color(0xFF1E3A8A)))),
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDocCount(String title, int count, int total) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B))),
+            const SizedBox(height: 2),
+            Text("$count/$total uploaded", style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+          ],
         ),
-        const SizedBox(height: 32),
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.03),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
+        Icon(Icons.check_circle, color: count == total && total > 0 ? const Color(0xFF10B981) : const Color(0xFFCBD5E1), size: 16),
+      ],
+    );
+  }
+
+  Widget _buildPreviewSectionCard({required String title, required IconData icon, required Color iconColor, required VoidCallback onEdit, required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: iconColor.withOpacity(0.1), shape: BoxShape.circle), child: Icon(icon, color: iconColor, size: 20)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B))),
+              ),
+              TextButton.icon(
+                onPressed: onEdit,
+                icon: const Icon(Icons.edit, size: 14, color: Color(0xFF2563EB)),
+                label: const Text("Edit", style: TextStyle(fontSize: 13, color: Color(0xFF2563EB), fontWeight: FontWeight.bold)),
               )
             ],
           ),
-          child: Column(
-            children: [
-              _previewRow("Work Type", _workType ?? ""),
-              const Divider(height: 32),
-              _previewRow("Resume", _resumeName ?? "Not uploaded"),
-              const Divider(height: 32),
-              // Unified Preview Logic
-              if (!_noPanCard) ...[
-                _previewRow(
-                  "PAN Number",
-                  _panController.text.toUpperCase().isEmpty
-                      ? "Not provided"
-                      : _panController.text.toUpperCase(),
-                ),
-              ] else ...[
-                _previewRow("PAN Card", "Not available"),
-                const Divider(height: 32),
-                _previewRow("Proof Type", _addressProofType ?? ""),
-                const Divider(height: 32),
-                _previewRow("Proof Doc", _addressProofName ?? "Not uploaded"),
-              ],
-              const Divider(height: 32),
-              _previewRow(
-                "Salary Account",
-                _salaryAccountController.text.isEmpty
-                    ? "Not provided"
-                    : _salaryAccountController.text,
-              ),
-              const Divider(height: 32),
-              _previewRow("Education Board", _educationBoard ?? "Not provided"),
-              const Divider(height: 32),
-              _previewRow("Primary Study", _primaryStudy ?? "Not provided"),
-              if (_primaryStudy == '10th Standard' &&
-                  _primaryMarksheetName != null) ...[
-                const Divider(height: 32),
-                _previewRow("10th Marksheet", _primaryMarksheetName!),
-              ],
-              if (_after10thPath != null) ...[
-                const Divider(height: 32),
-                _previewRow("10th Path", _after10thPath!),
-                if (_after10thPath == "Higher Secondary" &&
-                    _higherSecondaryClass != null) ...[
-                  const Divider(height: 32),
-                  _previewRow("HS Class", _higherSecondaryClass!),
-                  if (_higherSecondaryClass == '12th Standard') ...[
-                    const Divider(height: 32),
-                    _previewRow(
-                      "12th Marksheet",
-                      _hsMarksheetName ?? "Not uploaded",
-                    ),
-                  ],
-                ] else if (_after10thPath == "ITI" && _itiCourse != null) ...[
-                  const Divider(height: 32),
-                  _previewRow("ITI Course", _itiCourse!),
-                  const Divider(height: 32),
-                  _previewRow(
-                    "ITI Certificate",
-                    _itiCertificateName ?? "Not uploaded",
-                  ),
-                ],
-              ],
-              // Degree Preview
-              ..._degrees.asMap().entries.expand((entry) {
-                final i = entry.key;
-                final d = entry.value;
-                return [
-                  const Divider(height: 32),
-                  _previewRow("Degree ${i + 1} Stream", d.stream ?? ""),
-                  const Divider(height: 32),
-                  _previewRow("Degree ${i + 1}", d.degree ?? ""),
-                  const Divider(height: 32),
-                  _previewRow("University ${i + 1}", d.universityController.text),
-                  const Divider(height: 32),
-                  _previewRow("Institute ${i + 1}", d.instituteController.text),
-                  const Divider(height: 32),
-                  _previewRow("Year ${i + 1}", d.yearOfPassingController.text),
-                  const Divider(height: 32),
-                  _previewRow("Cert ${i + 1}", d.certificateName ?? "Not uploaded"),
-                ];
-              }),
-            ],
+          const SizedBox(height: 24),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreviewActionButtons() {
+    return Wrap(
+      spacing: 16,
+      runSpacing: 16,
+      alignment: WrapAlignment.spaceBetween,
+      children: [
+        OutlinedButton.icon(
+          onPressed: () => setState(() => _currentStep = 3),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF1E293B)),
+          label: const Text("Back", style: TextStyle(color: Color(0xFF1E293B))),
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            side: const BorderSide(color: Color(0xFFE2E8F0)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
         ),
-        const SizedBox(height: 48),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () => setState(() => _currentStep = 1),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                  side: const BorderSide(
-                    color: Color(0xFFE2E8F0),
-                    width: 1.5,
-                  ),
-                ),
-                child: const Text(
-                  "Previous",
-                  style: TextStyle(
-                    color: Color(0xFF1E293B),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF6366F1), Color(0xFFA855F7)],
-                  ),
-                  borderRadius: BorderRadius.circular(100),
-                ),
-                child: ElevatedButton(
-                  onPressed: _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                    padding: const EdgeInsets.symmetric(vertical: 20),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(100),
-                    ),
-                  ),
-                  child: const Text(
-                    "Submit Registration",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
+        TextButton.icon(
+          onPressed: () {},
+          icon: const Icon(Icons.download, color: Color(0xFF475569)),
+          label: const Text("Download Preview", style: TextStyle(color: Color(0xFF475569))),
         ),
+        ElevatedButton(
+          onPressed: _submit,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF2563EB),
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text("Confirm & Submit", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              SizedBox(width: 8),
+              Icon(Icons.arrow_forward, color: Colors.white, size: 16),
+            ],
+          ),
+        )
       ],
     );
   }

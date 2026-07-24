@@ -146,7 +146,7 @@ class AccountTypeCard extends StatelessWidget {
                               ),
                             ),
                             child: Text(
-                              primaryButtonText ?? (isCompleted ? "VIEW" : "UPGRADE"),
+                              primaryButtonText ?? "UPGRADE",
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                 fontSize: 9, // Slightly smaller to fit longer text
@@ -171,7 +171,7 @@ class AccountTypeCard extends StatelessWidget {
                             ),
                           ),
                           child: const Text(
-                            "READ MORE",
+                            "View Details",
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w900,

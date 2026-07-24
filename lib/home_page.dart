@@ -6,10 +6,13 @@ import 'upgrade/business_user_store.dart';
 import 'upgrade/employee_user_store.dart';
 import 'upgrade/job_categories_page.dart';
 import 'upgrade/kovil_categories_page.dart';
+import 'features/upgrade/verified_upgrade_intro_page.dart';
+import 'upgrade/user_overview_page.dart';
 import 'user_service.dart';
 import 'widgets/common_dashboard_app_bar.dart';
 import 'widgets/account_type_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'upgrade/employee_upgrade_page.dart';
 
 enum DashboardSection { activities, privilege }
 
@@ -128,27 +131,27 @@ class _HomePageState extends State<HomePage> {
     _careerChildActivities = [
       ActivityCardData(
         id: "job_career",
-        title: "JOB",
-        subtitle: "CAREER",
-        description: "Employee access to business features",
-        icon: "📝",
-        color: const Color(0xFFF97316),
+        title: "Job Management",
+        subtitle: "HIRING DESK",
+        description: "Search for jobs, apply, and track your applications",
+        icon: "💼",
+        color: const Color(0xFF8B5CF6),
       ),
       ActivityCardData(
         id: "employee",
-        title: "EMPLOYEE",
-        subtitle: "CAREER",
-        description: "Employee management & payroll features",
-        icon: "📋",
-        color: const Color(0xFF64748B),
+        title: "Employee Portal",
+        subtitle: "STAFF DIRECTORY",
+        description: "Employee access to business features",
+        icon: "👥",
+        color: const Color(0xFF10B981),
       ),
       ActivityCardData(
         id: "business_career",
-        title: "BUSINESS",
-        subtitle: "CAREER",
+        title: "Business Register",
+        subtitle: "BI SUITE",
         description: "Access to business analytics & team management",
-        icon: "💼",
-        color: const Color(0xFF64748B),
+        icon: "📈",
+        color: const Color(0xFFF59E0B),
       ),
       ActivityCardData(
         id: "business",
@@ -170,7 +173,9 @@ class _HomePageState extends State<HomePage> {
           _activities.insertAll(idx + 1, _careerChildActivities);
         }
       } else {
-        _activities.removeWhere((c) => _careerChildActivities.any((child) => child.id == c.id));
+        _activities.removeWhere(
+          (c) => _careerChildActivities.any((child) => child.id == c.id),
+        );
       }
       _filterActivities(_searchController.text);
     });
@@ -187,14 +192,15 @@ class _HomePageState extends State<HomePage> {
           final description = activity.description.toLowerCase();
           final searchLower = query.toLowerCase();
           return title.contains(searchLower) ||
-                 subtitle.contains(searchLower) ||
-                 description.contains(searchLower);
+              subtitle.contains(searchLower) ||
+              description.contains(searchLower);
         }).toList();
       }
     });
   }
 
   bool _isMainBusinessRegistered = false;
+  bool _isRegisteredUpgraded = false;
 
   Future<void> _loadUserSession() async {
     await UserService().loadSession();
@@ -206,12 +212,15 @@ class _HomePageState extends State<HomePage> {
             ? widget.userName
             : data['name']!;
         _accountType = data['accountType'] ?? widget.accountType;
-        _isMainBusinessRegistered = prefs.getBool('is_main_business_registered') ?? false;
-        
+        _isMainBusinessRegistered =
+            prefs.getBool('is_main_business_registered') ?? false;
+        _isRegisteredUpgraded = prefs.getBool('is_registered_upgraded') ?? false;
+
         // Initialize dropdown from store if business exists
-        if (BusinessUserStore().businesses.isNotEmpty && 
+        if (BusinessUserStore().businesses.isNotEmpty &&
             BusinessUserStore().businesses.first.businessTypes.isNotEmpty) {
-          _selectedBusinessScale = BusinessUserStore().businesses.first.businessTypes.first;
+          _selectedBusinessScale =
+              BusinessUserStore().businesses.first.businessTypes.first;
         }
       });
     }
@@ -222,29 +231,45 @@ class _HomePageState extends State<HomePage> {
       return true;
     }
     if (moduleId == "business") {
-      return _isMainBusinessRegistered || BusinessUserStore().businesses.isNotEmpty;
+      return _isMainBusinessRegistered ||
+          BusinessUserStore().businesses.isNotEmpty;
     }
     if (moduleId == "employee") {
       return EmployeeUserStore().hasData;
+    }
+    if (moduleId == "registered") {
+      return _isRegisteredUpgraded;
     }
     return false;
   }
 
   void _handleNavigation(String moduleId, String title) {
     final isCompleted = _checkCompletion(moduleId);
-    
+
+    if (moduleId == "registered") {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => UserOverviewPage(initialPage: isCompleted ? 0 : 1),
+        ),
+      ).then((_) => _loadUserSession());
+      return;
+    }
+
     if (isCompleted) {
       if (moduleId == "business" || moduleId == "business_career") {
         openBusinessViewPage(context);
       } else if (moduleId == "employee") {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const EmployeeDashboardPage()),
+          MaterialPageRoute(
+            builder: (context) => const EmployeeDashboardPage(),
+          ),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Opening $title Dashboard")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Opening $title Dashboard")));
       }
     } else {
       if (moduleId == "business") {
@@ -255,7 +280,9 @@ class _HomePageState extends State<HomePage> {
       } else if (moduleId == "employee") {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const EmployeeDashboardPage()),
+          MaterialPageRoute(
+            builder: (context) => const EmployeeUpgradePage(),
+          ),
         ).then((_) => setState(() {}));
       } else if (moduleId == "job_career") {
         Navigator.push(
@@ -267,10 +294,17 @@ class _HomePageState extends State<HomePage> {
           context,
           MaterialPageRoute(builder: (context) => const KovilCategoriesPage()),
         );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("$title Upgrade coming soon!")),
+      } else if (moduleId == "verified") {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const VerifiedUpgradeIntroPage(),
+          ),
         );
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("$title Upgrade coming soon!")));
       }
     }
   }
@@ -292,10 +326,10 @@ class _HomePageState extends State<HomePage> {
           children: [
             // Modern Search Bar
             _buildSearchBar(),
-            
+
             // Section Header
             _buildSectionHeader(),
-            
+
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: AnimatedSwitcher(
@@ -313,9 +347,9 @@ class _HomePageState extends State<HomePage> {
                   );
                 },
                 child: _selectedSection == DashboardSection.activities
-                    ? (_filteredActivities.isEmpty 
-                        ? _buildEmptyState() 
-                        : _buildActivitiesGrid())
+                    ? (_filteredActivities.isEmpty
+                          ? _buildEmptyState()
+                          : _buildActivitiesGrid())
                     : _buildPrivilegeGrid(),
               ),
             ),
@@ -349,15 +383,19 @@ class _HomePageState extends State<HomePage> {
             hintText: "Search activities...",
             hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
             prefixIcon: Icon(Icons.search_rounded, color: Colors.grey.shade400),
-            suffixIcon: _searchController.text.isNotEmpty 
-              ? IconButton(
-                  icon: const Icon(Icons.clear_rounded, size: 20, color: Colors.grey),
-                  onPressed: () {
-                    _searchController.clear();
-                    _filterActivities("");
-                  },
-                )
-              : null,
+            suffixIcon: _searchController.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(
+                      Icons.clear_rounded,
+                      size: 20,
+                      color: Colors.grey,
+                    ),
+                    onPressed: () {
+                      _searchController.clear();
+                      _filterActivities("");
+                    },
+                  )
+                : null,
             border: InputBorder.none,
             contentPadding: const EdgeInsets.symmetric(vertical: 15),
           ),
@@ -367,12 +405,18 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildSectionHeader() {
-    final title = _selectedSection == DashboardSection.activities ? "Activities" : "User Privilege";
-    final subtitle = _selectedSection == DashboardSection.activities 
-        ? "Manage user access levels" 
+    final title = _selectedSection == DashboardSection.activities
+        ? "Activities"
+        : "User Privilege";
+    final subtitle = _selectedSection == DashboardSection.activities
+        ? "Manage user access levels"
         : "Manage user roles & permissions";
-    final icon = _selectedSection == DashboardSection.activities ? Icons.bolt : Icons.shield_outlined;
-    final iconColor = _selectedSection == DashboardSection.activities ? Colors.blue : Colors.blue.shade700;
+    final icon = _selectedSection == DashboardSection.activities
+        ? Icons.bolt
+        : Icons.shield_outlined;
+    final iconColor = _selectedSection == DashboardSection.activities
+        ? Colors.blue
+        : Colors.blue.shade700;
 
     return Padding(
       padding: const EdgeInsets.only(top: 24, bottom: 8),
@@ -397,10 +441,7 @@ class _HomePageState extends State<HomePage> {
           ),
           Text(
             subtitle,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
           ),
         ],
       ),
@@ -427,10 +468,7 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 8),
           Text(
             "Try a different search term",
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade500,
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
           ),
         ],
       ),
@@ -450,14 +488,16 @@ class _HomePageState extends State<HomePage> {
         setState(() {
           final element = _filteredActivities.removeAt(oldIndex);
           _filteredActivities.insert(newIndex, element);
-          
+
           if (_searchController.text.isEmpty) {
             final aElement = _activities.removeAt(oldIndex);
             _activities.insert(newIndex, aElement);
           }
         });
       },
-      children: _filteredActivities.map((card) => _buildActivityCard(card)).toList(),
+      children: _filteredActivities
+          .map((card) => _buildActivityCard(card))
+          .toList(),
     );
   }
 
@@ -465,10 +505,13 @@ class _HomePageState extends State<HomePage> {
     return KeyedSubtree(
       key: ValueKey(card.id),
       child: ListenableBuilder(
-        listenable: Listenable.merge([BusinessUserStore(), EmployeeUserStore()]),
+        listenable: Listenable.merge([
+          BusinessUserStore(),
+          EmployeeUserStore(),
+        ]),
         builder: (context, _) {
           final isCompleted = _checkCompletion(card.id);
-          
+
           Widget? topRightAction;
           if (card.id == "jobs") {
             topRightAction = GestureDetector(
@@ -480,7 +523,9 @@ class _HomePageState extends State<HomePage> {
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  _isCareerExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                  _isCareerExpanded
+                      ? Icons.keyboard_arrow_up
+                      : Icons.keyboard_arrow_down,
                   size: 16,
                   color: Colors.grey.shade700,
                 ),
@@ -496,7 +541,9 @@ class _HomePageState extends State<HomePage> {
             color: card.color,
             isCompleted: isCompleted,
             primaryButtonText: isCompleted ? "VIEW" : "UPGRADE",
-            customDescriptionWidget: (card.id == "business" && isCompleted) ? _buildBusinessDropdown(context) : null,
+            customDescriptionWidget: (card.id == "business" && isCompleted)
+                ? _buildBusinessDropdown(context)
+                : null,
             // REMOVED: hidePrimaryButton so that VIEW button appears for Business
             hidePrimaryButton: false,
             topRightAction: topRightAction,
@@ -523,7 +570,8 @@ class _HomePageState extends State<HomePage> {
           description: "Full access to standard features & profile management",
           icon: "👤",
           color: const Color(0xFF3B82F6),
-          isCompleted: true,
+          isCompleted: _checkCompletion("registered"),
+          primaryButtonText: _checkCompletion("registered") ? "VIEW" : "UPGRADE",
           onPrimaryTap: () => _handleNavigation("registered", "Registered"),
           onReadMoreTap: () => _showReadMore("Registered"),
         ),
@@ -533,7 +581,8 @@ class _HomePageState extends State<HomePage> {
           description: "Access to business analytics & team management",
           icon: "💼",
           color: const Color(0xFF8B5CF6),
-          isCompleted: true,
+          isCompleted: _checkCompletion("business"),
+          primaryButtonText: _checkCompletion("business") ? "VIEW" : "UPGRADE",
           onPrimaryTap: () => _handleNavigation("business", "Business"),
           onReadMoreTap: () => _showReadMore("Business"),
         ),
@@ -577,15 +626,16 @@ class _HomePageState extends State<HomePage> {
           children: [
             Text(
               "About $module",
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             Text(
               "This module provides comprehensive tools for $module management. Upgrade to unlock all features including advanced analytics, team collaboration, and priority support.",
-              style: const TextStyle(fontSize: 14, color: Color(0xFF64748B), height: 1.5),
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF64748B),
+                height: 1.5,
+              ),
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -595,9 +645,17 @@ class _HomePageState extends State<HomePage> {
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1E293B),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                child: const Text("CLOSE", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: const Text(
+                  "CLOSE",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
           ],
@@ -620,7 +678,10 @@ class _HomePageState extends State<HomePage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.5), width: 1),
+        border: Border.all(
+          color: const Color(0xFF6366F1).withOpacity(0.5),
+          width: 1,
+        ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Row(
@@ -636,13 +697,18 @@ class _HomePageState extends State<HomePage> {
                   color: Color(0xFF6366F1),
                 ),
                 isExpanded: true,
-                items: ["Cottage Industry", "Small Scale", "Medium Scale", "Large Scale"]
-                    .map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value, overflow: TextOverflow.ellipsis),
-                  );
-                }).toList(),
+                items:
+                    [
+                      "Cottage Industry",
+                      "Small Scale",
+                      "Medium Scale",
+                      "Large Scale",
+                    ].map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value, overflow: TextOverflow.ellipsis),
+                      );
+                    }).toList(),
                 onChanged: (val) {
                   if (val != null) {
                     setState(() {
@@ -666,12 +732,20 @@ class _HomePageState extends State<HomePage> {
                 color: Color(0xFF6366F1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.visibility_outlined, size: 12, color: Colors.white),
+              child: const Icon(
+                Icons.visibility_outlined,
+                size: 12,
+                color: Colors.white,
+              ),
             ),
           ),
           const SizedBox(width: 8),
           // Dropdown Arrow
-          const Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: Color(0xFF94A3B8)),
+          const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            size: 16,
+            color: Color(0xFF94A3B8),
+          ),
         ],
       ),
     );
