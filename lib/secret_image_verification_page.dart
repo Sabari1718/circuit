@@ -3,11 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'user_service.dart';
 import 'providers.dart';
 import 'home_page.dart';
+import 'services/captcha_service.dart';
+import 'auth_service.dart';
 
 class SecretImageVerificationPage extends ConsumerStatefulWidget {
   final String identifier;
+  final String? password;
 
-  const SecretImageVerificationPage({super.key, required this.identifier});
+  const SecretImageVerificationPage({super.key, required this.identifier, this.password});
 
   @override
   ConsumerState<SecretImageVerificationPage> createState() =>
@@ -16,26 +19,39 @@ class SecretImageVerificationPage extends ConsumerStatefulWidget {
 
 class _SecretImageVerificationPageState
     extends ConsumerState<SecretImageVerificationPage> {
-  String? _selectedImage;
+  CaptchaCategory? _selectedCategory;
   bool _isVerifying = false;
+  bool _isLoadingCategories = true;
+  List<CaptchaCategory> _categories = [];
+  final CaptchaService _captchaService = CaptchaService();
 
-  final List<String> _images = [
-    'assets/captcha/dog.jpg',
-    'assets/captcha/cat.jpg',
-    'assets/captcha/parrot.jpg',
-    'assets/captcha/car.jpg',
-    'assets/captcha/sports_bike.jpg',
-    'assets/captcha/train.jpg',
-    'assets/captcha/airplane.jpg',
-    'assets/captcha/bicycle.jpg',
-    'assets/captcha/coconut_tree.jpg',
-    'assets/captcha/mountain.jpg',
-    'assets/captcha/sunflower.jpg',
-    'assets/captcha/temple.jpg',
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchCategories();
+  }
+
+  Future<void> _fetchCategories() async {
+    try {
+      final categories = await _captchaService.getCategories();
+      if (mounted) {
+        setState(() {
+          _categories = categories;
+          _isLoadingCategories = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingCategories = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load images: $e')),
+        );
+      }
+    }
+  }
 
   Future<void> _verify() async {
-    if (_selectedImage == null) {
+    if (_selectedCategory == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select your secret image')),
       );
@@ -50,8 +66,36 @@ class _SecretImageVerificationPageState
 
       if (!mounted) return;
 
-      if (savedImage == _selectedImage) {
+      // We saved the image ID as a string during setup
+      if (savedImage == _selectedCategory!.id.toString() || savedImage == _selectedCategory!.image) {
+        
+        // If password was passed, verify via API to get the token!
+        if (widget.password != null) {
+          try {
+            final response = await AuthService().login(
+              identifier: widget.identifier,
+              password: widget.password!,
+              captchaImageId: _selectedCategory!.id,
+            );
+            
+            final userData = response['data']?['data'];
+            if (userData != null) {
+              await userService.saveFromApiUser(userData);
+            }
+          } catch (apiError) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(apiError.toString().replaceAll('AuthException: ', '')),
+                backgroundColor: Colors.redAccent,
+              ),
+            );
+            return;
+          }
+        }
+        
         // Success
+        if (!mounted) return;
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const HomePage()),
@@ -108,60 +152,83 @@ class _SecretImageVerificationPageState
                     color: Colors.white,
                     border: Border.all(color: Colors.grey.shade300, width: 2),
                   ),
-                  child: GridView.builder(
-                    padding: EdgeInsets.zero,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      crossAxisSpacing: 2,
-                      mainAxisSpacing: 2,
-                    ),
-                    itemCount: _images.length,
-                    itemBuilder: (context, index) {
-                      final imageUrl = _images[index];
-                      final isSelected = _selectedImage == imageUrl;
-
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _selectedImage = imageUrl;
-                          });
-                        },
-                        child: Container(
-                          color: Colors.white,
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                padding: EdgeInsets.all(isSelected ? 10.0 : 0.0),
-                                child: Image.asset(
-                                  imageUrl,
-                                  fit: BoxFit.cover,
-                                ),
+                  child: _isLoadingCategories
+                      ? const Center(child: CircularProgressIndicator())
+                      : _categories.isEmpty
+                          ? const Center(child: Text("No images available"))
+                          : GridView.builder(
+                              padding: EdgeInsets.zero,
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                crossAxisSpacing: 2,
+                                mainAxisSpacing: 2,
                               ),
-                              if (isSelected)
-                                Positioned(
-                                  top: 4,
-                                  right: 4,
+                              itemCount: _categories.length,
+                              itemBuilder: (context, index) {
+                                final category = _categories[index];
+                                final isSelected =
+                                    _selectedCategory?.id == category.id;
+
+                                return GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedCategory = category;
+                                    });
+                                  },
                                   child: Container(
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFF6366F1),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    padding: const EdgeInsets.all(4),
-                                    child: const Icon(
-                                      Icons.check,
-                                      color: Colors.white,
-                                      size: 16,
+                                    color: Colors.white,
+                                    child: Stack(
+                                      fit: StackFit.expand,
+                                      children: [
+                                        AnimatedContainer(
+                                          duration:
+                                              const Duration(milliseconds: 200),
+                                          padding: EdgeInsets.all(
+                                              isSelected ? 10.0 : 0.0),
+                                          child: Image.network(
+                                            category.image,
+                                            fit: BoxFit.cover,
+                                            loadingBuilder: (context, child, progress) {
+                                              if (progress == null) return child;
+                                              return Container(
+                                                color: Colors.grey.shade200,
+                                                child: const Center(
+                                                  child: CircularProgressIndicator(),
+                                                ),
+                                              );
+                                            },
+                                            errorBuilder: (context, error, stackTrace) =>
+                                                Container(
+                                              color: Colors.grey.shade200,
+                                              child: const Icon(Icons.error,
+                                                  color: Colors.red),
+                                            ),
+                                          ),
+                                        ),
+                                        if (isSelected)
+                                          Positioned(
+                                            top: 4,
+                                            right: 4,
+                                            child: Container(
+                                              decoration: const BoxDecoration(
+                                                color: Color(0xFF6366F1),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              padding: const EdgeInsets.all(4),
+                                              child: const Icon(
+                                                Icons.check,
+                                                color: Colors.white,
+                                                size: 16,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
                                     ),
                                   ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                                );
+                              },
+                            ),
                 ),
               ),
             ),
@@ -171,7 +238,7 @@ class _SecretImageVerificationPageState
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: _isVerifying ? null : _verify,
+                  onPressed: _isVerifying || _selectedCategory == null ? null : _verify,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF6366F1),
                     shape: RoundedRectangleBorder(

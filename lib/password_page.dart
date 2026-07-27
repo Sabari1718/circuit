@@ -132,7 +132,7 @@ class _PasswordPageState extends ConsumerState<PasswordPage> {
               context,
               MaterialPageRoute(
                 builder: (context) =>
-                    SecretImageSetupPage(identifier: identifier),
+                    SecretImageSetupPage(identifier: identifier, password: password, isExistingUser: true),
               ),
               (route) => false,
             );
@@ -143,6 +143,7 @@ class _PasswordPageState extends ConsumerState<PasswordPage> {
               MaterialPageRoute(
                 builder: (context) => SecretImageVerificationPage(
                   identifier: correctIdentifier ?? identifier,
+                  password: password,
                 ),
               ),
               (route) => false,

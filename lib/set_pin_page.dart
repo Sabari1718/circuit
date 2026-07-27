@@ -51,71 +51,23 @@ class _SetPinPageState extends ConsumerState<SetPinPage> {
       // Save user's own PIN + password fallback + enable app lock
       await AppLockService().enableAppLock(pin: pin, password: widget.password);
 
-      final data = await userService.getUserData();
-      final String name = data['name'] ?? 'User';
-      final String email = data['email'] ?? '';
-      final String mobile = data['phone'] ?? '';
-      final String address = data['address'] ?? 'N/A';
-
-      print("========== REGISTER USER IN BACKEND ==========");
-      print("NAME: $name");
-      print("PHONE: $mobile");
-      print("EMAIL: $email");
-      print("ADDRESS: $address");
-      print("PIN: $pin");
-
-      final registerResult = await AuthService().register(
-        phoneNumber: mobile,
-        email: email,
-        password: widget.password,
-        address: address,
-        userName: name,
-        pin: pin,
-      );
-
-      print("REGISTER RESULT: $registerResult");
-
-      try {
-        // Verify if token exists locally, if not, perform a programmatic login to get the JWT token.
-        final String? token = await AuthService().getToken();
-        if (token == null || token.trim().isEmpty) {
-          print(
-            "No token in registration response. Logging in programmatically...",
-          );
-          final String identifier = mobile.isNotEmpty ? mobile : email;
-          final loginResponse = await AuthService().login(
-            identifier: identifier,
-            password: widget.password,
-          );
-          final userData = loginResponse['data']?['data'];
-          if (userData != null) {
-            await userService.saveFromApiUser(userData);
-          }
-        }
-      } catch (loginErr) {
-        print("Programmatic login failed: $loginErr");
-      }
-
-      try {
-        // Only save session data. Registration data is stored securely in DB.
-        // Set user session data with isLoggedIn: true
-        await userService.saveUserData(
-          phone: mobile,
-          email: email,
-          secretImage: 'bypassed',
-          isLoggedIn: true,
-        );
-      } catch (saveErr) {
-        print("Saving user session locally failed: $saveErr");
-      }
-
-      print("PIN SAVED AND USER REGISTERED SUCCESSFULLY");
+      print("PIN SAVED. NAVIGATING TO CAPTCHA SETUP.");
 
       if (!mounted) return;
 
+      final data = await userService.getUserData();
+      final String email = data['email'] ?? '';
+      final String mobile = data['phone'] ?? '';
+
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => SecretImageSetupPage(identifier: mobile.isNotEmpty ? mobile : email)),
+        MaterialPageRoute(
+          builder: (context) => SecretImageSetupPage(
+            identifier: mobile.isNotEmpty ? mobile : email,
+            password: widget.password,
+            pin: pin,
+          ),
+        ),
         (route) => false,
       );
     } catch (e) {

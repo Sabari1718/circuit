@@ -45,7 +45,7 @@ class AuthService {
 
   /// Login endpoint.
   static const String loginUrl =
-      'https://user.jobes24x7.com/api/login/authenticate';
+      'https://managelogin.jobes24x7.com/api/login/authenticate';
 
   // ──────────────────────────────────────────────
   // Token validity window
@@ -200,12 +200,16 @@ class AuthService {
     required String identifier,
     required String password,
     bool isPin = false,
+    int? captchaImageId,
   }) async {
     final Map<String, dynamic> body = isPin ? {'pin': password} : {'password': password};
     if (identifier.contains('@')) {
       body['email'] = identifier;
     } else {
       body['phone_number'] = identifier;
+    }
+    if (captchaImageId != null) {
+      body['captcha_image_id'] = captchaImageId;
     }
 
     debugPrint('[AuthService] LOGIN → $loginUrl  body: $body');
@@ -226,12 +230,23 @@ class AuthService {
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
-      final bool success = data['data']?['code'] == 200 || data['code'] == 200;
+      bool success = false;
+
+      if (data['code'] == 200 || data['result'] == 'Success' || data['result'] == 'success') {
+        success = true;
+      }
+      if (data['data'] != null && data['data'] is Map) {
+        if (data['data']['code'] == 200 || 
+            data['data']['result'] == 'Success' || 
+            data['data']['result'] == 'success') {
+          success = true;
+        }
+      }
 
       if (success) {
         // ── Extract token ──────────────────────────────────────────────────
         final String? token =
-            data['data']?['token']?.toString() ??
+            (data['data'] is Map ? data['data']['token']?.toString() : null) ??
             data['token']?.toString() ??
             data['access_token']?.toString() ??
             data['jwt']?.toString();
@@ -313,8 +328,10 @@ class AuthService {
     required String address,
     required String userName,
     required String pin,
+    required String captchaImage,
+    required int captchaImageId,
   }) async {
-    const String registerUrl = 'https://user.jobes24x7.com/api/login/create';
+    const String registerUrl = 'https://managelogin.jobes24x7.com/api/login/create';
 
     final Map<String, dynamic> body = {
       'phone_number': phoneNumber.isNotEmpty ? phoneNumber : '',
@@ -333,6 +350,8 @@ class AuthService {
       'user_main_id': null,
       'user_type': 'guest',
       'pin': pin,
+      'captcha_image': captchaImage,
+      'captcha_image_id': captchaImageId,
     };
 
     debugPrint('[AuthService] REGISTER → $registerUrl  body: $body');
