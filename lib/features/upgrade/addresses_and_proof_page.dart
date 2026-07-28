@@ -1,9 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
+import 'dart:convert';
+import 'dart:io';
+import '../../user_service.dart';
 
 class AddressesAndProofPage extends StatefulWidget {
-  const AddressesAndProofPage({super.key});
+  final String gender;
+  final String idType;
+  final String panNumber;
+  final String profilePhotoBase64;
+  final String panDocBase64;
+  final String idDocBase64;
+
+  const AddressesAndProofPage({
+    super.key,
+    required this.gender,
+    required this.idType,
+    required this.panNumber,
+    required this.profilePhotoBase64,
+    required this.panDocBase64,
+    required this.idDocBase64,
+  });
 
   @override
   State<AddressesAndProofPage> createState() => _AddressesAndProofPageState();
@@ -42,12 +60,18 @@ class _AddressesAndProofPageState extends State<AddressesAndProofPage> {
   bool isAddressSelected = false;
   String? selectedDocumentType;
   String? addressProofFileName;
+  String? addressProofBase64;
+  bool _isLoading = false;
 
   Future<void> _pickFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
-    if (result != null) {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
+    if (result != null && result.files.single.path != null) {
+      final file = File(result.files.single.path!);
+      final bytes = await file.readAsBytes();
+      final base64String = "data:image/png;base64,${base64Encode(bytes)}";
       setState(() {
         addressProofFileName = result.files.single.name;
+        addressProofBase64 = base64String;
       });
     }
   }
@@ -517,20 +541,75 @@ class _AddressesAndProofPageState extends State<AddressesAndProofPage> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: ElevatedButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Finished successfully!")),
-                          );
-                          // Pop back to dashboard
-                          Navigator.pop(context);
-                          Navigator.pop(context);
+                        onPressed: _isLoading ? null : () async {
+                          if (!isAddressAdded || !isAddressSelected || selectedDocumentType == null || addressProofBase64 == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Please complete all required fields and upload address proof')),
+                            );
+                            return;
+                          }
+
+                          setState(() => _isLoading = true);
+
+                          final userData = await UserService().getUserData();
+                          final String actualUserMainId = userData['user_main_id']?.toString() ?? "";
+
+                          if (actualUserMainId.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Error: User ID not found. Please log in again.')),
+                            );
+                            setState(() => _isLoading = false);
+                            return;
+                          }
+
+                          final payload = {
+                            "user_main_id": actualUserMainId,
+                            "gender": widget.gender,
+                            "address_proof": {
+                              "proof_type": selectedDocumentType,
+                              "proof_document": addressProofBase64,
+                            },
+                            "addresses": [
+                              {
+                                "address_type": _addressTypeController.text,
+                                "property_type": selectedPropertyType,
+                                "pincode": _pincodeController.text,
+                              }
+                            ],
+                            "government_id_document": widget.idDocBase64,
+                            "government_id_type": widget.idType,
+                            "pan_document": widget.panDocBase64,
+                            "pan_number": widget.panNumber,
+                            "profile_photo": widget.profilePhotoBase64,
+                          };
+
+                          final response = await UserService().submitVerifiedRegistration(payload);
+                          
+                          setState(() => _isLoading = false);
+
+                          if (!mounted) return;
+
+                          if (response['success'] == true) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(response['message'] ?? "Finished successfully!")),
+                            );
+                            Navigator.pop(context);
+                            Navigator.pop(context);
+                            Navigator.pop(context);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(response['message'] ?? "Failed to submit.")),
+                            );
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.transparent,
                           shadowColor: Colors.transparent,
                           padding: const EdgeInsets.symmetric(horizontal: 24),
                         ),
-                        child: const Text("Finish", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        child: _isLoading 
+                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            : const Text("Finish", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                       ),
                     ),
                   ],

@@ -37,7 +37,38 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
   Uint8List? _uploadFileBytes;
   String? _profileFileName;
   Uint8List? _profileFileBytes;
+  String? _profilePhotoUrl;
+  String? _panPhotoUrl;
+  
+  // Extra Verified Data Fields
+  String? _govIdType;
+  Uint8List? _govIdPhotoBytes;
+  String? _govIdPhotoUrl;
+  
+  String? _addressType;
+  String? _pincode;
+  
+  String? _addressProofType;
+  Uint8List? _addressProofBytes;
+  String? _addressProofUrl;
+  
   bool _isSubmitting = false;
+
+  void _parseImageField(String? path, void Function(String? url) setUrl, void Function(Uint8List? bytes) setBytes) {
+    if (path == null || path.isEmpty) return;
+    if (path.startsWith('data:image')) {
+      try {
+        final base64Str = path.split(',').last;
+        setBytes(base64Decode(base64Str));
+      } catch (e) {
+        debugPrint("Error parsing base64 image: $e");
+      }
+    } else if (path.startsWith('http')) {
+      setUrl(path);
+    } else {
+      setUrl('https://managelogin.jobes24x7.com/api/$path');
+    }
+  }
 
   @override
   void initState() {
@@ -68,6 +99,39 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
       }
       _isVerified = _panNumber.isNotEmpty;
     });
+
+    if (_userMainId.isNotEmpty && _userMainId != "9508383027") {
+      final verifiedData = await UserService().getVerificationDetails(_userMainId);
+      if (verifiedData != null && mounted) {
+        setState(() {
+          _isVerified = true;
+          _panNumber = verifiedData['pan_number']?.toString() ?? _panNumber;
+          _gender = verifiedData['gender']?.toString() ?? _gender;
+          
+          final profilePath = verifiedData['profile_photo_path']?.toString();
+          _parseImageField(profilePath, (url) => _profilePhotoUrl = url, (bytes) => _profileFileBytes = bytes);
+          
+          final panPath = verifiedData['pan_document_path']?.toString();
+          _parseImageField(panPath, (url) => _panPhotoUrl = url, (bytes) => _uploadFileBytes = bytes);
+          
+          _govIdType = verifiedData['government_id_type']?.toString();
+          final govIdPath = verifiedData['government_id_document_path']?.toString();
+          _parseImageField(govIdPath, (url) => _govIdPhotoUrl = url, (bytes) => _govIdPhotoBytes = bytes);
+          
+          if (verifiedData['addresses'] != null && verifiedData['addresses'] is List && (verifiedData['addresses'] as List).isNotEmpty) {
+             final addressData = (verifiedData['addresses'] as List).first;
+             _addressType = addressData['address_type']?.toString();
+             _pincode = addressData['pincode']?.toString();
+          }
+          
+          if (verifiedData['address_proof'] != null) {
+             _addressProofType = verifiedData['address_proof']['proof_type']?.toString();
+             final proofPath = verifiedData['address_proof']['proof_document']?.toString();
+             _parseImageField(proofPath, (url) => _addressProofUrl = url, (bytes) => _addressProofBytes = bytes);
+          }
+        });
+      }
+    }
   }
 
   Future<void> _saveVerificationData(
@@ -362,7 +426,11 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
               final leftContent = Container(
                 padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2563EB),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   borderRadius: isSmall 
                       ? const BorderRadius.vertical(top: Radius.circular(20)) 
                       : const BorderRadius.horizontal(left: Radius.circular(20)),
@@ -371,16 +439,17 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      width: 80,
-                      height: 80,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
+                      width: 90,
+                      height: 90,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
                         shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
                       ),
-                      child: const Icon(Icons.security, color: Color(0xFF2563EB), size: 40),
+                      child: const Icon(Icons.verified_user_rounded, color: Colors.white, size: 44),
                     ),
                     const SizedBox(height: 24),
-                    const Text("USER TYPE", style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 1)),
+                    const Text("VERIFIED ACCOUNT", style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
                     const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -389,12 +458,12 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: Colors.white.withOpacity(0.3)),
                       ),
-                      child: const Text("register", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+                      child: Text(_accountType.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800)),
                     ),
-                    const SizedBox(height: 24),
-                    const Text("USER MAIN ID", style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 1)),
+                    const SizedBox(height: 32),
+                    const Text("USER ID", style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
                     const SizedBox(height: 4),
-                    Text(_userMainId, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)),
+                    Text(_userMainId, style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: 1)),
                   ],
                 ),
               );
@@ -402,27 +471,38 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
               final rightContent = Padding(
                 padding: const EdgeInsets.all(32.0),
                 child: isSmall ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildProfileSection(),
-                    const Divider(height: 48),
+                    const SizedBox(height: 40),
                     _buildDetailsSection(),
-                    const Divider(height: 48),
+                    const SizedBox(height: 40),
                     _buildDocumentSection(),
                   ],
                 ) : Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildProfileSection(),
+                    Expanded(
+                      flex: 4,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildProfileSection(),
+                          const SizedBox(height: 40),
+                          _buildDocumentSection(),
+                        ]
+                      )
+                    ),
                     Container(
                       width: 1,
-                      height: 120,
+                      height: 400,
                       color: const Color(0xFFE2E8F0),
                       margin: const EdgeInsets.symmetric(horizontal: 32),
                     ),
-                    Expanded(child: _buildDetailsSection()),
-                    const SizedBox(width: 32),
-                    Expanded(child: _buildDocumentSection()),
+                    Expanded(
+                      flex: 6,
+                      child: _buildDetailsSection(),
+                    ),
                   ],
                 ),
               );
@@ -453,32 +533,43 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
   }
 
   Widget _buildProfileSection() {
-    return Column(
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        const Text("PROFILE PHOTO", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8), letterSpacing: 0.5)),
-        const SizedBox(height: 16),
         Container(
           width: 80,
           height: 80,
           decoration: BoxDecoration(
-            color: const Color(0xFF2563EB),
+            color: const Color(0xFFF1F5F9),
             shape: BoxShape.circle,
-            image: _profileFileBytes != null ? DecorationImage(image: MemoryImage(_profileFileBytes!), fit: BoxFit.cover) : null,
+            border: Border.all(color: const Color(0xFFE2E8F0), width: 2),
+            boxShadow: [
+               BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))
+            ],
+            image: _profilePhotoUrl != null 
+                ? DecorationImage(image: NetworkImage(_profilePhotoUrl!), fit: BoxFit.cover)
+                : (_profileFileBytes != null ? DecorationImage(image: MemoryImage(_profileFileBytes!), fit: BoxFit.cover) : null),
           ),
-          child: _profileFileBytes == null 
-              ? const Center(child: Text("US", style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)))
+          child: _profilePhotoUrl == null && _profileFileBytes == null 
+              ? const Center(child: Icon(Icons.person, color: Color(0xFFCBD5E1), size: 40))
               : null,
         ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: const Color(0xFF2563EB),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: const Text("REGISTER", style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
-        ),
+        const SizedBox(width: 20),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text("PROFILE PHOTO", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8), letterSpacing: 1)),
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFDEF7EC),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Text("UPLOADED", style: TextStyle(color: Color(0xFF03543F), fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+            ),
+          ],
+        )
       ],
     );
   }
@@ -487,13 +578,49 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("PAN NUMBER", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8), letterSpacing: 0.5)),
-        const SizedBox(height: 8),
-        Text(_panNumber.isNotEmpty ? _panNumber : "-", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF2563EB))),
-        const SizedBox(height: 24),
-        const Text("GENDER", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8), letterSpacing: 0.5)),
-        const SizedBox(height: 8),
-        Text(_gender.isNotEmpty ? _gender : "-", style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF2563EB))),
+        Row(
+          children: [
+             const Icon(Icons.badge, size: 18, color: Color(0xFF2563EB)),
+             const SizedBox(width: 8),
+             const Text("PERSONAL DETAILS", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF1E293B), letterSpacing: 0.5)),
+          ]
+        ),
+        const SizedBox(height: 20),
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+             color: const Color(0xFFF8FAFC),
+             borderRadius: BorderRadius.circular(16),
+             border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Column(
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: _buildDetailItem("PAN NUMBER", _panNumber.isNotEmpty ? _panNumber : "-")),
+                  Expanded(child: _buildDetailItem("GENDER", _gender.isNotEmpty ? _gender : "-")),
+                ]
+              ),
+              const SizedBox(height: 24),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: _buildDetailItem("GOV ID TYPE", _govIdType ?? "-")),
+                  Expanded(child: _buildDetailItem("ADDRESS TYPE", _addressType ?? "-")),
+                ]
+              ),
+              const SizedBox(height: 24),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: _buildDetailItem("PINCODE", _pincode ?? "-")),
+                  Expanded(child: _buildDetailItem("ADDRESS PROOF", _addressProofType ?? "-")),
+                ]
+              ),
+            ]
+          )
+        )
       ],
     );
   }
@@ -502,86 +629,113 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("PAN CARD DOCUMENT", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8), letterSpacing: 0.5)),
-        const SizedBox(height: 16),
-        GestureDetector(
-          onTap: () {
-            if (_uploadFileBytes != null) {
-              showDialog(
-                context: context,
-                builder: (context) => Dialog(
-                  backgroundColor: Colors.transparent,
-                  insetPadding: const EdgeInsets.all(24),
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: InteractiveViewer(
-                          child: Image.memory(_uploadFileBytes!, fit: BoxFit.contain),
-                        ),
-                      ),
-                      Positioned(
-                        top: -12,
-                        right: -12,
-                        child: GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFEF4444),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.close, color: Colors.white, size: 20),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
-          },
-          child: Container(
-            height: 100,
-            width: 140,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-              image: _uploadFileBytes != null ? DecorationImage(image: MemoryImage(_uploadFileBytes!), fit: BoxFit.cover) : null,
-            ),
-            child: _uploadFileBytes == null 
-                ? const Icon(Icons.description, color: Color(0xFFCBD5E1), size: 40)
-                : null,
-          ),
+        Row(
+          children: [
+             const Icon(Icons.folder_shared, size: 18, color: Color(0xFF2563EB)),
+             const SizedBox(width: 8),
+             const Text("UPLOADED DOCUMENTS", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF1E293B), letterSpacing: 0.5)),
+          ]
         ),
+        const SizedBox(height: 20),
+        Wrap(
+          spacing: 16,
+          runSpacing: 16,
+          children: [
+            _buildDocThumbnail("PAN Card", _panPhotoUrl, _uploadFileBytes),
+            _buildDocThumbnail("Gov ID", _govIdPhotoUrl, _govIdPhotoBytes),
+            _buildDocThumbnail("Address Proof", _addressProofUrl, _addressProofBytes),
+          ]
+        )
       ],
     );
   }
+
+  Widget _buildDocThumbnail(String title, String? url, Uint8List? bytes) {
+    if (url == null && bytes == null) return const SizedBox.shrink();
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: () {
+            showDialog(
+              context: context,
+              builder: (context) => Dialog(
+                backgroundColor: Colors.transparent,
+                insetPadding: const EdgeInsets.all(24),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                      child: InteractiveViewer(
+                        child: url != null
+                            ? Image.network(url, fit: BoxFit.contain)
+                            : Image.memory(bytes!, fit: BoxFit.contain),
+                      ),
+                    ),
+                    Positioned(
+                      top: -12, right: -12,
+                      child: GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
+                          child: const Icon(Icons.close, color: Colors.white, size: 20),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+          child: Container(
+            height: 90,
+            width: 130,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 2),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 4))
+              ],
+              image: url != null
+                  ? DecorationImage(image: NetworkImage(url), fit: BoxFit.cover)
+                  : (bytes != null ? DecorationImage(image: MemoryImage(bytes), fit: BoxFit.cover) : null),
+            ),
+            child: (url == null && bytes == null)
+                ? const Center(child: Icon(Icons.image_not_supported, color: Color(0xFFCBD5E1)))
+                : null,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(6)
+          ),
+          child: Text(title.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF64748B), letterSpacing: 0.5)),
+        ),
+      ]
+    );
+  }
+
   Widget _buildDetailItem(String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w800,
-            color: Color(0xFF94A3B8),
-            letterSpacing: 0.5,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-        ),
+        Text(label, style: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+          color: Color(0xFF94A3B8),
+          letterSpacing: 0.5,
+        )),
+        const SizedBox(height: 4),
+        Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
       ],
     );
   }

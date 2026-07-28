@@ -1,13 +1,43 @@
 import 'package:flutter/material.dart';
 import 'verified_upgrade_intro_page.dart';
+import '../../upgrade/new_business_register_page.dart';
 
-class UserUpgradePage extends StatelessWidget {
+class UserUpgradePage extends StatefulWidget {
   const UserUpgradePage({super.key});
+
+  @override
+  State<UserUpgradePage> createState() => _UserUpgradePageState();
+}
+
+class _UserUpgradePageState extends State<UserUpgradePage> {
+  bool _isVerified = false; // Dummy variable for testing
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        title: const Text("User Privileges", style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
+        actions: [
+          Row(
+            children: [
+              Text("Verified?", style: TextStyle(color: Colors.grey[700], fontSize: 14)),
+              Switch(
+                value: _isVerified,
+                activeColor: const Color(0xFF2563EB),
+                onChanged: (val) {
+                  setState(() {
+                    _isVerified = val;
+                  });
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -162,7 +192,14 @@ class UserUpgradePage extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               if (item['title'] == "BUSINESS") {
-                Navigator.pushNamed(context, '/business');
+                if (_isVerified) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const NewBusinessRegisterPage()),
+                  );
+                } else {
+                  _showVerificationDialog(context);
+                }
               } else if (item['title'] == "VERIFIED") {
                 Navigator.push(
                   context,
@@ -187,6 +224,85 @@ class UserUpgradePage extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showVerificationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFEF3C7),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.shield, color: Color(0xFFD97706), size: 48),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                "Verification Required",
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "To register as a Business User, you must first complete your Verified User Registration (Identity & PAN verification).\nPlease verify your identity before accessing the Business portal.",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Color(0xFF64748B), fontSize: 14, height: 1.6),
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context); // close dialog
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const VerifiedUpgradeIntroPage()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2563EB),
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  elevation: 0,
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        "Go to Verified User Registration", 
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Icon(Icons.arrow_forward, size: 18),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                ),
+                child: const Text("Back to Dashboard", style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

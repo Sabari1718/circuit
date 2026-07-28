@@ -446,4 +446,95 @@ class UserService extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('secret_img_$identifier');
   }
+
+  // ===========================================================================
+  // VERIFIED USER API
+  // ===========================================================================
+
+  Future<Map<String, dynamic>> submitVerifiedRegistration(Map<String, dynamic> payload) async {
+    final url = 'https://managelogin.jobes24x7.com/api/api/verified-user';
+    debugPrint('=== API REQUEST: POST $url ===');
+    debugPrint('Payload: ${jsonEncode(payload)}');
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(payload),
+      );
+
+      debugPrint('=== API RESPONSE [${response.statusCode}] ===');
+      debugPrint('Body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final decoded = jsonDecode(response.body);
+        return {
+          'success': decoded['success'] ?? true,
+          'message': decoded['message'] ?? 'Verification submitted successfully.',
+          'data': decoded['data'] ?? {},
+        };
+      } else {
+        return {
+          'success': false,
+          'message': 'Failed to submit verification. Status: ${response.statusCode}',
+        };
+      }
+    } catch (e) {
+      debugPrint('Error submitting verified registration: $e');
+      return {
+        'success': false,
+        'message': 'An error occurred while submitting the request.',
+      };
+    }
+  }
+
+  Future<bool> checkVerificationStatus(String userMainId) async {
+    final url = 'https://managelogin.jobes24x7.com/api/api/verified-user/$userMainId';
+    debugPrint('=== API REQUEST: GET $url ===');
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      debugPrint('=== API RESPONSE [${response.statusCode}] ===');
+      debugPrint('Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded['success'] == true && decoded['data'] != null && decoded['data']['id'] != null) {
+          // If the API returns success and data with a valid id exists, it means the user has a verified user record
+          return true;
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking verification status: $e');
+    }
+    return false;
+  }
+
+  Future<Map<String, dynamic>?> getVerificationDetails(String userMainId) async {
+    final url = 'https://managelogin.jobes24x7.com/api/api/verified-user/$userMainId';
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded['success'] == true && decoded['data'] != null && decoded['data']['id'] != null) {
+          return decoded['data'] as Map<String, dynamic>;
+        }
+      }
+    } catch (e) {
+      debugPrint('Error getting verification details: $e');
+    }
+    return null;
+  }
 }

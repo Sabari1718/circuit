@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import 'upgrade/business_created_page.dart';
+import 'upgrade/new_business_register_page.dart';
 import 'features/employee/employee_dashboard_page.dart';
 import 'upgrade/business_user_store.dart';
 import 'upgrade/employee_user_store.dart';
@@ -201,11 +202,19 @@ class _HomePageState extends State<HomePage> {
 
   bool _isMainBusinessRegistered = false;
   bool _isRegisteredUpgraded = false;
+  bool _isVerified = false; // Add for testing verification flow
 
   Future<void> _loadUserSession() async {
     await UserService().loadSession();
     final data = await UserService().getUserData();
     final prefs = await SharedPreferences.getInstance();
+
+    bool isVerified = false;
+    final userMainId = data['user_main_id'];
+    if (userMainId != null && userMainId.toString().isNotEmpty) {
+      isVerified = await UserService().checkVerificationStatus(userMainId.toString());
+    }
+
     if (mounted) {
       setState(() {
         _currentUserName = (data['name'] ?? widget.userName).trim().isEmpty
@@ -215,6 +224,7 @@ class _HomePageState extends State<HomePage> {
         _isMainBusinessRegistered =
             prefs.getBool('is_main_business_registered') ?? false;
         _isRegisteredUpgraded = prefs.getBool('is_registered_upgraded') ?? false;
+        _isVerified = isVerified;
 
         // Initialize dropdown from store if business exists
         if (BusinessUserStore().businesses.isNotEmpty &&
@@ -239,6 +249,9 @@ class _HomePageState extends State<HomePage> {
     }
     if (moduleId == "registered") {
       return _isRegisteredUpgraded;
+    }
+    if (moduleId == "verified") {
+      return _isVerified;
     }
     return false;
   }
@@ -266,6 +279,13 @@ class _HomePageState extends State<HomePage> {
             builder: (context) => const EmployeeDashboardPage(),
           ),
         );
+      } else if (moduleId == "verified" || moduleId == "registered") {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => UserOverviewPage(initialPage: isCompleted ? 0 : 1),
+          ),
+        );
       } else {
         ScaffoldMessenger.of(
           context,
@@ -273,10 +293,14 @@ class _HomePageState extends State<HomePage> {
       }
     } else {
       if (moduleId == "business") {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const BusinessCreatedPage()),
-        ).then((_) => setState(() {}));
+        if (_isVerified) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const NewBusinessRegisterPage()),
+          ).then((_) => setState(() {}));
+        } else {
+          _showVerificationDialog(context);
+        }
       } else if (moduleId == "employee") {
         Navigator.push(
           context,
@@ -300,7 +324,7 @@ class _HomePageState extends State<HomePage> {
           MaterialPageRoute(
             builder: (context) => const VerifiedUpgradeIntroPage(),
           ),
-        );
+        ).then((_) => _loadUserSession());
       } else {
         ScaffoldMessenger.of(
           context,
@@ -355,6 +379,85 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 24),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _showVerificationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFEF3C7),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.shield, color: Color(0xFFD97706), size: 48),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                "Verification Required",
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "To register as a Business User, you must first complete your Verified User Registration (Identity & PAN verification).\nPlease verify your identity before accessing the Business portal.",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Color(0xFF64748B), fontSize: 14, height: 1.6),
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context); // close dialog
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const VerifiedUpgradeIntroPage()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2563EB),
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  elevation: 0,
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        "Go to Verified User Registration", 
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Icon(Icons.arrow_forward, size: 18),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                ),
+                child: const Text("Back to Dashboard", style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -431,13 +534,20 @@ class _HomePageState extends State<HomePage> {
             child: Icon(icon, color: iconColor, size: 20),
           ),
           const SizedBox(height: 8),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1E293B),
-            ),
+          Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8.0,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+            ],
           ),
           Text(
             subtitle,
@@ -592,8 +702,8 @@ class _HomePageState extends State<HomePage> {
           description: "Verified badge & priority support",
           icon: "✅",
           color: const Color(0xFF10B981),
-          isCompleted: false,
-          primaryButtonText: "Upgrade to VERIFIED",
+          isCompleted: _checkCompletion("verified"),
+          primaryButtonText: _checkCompletion("verified") ? "VIEW" : "Upgrade to VERIFIED",
           onPrimaryTap: () => _handleNavigation("verified", "Verified"),
           onReadMoreTap: () => _showReadMore("Verified"),
         ),

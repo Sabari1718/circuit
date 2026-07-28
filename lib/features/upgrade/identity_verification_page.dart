@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
+import 'dart:convert';
+import 'dart:io';
 import 'addresses_and_proof_page.dart';
 
 class IdentityVerificationPage extends StatefulWidget {
@@ -18,12 +20,19 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
   String? panDocName;
   String? idDocName;
   
+  String? profilePhotoBase64;
+  String? panDocBase64;
+  String? idDocBase64;
+  
   final TextEditingController _panController = TextEditingController();
 
-  Future<void> _pickFile(Function(String?) onPicked) async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
-    if (result != null) {
-      onPicked(result.files.single.name);
+  Future<void> _pickFile(Function(String?, String?) onPicked) async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
+    if (result != null && result.files.single.path != null) {
+      final file = File(result.files.single.path!);
+      final bytes = await file.readAsBytes();
+      final base64String = "data:image/png;base64,${base64Encode(bytes)}";
+      onPicked(result.files.single.name, base64String);
     }
   }
 
@@ -112,11 +121,11 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
                           const SizedBox(height: 24),
                           _buildDropdownField("Select ID Type *", "Select Government ID Type", ["Aadhaar Card", "Passport", "Driving Licence", "Voter ID Card"], selectedIdType, (v) => setState(() => selectedIdType = v)),
                           const SizedBox(height: 24),
-                          _buildFilePicker("Profile Photo *", profilePhotoName, () => _pickFile((name) => setState(() => profilePhotoName = name)), isImage: true),
+                          _buildFilePicker("Profile Photo *", profilePhotoName, () => _pickFile((name, base64) => setState(() { profilePhotoName = name; profilePhotoBase64 = base64; })), isImage: true),
                           const SizedBox(height: 24),
-                          _buildFilePicker("Upload PAN Document *", panDocName, () => _pickFile((name) => setState(() => panDocName = name))),
+                          _buildFilePicker("Upload PAN Document *", panDocName, () => _pickFile((name, base64) => setState(() { panDocName = name; panDocBase64 = base64; }))),
                           const SizedBox(height: 24),
-                          _buildFilePicker("Upload ID Document *", idDocName, () => _pickFile((name) => setState(() => idDocName = name))),
+                          _buildFilePicker("Upload ID Document *", idDocName, () => _pickFile((name, base64) => setState(() { idDocName = name; idDocBase64 = base64; }))),
                         ],
                       );
                     }
@@ -140,11 +149,11 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _buildFilePicker("Profile Photo *", profilePhotoName, () => _pickFile((name) => setState(() => profilePhotoName = name)), isImage: true),
+                              _buildFilePicker("Profile Photo *", profilePhotoName, () => _pickFile((name, base64) => setState(() { profilePhotoName = name; profilePhotoBase64 = base64; })), isImage: true),
                               const SizedBox(height: 24),
-                              _buildFilePicker("Upload PAN Document *", panDocName, () => _pickFile((name) => setState(() => panDocName = name))),
+                              _buildFilePicker("Upload PAN Document *", panDocName, () => _pickFile((name, base64) => setState(() { panDocName = name; panDocBase64 = base64; }))),
                               const SizedBox(height: 24),
-                              _buildFilePicker("Upload ID Document *", idDocName, () => _pickFile((name) => setState(() => idDocName = name))),
+                              _buildFilePicker("Upload ID Document *", idDocName, () => _pickFile((name, base64) => setState(() { idDocName = name; idDocBase64 = base64; }))),
                             ],
                           ),
                         ),
@@ -188,9 +197,30 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
                         ),
                         child: ElevatedButton.icon(
                           onPressed: () {
+                            if (selectedGender == null || 
+                                _panController.text.isEmpty ||
+                                profilePhotoBase64 == null ||
+                                panDocBase64 == null ||
+                                selectedIdType == null ||
+                                idDocBase64 == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Please fill all required fields and upload images')),
+                              );
+                              return;
+                            }
+                            
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => const AddressesAndProofPage()),
+                              MaterialPageRoute(
+                                builder: (context) => AddressesAndProofPage(
+                                  gender: selectedGender!,
+                                  idType: selectedIdType!,
+                                  panNumber: _panController.text,
+                                  profilePhotoBase64: profilePhotoBase64!,
+                                  panDocBase64: panDocBase64!,
+                                  idDocBase64: idDocBase64!,
+                                ),
+                              ),
                             );
                           },
                           icon: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
