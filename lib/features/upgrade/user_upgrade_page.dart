@@ -17,14 +17,24 @@ class _UserUpgradePageState extends State<UserUpgradePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text("User Privileges", style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold)),
+        title: const Text(
+          "User Privileges",
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
         actions: [
           Row(
             children: [
-              Text("Verified?", style: TextStyle(color: Colors.grey[700], fontSize: 14)),
+              Text(
+                "Verified?",
+                style: TextStyle(color: Colors.grey[700], fontSize: 14),
+              ),
               Switch(
                 value: _isVerified,
                 activeColor: const Color(0xFF2563EB),
@@ -195,7 +205,9 @@ class _UserUpgradePageState extends State<UserUpgradePage> {
                 if (_isVerified) {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const NewBusinessRegisterPage()),
+                    MaterialPageRoute(
+                      builder: (context) => const NewBusinessRegisterPage(),
+                    ),
                   );
                 } else {
                   _showVerificationDialog(context);
@@ -244,18 +256,30 @@ class _UserUpgradePageState extends State<UserUpgradePage> {
                   color: Color(0xFFFEF3C7),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.shield, color: Color(0xFFD97706), size: 48),
+                child: const Icon(
+                  Icons.shield,
+                  color: Color(0xFFD97706),
+                  size: 48,
+                ),
               ),
               const SizedBox(height: 24),
               const Text(
                 "Verification Required",
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
               ),
               const SizedBox(height: 16),
               const Text(
                 "To register as a Business User, you must first complete your Verified User Registration (Identity & PAN verification).\nPlease verify your identity before accessing the Business portal.",
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Color(0xFF64748B), fontSize: 14, height: 1.6),
+                style: TextStyle(
+                  color: Color(0xFF64748B),
+                  fontSize: 14,
+                  height: 1.6,
+                ),
               ),
               const SizedBox(height: 32),
               ElevatedButton(
@@ -263,14 +287,18 @@ class _UserUpgradePageState extends State<UserUpgradePage> {
                   Navigator.pop(context); // close dialog
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const VerifiedUpgradeIntroPage()),
+                    MaterialPageRoute(
+                      builder: (context) => const VerifiedUpgradeIntroPage(),
+                    ),
                   );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2563EB),
                   foregroundColor: Colors.white,
                   minimumSize: const Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   elevation: 0,
                 ),
                 child: const Row(
@@ -278,7 +306,7 @@ class _UserUpgradePageState extends State<UserUpgradePage> {
                   children: [
                     Flexible(
                       child: Text(
-                        "Go to Verified User Registration", 
+                        "Go to Verified User Registration",
                         textAlign: TextAlign.center,
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
@@ -298,7 +326,13 @@ class _UserUpgradePageState extends State<UserUpgradePage> {
                     side: const BorderSide(color: Color(0xFFE2E8F0)),
                   ),
                 ),
-                child: const Text("Back to Dashboard", style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.bold)),
+                child: const Text(
+                  "Back to Dashboard",
+                  style: TextStyle(
+                    color: Color(0xFF475569),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ],
           ),

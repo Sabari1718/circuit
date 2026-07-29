@@ -3,12 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../widgets/common_dashboard_app_bar.dart';
 import '../widgets/business_sidebar_menu.dart';
+import '../features/upgrade/add_business_welcome_widget.dart';
+import '../features/store/store_configuration_widget.dart';
 
 class NewBusinessRegisterPage extends StatefulWidget {
   const NewBusinessRegisterPage({super.key});
 
   @override
-  State<NewBusinessRegisterPage> createState() => _NewBusinessRegisterPageState();
+  State<NewBusinessRegisterPage> createState() =>
+      _NewBusinessRegisterPageState();
 }
 
 class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
@@ -26,10 +29,16 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
   final _pinCodeCtrl = TextEditingController();
 
   bool _isConfirmed = false;
+  
+  String _activeItem = 'business_overview';
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   Future<void> _pickImage(bool isBankDoc) async {
     final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
     if (image != null) {
       final bytes = await image.readAsBytes();
       setState(() {
@@ -63,6 +72,15 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
     }
   }
 
+  void _onSectionChanged(String newItem) {
+    setState(() {
+      _activeItem = newItem;
+    });
+    if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+      _scaffoldKey.currentState?.closeDrawer();
+    }
+  }
+
   @override
   void dispose() {
     _accNumberCtrl.dispose();
@@ -71,47 +89,84 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
     super.dispose();
   }
 
+  Widget _buildRegistrationForm() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 700),
+          child: Column(
+            children: [
+              _buildHeader(),
+              const SizedBox(height: 32),
+              _buildStepper(),
+              const SizedBox(height: 32),
+              _buildCurrentStepContent(),
+              const SizedBox(height: 32),
+              _buildFooterButtons(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMainContent() {
+    if (_activeItem == 'add_business') {
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 1000),
+            child: AddBusinessWelcomeWidget(
+              onRegistrationTypeSelected: (String type) {
+                setState(() {
+                  _activeItem = 'business_overview';
+                });
+              },
+            ),
+          ),
+        ),
+      );
+    } else if (_activeItem == 'create_store_category') {
+      return StoreConfigurationWidget(
+        onContinue: () {
+          // Handle continue action if needed
+        },
+      );
+    } else {
+      return _buildRegistrationForm();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 768;
 
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: const CommonDashboardAppBar(
-        automaticallyImplyLeading: true,
-      ),
+      appBar: const CommonDashboardAppBar(automaticallyImplyLeading: true),
       drawer: isMobile
           ? Drawer(
-              child: BusinessSidebarMenu(activeItem: ''),
+              child: BusinessSidebarMenu(
+                activeItem: _activeItem,
+                onSectionChanged: _onSectionChanged,
+              ),
             )
           : null,
       body: Row(
         children: [
           if (!isMobile)
-            const SizedBox(
+            SizedBox(
               width: 250,
-              child: BusinessSidebarMenu(activeItem: ''),
-            ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Center(
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 700),
-                  child: Column(
-                    children: [
-                      _buildHeader(),
-                      const SizedBox(height: 32),
-                      _buildStepper(),
-                      const SizedBox(height: 32),
-                      _buildCurrentStepContent(),
-                      const SizedBox(height: 32),
-                      _buildFooterButtons(),
-                    ],
-                  ),
-                ),
+              child: BusinessSidebarMenu(
+                activeItem: _activeItem,
+                onSectionChanged: _onSectionChanged,
               ),
             ),
+          Expanded(
+            child: _buildMainContent(),
           ),
         ],
       ),
@@ -134,7 +189,11 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
               ),
             ],
           ),
-          child: const Icon(Icons.badge_outlined, color: Color(0xFF2563EB), size: 32),
+          child: const Icon(
+            Icons.badge_outlined,
+            color: Color(0xFF2563EB),
+            size: 32,
+          ),
         ),
         const SizedBox(height: 16),
         const Row(
@@ -155,10 +214,7 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
         const SizedBox(height: 8),
         Text(
           "Complete your business user registration profile",
-          style: TextStyle(
-            color: Colors.grey[600],
-            fontSize: 14,
-          ),
+          style: TextStyle(color: Colors.grey[600], fontSize: 14),
         ),
       ],
     );
@@ -171,10 +227,7 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
         if (index % 2 != 0) {
           // Divider
           return Expanded(
-            child: Container(
-              height: 2,
-              color: const Color(0xFFE2E8F0),
-            ),
+            child: Container(height: 2, color: const Color(0xFFE2E8F0)),
           );
         }
         final stepIndex = index ~/ 2;
@@ -187,7 +240,9 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
               width: 24,
               height: 24,
               decoration: BoxDecoration(
-                color: isActive || isCompleted ? const Color(0xFF2563EB) : const Color(0xFF94A3B8),
+                color: isActive || isCompleted
+                    ? const Color(0xFF2563EB)
+                    : const Color(0xFF94A3B8),
                 shape: BoxShape.circle,
               ),
               child: Center(
@@ -207,7 +262,9 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
             Text(
               steps[stepIndex],
               style: TextStyle(
-                color: isActive || isCompleted ? const Color(0xFF2563EB) : const Color(0xFF94A3B8),
+                color: isActive || isCompleted
+                    ? const Color(0xFF2563EB)
+                    : const Color(0xFF94A3B8),
                 fontWeight: FontWeight.bold,
                 fontSize: 13,
               ),
@@ -260,7 +317,11 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
                     color: Color(0xFF2563EB),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.account_balance, color: Colors.white, size: 24),
+                  child: const Icon(
+                    Icons.account_balance,
+                    color: Colors.white,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -278,10 +339,7 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
                       const SizedBox(height: 4),
                       Text(
                         "Enter your bank account details",
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 13,
-                        ),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 13),
                       ),
                     ],
                   ),
@@ -292,7 +350,10 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
           const SizedBox(height: 24),
 
           // Account Number
-          const Text("Account Number *", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          const Text(
+            "Account Number *",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
           const SizedBox(height: 8),
           TextFormField(
             controller: _accNumberCtrl,
@@ -304,14 +365,20 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
               Icon(Icons.info_outline, size: 14, color: Colors.grey[600]),
               const SizedBox(width: 4),
               Expanded(
-                child: Text("Enter the account number as shown in your passbook", style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                child: Text(
+                  "Enter the account number as shown in your passbook",
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 24),
 
           // Confirm Account Number
-          const Text("Confirm Account Number", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          const Text(
+            "Confirm Account Number",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
           const SizedBox(height: 8),
           TextFormField(
             controller: _confirmAccNumberCtrl,
@@ -328,7 +395,11 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
             ),
             child: const Row(
               children: [
-                Icon(Icons.warning_amber_rounded, color: Color(0xFFF59E0B), size: 20),
+                Icon(
+                  Icons.warning_amber_rounded,
+                  color: Color(0xFFF59E0B),
+                  size: 20,
+                ),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -347,6 +418,7 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
       ),
     );
   }
+
   Widget _buildDocumentStep() {
     return Container(
       padding: const EdgeInsets.all(24),
@@ -374,7 +446,11 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
                     color: Color(0xFF2563EB),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.description, color: Colors.white, size: 24),
+                  child: const Icon(
+                    Icons.description,
+                    color: Colors.white,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -392,10 +468,7 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
                       const SizedBox(height: 4),
                       Text(
                         "Provide bank passbook or cancelled cheque proof",
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 13,
-                        ),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 13),
                       ),
                     ],
                   ),
@@ -406,7 +479,10 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
           const SizedBox(height: 24),
 
           // Document Type Radios
-          const Text("Document Type", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          const Text(
+            "Document Type",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
           const SizedBox(height: 8),
           Wrap(
             spacing: 24,
@@ -421,15 +497,25 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
           // Upload Box
           Row(
             children: [
-              Text(_selectedBankDocType, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              const Text(" *", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.red)),
+              Text(
+                _selectedBankDocType,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              const Text(
+                " *",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Colors.red,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
-          _buildUploadBox(
-            bytes: _bankDocBytes,
-            onTap: () => _pickImage(true),
-          ),
+          _buildUploadBox(bytes: _bankDocBytes, onTap: () => _pickImage(true)),
           const SizedBox(height: 16),
 
           // Info Box
@@ -472,8 +558,12 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
       child: Row(
         children: [
           Icon(
-            _selectedBankDocType == value ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-            color: _selectedBankDocType == value ? const Color(0xFF2563EB) : Colors.grey[400],
+            _selectedBankDocType == value
+                ? Icons.radio_button_checked
+                : Icons.radio_button_unchecked,
+            color: _selectedBankDocType == value
+                ? const Color(0xFF2563EB)
+                : Colors.grey[400],
             size: 20,
           ),
           const SizedBox(width: 8),
@@ -519,7 +609,11 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
                     color: Color(0xFF2563EB),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.map_outlined, color: Colors.white, size: 24),
+                  child: const Icon(
+                    Icons.map_outlined,
+                    color: Colors.white,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -537,10 +631,7 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
                       const SizedBox(height: 4),
                       Text(
                         "Provide address proof and your business location details",
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 13,
-                        ),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 13),
                       ),
                     ],
                   ),
@@ -551,13 +642,18 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
           const SizedBox(height: 24),
 
           // Document Type Dropdown
-          const Text("Document Type", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          const Text(
+            "Document Type",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFF2563EB).withOpacity(0.5)),
+              border: Border.all(
+                color: const Color(0xFF2563EB).withOpacity(0.5),
+              ),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
@@ -570,8 +666,13 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
                     value: type,
                     child: Container(
                       width: double.infinity,
-                      color: isSelected ? const Color(0xFF2563EB) : Colors.transparent,
-                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                      color: isSelected
+                          ? const Color(0xFF2563EB)
+                          : Colors.transparent,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 8,
+                      ),
                       child: Text(
                         type,
                         style: TextStyle(
@@ -598,8 +699,18 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
           // Upload Box
           const Row(
             children: [
-              Text("Upload Document ", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              Text("*", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.red)),
+              Text(
+                "Upload Document ",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+              Text(
+                "*",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Colors.red,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -631,7 +742,13 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
 
           // Address Form Fields
           _buildResponsiveGrid(context, [
-            _buildDropdownField("Address Type", "-- Select Address Type --", ['-- Select Address Type --', 'Factory', 'Warehouse / Godown', 'Office', 'Other (Custom Address Type)']),
+            _buildDropdownField("Address Type", "-- Select Address Type --", [
+              '-- Select Address Type --',
+              'Factory',
+              'Warehouse / Godown',
+              'Office',
+              'Other (Custom Address Type)',
+            ]),
             _buildTextField("Door Number", "Door Number", required: true),
             _buildTextField("Street Name", "Street Name", required: true),
           ]),
@@ -661,7 +778,11 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
           const SizedBox(height: 24),
 
           _buildResponsiveGrid(context, [
-            _buildTextField("Area / Locality", "Enter Area / Locality", required: true),
+            _buildTextField(
+              "Area / Locality",
+              "Enter Area / Locality",
+              required: true,
+            ),
             _buildTextField("City", "Enter City"),
             _buildTextField("District", "District", required: true),
           ]),
@@ -706,10 +827,15 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
     if (MediaQuery.of(context).size.width < 768) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: children.map((c) => Padding(padding: const EdgeInsets.only(bottom: 16), child: c)).toList(),
+        children: children
+            .map(
+              (c) =>
+                  Padding(padding: const EdgeInsets.only(bottom: 16), child: c),
+            )
+            .toList(),
       );
     }
-    
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: children.map((c) {
@@ -729,14 +855,23 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
       children: [
         Row(
           children: [
-            Text(label, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey[800])),
-            if (required) const Text(" *", style: TextStyle(color: Colors.red, fontSize: 13)),
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                color: Colors.grey[800],
+              ),
+            ),
+            if (required)
+              const Text(
+                " *",
+                style: TextStyle(color: Colors.red, fontSize: 13),
+              ),
           ],
         ),
         const SizedBox(height: 8),
-        TextFormField(
-          decoration: _inputDecoration(hint),
-        ),
+        TextFormField(decoration: _inputDecoration(hint)),
       ],
     );
   }
@@ -747,7 +882,14 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
       children: [
         Row(
           children: [
-            Text(label, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey[800])),
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                color: Colors.grey[800],
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 8),
@@ -768,8 +910,13 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
                   value: type,
                   child: Container(
                     width: double.infinity,
-                    color: isSelected ? const Color(0xFF2563EB) : Colors.transparent,
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                    color: isSelected
+                        ? const Color(0xFF2563EB)
+                        : Colors.transparent,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 8,
+                    ),
                     child: Text(
                       type,
                       style: TextStyle(
@@ -800,7 +947,14 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
       children: [
         Row(
           children: [
-            Text("PIN Code", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey[800])),
+            Text(
+              "PIN Code",
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                color: Colors.grey[800],
+              ),
+            ),
             const Text(" *", style: TextStyle(color: Colors.red, fontSize: 13)),
           ],
         ),
@@ -822,8 +976,13 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF3B82F6),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 15,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
             ),
           ],
@@ -837,7 +996,11 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
     );
   }
 
-  Widget _buildUploadBox({required Uint8List? bytes, required VoidCallback onTap, bool isAddress = false}) {
+  Widget _buildUploadBox({
+    required Uint8List? bytes,
+    required VoidCallback onTap,
+    bool isAddress = false,
+  }) {
     if (bytes != null) {
       return Container(
         width: double.infinity,
@@ -854,7 +1017,13 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
             TextButton.icon(
               onPressed: onTap,
               icon: const Icon(Icons.refresh, color: Color(0xFF2563EB)),
-              label: const Text("Change", style: TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold)),
+              label: const Text(
+                "Change",
+                style: TextStyle(
+                  color: Color(0xFF2563EB),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         ),
@@ -877,7 +1046,9 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
             Icon(Icons.save_as_outlined, color: Colors.grey[700], size: 36),
             const SizedBox(height: 12),
             Text(
-              isAddress ? "Click to upload address proof" : "Click to upload document",
+              isAddress
+                  ? "Click to upload address proof"
+                  : "Click to upload document",
               style: TextStyle(
                 color: Colors.grey[800],
                 fontSize: 14,
@@ -887,16 +1058,14 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
             const SizedBox(height: 4),
             Text(
               "JPG, PNG or PDF (max. 5MB)",
-              style: TextStyle(
-                color: Colors.grey[500],
-                fontSize: 12,
-              ),
+              style: TextStyle(color: Colors.grey[500], fontSize: 12),
             ),
           ],
         ),
       ),
     );
   }
+
   Widget _buildPreviewStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -917,7 +1086,11 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
                   color: Color(0xFF10B981),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.check_circle_outline, color: Colors.white, size: 24),
+                child: const Icon(
+                  Icons.check_circle_outline,
+                  color: Colors.white,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -935,10 +1108,7 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
                     const SizedBox(height: 4),
                     Text(
                       "Verify all entered details before submission",
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 13,
-                      ),
+                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
                     ),
                   ],
                 ),
@@ -971,7 +1141,11 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
             title: "Bank Details",
             icon: Icons.account_balance_outlined,
             children: [
-              _buildPreviewRow("Account:", _accNumberCtrl.text.isNotEmpty ? _accNumberCtrl.text : "---", isLink: true),
+              _buildPreviewRow(
+                "Account:",
+                _accNumberCtrl.text.isNotEmpty ? _accNumberCtrl.text : "---",
+                isLink: true,
+              ),
               const SizedBox(height: 16),
               _buildPreviewImage("Document:", _bankDocBytes, height: 150),
             ],
@@ -985,14 +1159,22 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
             title: "Address Details",
             icon: Icons.location_on_outlined,
             children: [
-              _buildPreviewRow("Type:", _selectedAddressType == '-- Select Address Type --' ? "---" : _selectedAddressType),
+              _buildPreviewRow(
+                "Type:",
+                _selectedAddressType == '-- Select Address Type --'
+                    ? "---"
+                    : _selectedAddressType,
+              ),
               _buildPreviewRow("Door No.:", "---"),
               _buildPreviewRow("Street:", "---"),
               _buildPreviewRow("Landmark:", "---"),
               _buildPreviewRow("Area:", "---"),
               _buildPreviewRow("City:", "---"),
               _buildPreviewRow("District:", "---"),
-              _buildPreviewRow("Pincode:", _pinCodeCtrl.text.isNotEmpty ? _pinCodeCtrl.text : "---"),
+              _buildPreviewRow(
+                "Pincode:",
+                _pinCodeCtrl.text.isNotEmpty ? _pinCodeCtrl.text : "---",
+              ),
               _buildPreviewRow("State:", "---"),
               _buildPreviewRow("Country:", "---"),
             ],
@@ -1001,7 +1183,11 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
             title: "Documents",
             icon: Icons.description_outlined,
             children: [
-              _buildPreviewImage("Address Proof:", _addressDocBytes, height: 200),
+              _buildPreviewImage(
+                "Address Proof:",
+                _addressDocBytes,
+                height: 200,
+              ),
             ],
           ),
         ]),
@@ -1017,15 +1203,29 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
           ),
           child: Row(
             children: [
-              const Icon(Icons.warning_amber_rounded, color: Color(0xFFD97706), size: 24),
+              const Icon(
+                Icons.warning_amber_rounded,
+                color: Color(0xFFD97706),
+                size: 24,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: RichText(
                   text: const TextSpan(
-                    style: TextStyle(color: Color(0xFF92400E), fontSize: 13, fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                      color: Color(0xFF92400E),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
                     children: [
-                      TextSpan(text: "Declaration: ", style: TextStyle(fontWeight: FontWeight.bold)),
-                      TextSpan(text: "I hereby confirm that all the information provided is true and correct."),
+                      TextSpan(
+                        text: "Declaration: ",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      TextSpan(
+                        text:
+                            "I hereby confirm that all the information provided is true and correct.",
+                      ),
                     ],
                   ),
                 ),
@@ -1070,7 +1270,11 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
     );
   }
 
-  Widget _buildPreviewCard({required String title, required IconData icon, required List<Widget> children}) {
+  Widget _buildPreviewCard({
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -1130,14 +1334,15 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
     );
   }
 
-  Widget _buildPreviewImage(String label, Uint8List? bytes, {double height = 80}) {
+  Widget _buildPreviewImage(
+    String label,
+    Uint8List? bytes, {
+    double height = 80,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(color: Colors.grey[600], fontSize: 13),
-        ),
+        Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
         const SizedBox(height: 8),
         Container(
           width: double.infinity,
@@ -1192,12 +1397,15 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
           onPressed: _prevStep,
           child: Row(
             children: [
-              if (_currentStep > 0) const Icon(Icons.arrow_back, size: 18, color: Colors.grey),
+              if (_currentStep > 0)
+                const Icon(Icons.arrow_back, size: 18, color: Colors.grey),
               const SizedBox(width: 4),
               Text(
                 _currentStep == 0 ? "Cancel" : "Back",
                 style: TextStyle(
-                  color: _currentStep == 0 ? Colors.redAccent : Colors.grey[800],
+                  color: _currentStep == 0
+                      ? Colors.redAccent
+                      : Colors.grey[800],
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -1205,11 +1413,11 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
           ),
         ),
         ElevatedButton(
-          onPressed: _currentStep == 3 
-              ? (_isConfirmed ? _submitRegistration : null) 
+          onPressed: _currentStep == 3
+              ? (_isConfirmed ? _submitRegistration : null)
               : _nextStep,
           style: ElevatedButton.styleFrom(
-            backgroundColor: _currentStep == 3 
+            backgroundColor: _currentStep == 3
                 ? const Color(0xFF10B981) // Green for Submit
                 : const Color(0xFF2563EB),
             padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),

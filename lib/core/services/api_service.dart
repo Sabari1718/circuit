@@ -14,6 +14,7 @@ class ApiService {
   static const String baseUrl = 'http://192.168.1.35/smt_mail';
   static const String jobesBaseUrl = 'https://user.jobes24x7.com/api';
   static const String messageCentralBaseUrl = 'https://cpaas.messagecentral.com/verification/v3';
+  static const String manageLoginBaseUrl = 'https://managelogin.jobes24x7.com/api';
   static const String authToken = 'YOUR_AUTH_TOKEN'; // Replace with actual token
   static const String customerId = 'YOUR_CUSTOMER_ID'; // Replace with actual ID
 
@@ -600,5 +601,119 @@ class ApiService {
             ? 'image/png'
             : 'image/jpeg';
     return 'data:$mime;base64,${base64Encode(bytes)}';
+  }
+  // --- Store Configuration APIs ---
+
+  Future<List<dynamic>> getStorePaymentGateways() async {
+    final url = Uri.parse('$manageLoginBaseUrl/store-payment-gateways');
+    try {
+      final String? token = await getAuthToken();
+      final response = await http.get(url, headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      });
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return json.decode(response.body);
+      } else {
+        debugPrint('Failed to get payment gateways: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Error getting payment gateways: $e');
+    }
+    return [];
+  }
+
+  Future<List<dynamic>> getStoreSupportedLanguages() async {
+    final url = Uri.parse('$manageLoginBaseUrl/store-supported-languages');
+    try {
+      final String? token = await getAuthToken();
+      final response = await http.get(url, headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      });
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = json.decode(response.body);
+        if (data['success'] == true) {
+          return data['data'] ?? [];
+        }
+      } else {
+        debugPrint('Failed to get supported languages: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Error getting supported languages: $e');
+    }
+    return [];
+  }
+
+  Future<bool> saveStoreOpeningClosingTime(Map<String, dynamic> payload) async {
+    final url = Uri.parse('$manageLoginBaseUrl/store-opening-closing-time');
+    debugPrint('=== POST API REQUEST: $url ===');
+    debugPrint('Payload: ${json.encode(payload)}');
+    try {
+      final String? token = await getAuthToken();
+      final response = await http.post(url, headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      }, body: json.encode(payload));
+      
+      debugPrint('=== API RESPONSE [${response.statusCode}] ===');
+      debugPrint('Body: ${response.body}');
+      
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = json.decode(response.body);
+        return data['success'] == true;
+      }
+    } catch (e) {
+      debugPrint('Error saving opening/closing time: $e');
+    }
+    return false;
+  }
+
+  Future<bool> createStorePaymentGateway(Map<String, dynamic> payload) async {
+    final url = Uri.parse('$manageLoginBaseUrl/store-payment-gateways');
+    debugPrint('=== POST API REQUEST: $url ===');
+    debugPrint('Payload: ${json.encode(payload)}');
+    try {
+      final String? token = await getAuthToken();
+      final response = await http.post(url, headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      }, body: json.encode(payload));
+      
+      debugPrint('=== API RESPONSE [${response.statusCode}] ===');
+      debugPrint('Body: ${response.body}');
+      
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = json.decode(response.body);
+        return data['success'] == true;
+      }
+    } catch (e) {
+      debugPrint('Error creating payment gateway: $e');
+    }
+    return false;
+  }
+
+  Future<bool> createStoreSupportedLanguage(Map<String, dynamic> payload) async {
+    final url = Uri.parse('$manageLoginBaseUrl/store-supported-languages');
+    debugPrint('=== POST API REQUEST: $url ===');
+    debugPrint('Payload: ${json.encode(payload)}');
+    try {
+      final String? token = await getAuthToken();
+      final response = await http.post(url, headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      }, body: json.encode(payload));
+      
+      debugPrint('=== API RESPONSE [${response.statusCode}] ===');
+      debugPrint('Body: ${response.body}');
+      
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = json.decode(response.body);
+        return data['success'] == true;
+      }
+    } catch (e) {
+      debugPrint('Error creating supported language: $e');
+    }
+    return false;
   }
 }

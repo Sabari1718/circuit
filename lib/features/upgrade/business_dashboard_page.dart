@@ -22,15 +22,27 @@ class _BusinessDashboardPageState extends State<BusinessDashboardPage> {
         return Scaffold(
           backgroundColor: const Color(0xFFF1F5F9),
           appBar: AppBar(
-            title: const Text("Your Businesses", style: TextStyle(fontWeight: FontWeight.bold)),
+            title: const Text(
+              "Your Businesses",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             backgroundColor: Colors.white,
             elevation: 1,
             actions: [
-              IconButton(icon: const Icon(Icons.add_business, color: Color(0xFFE11D48)), 
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BusinessCreationFlowPage()))),
+              IconButton(
+                icon: const Icon(Icons.add_business, color: Color(0xFFE11D48)),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const BusinessCreationFlowPage(),
+                  ),
+                ),
+              ),
             ],
           ),
-          body: businesses.isEmpty ? _buildEmptyState() : _buildBusinessList(businesses),
+          body: businesses.isEmpty
+              ? _buildEmptyState()
+              : _buildBusinessList(businesses),
         );
       },
     );
@@ -41,16 +53,33 @@ class _BusinessDashboardPageState extends State<BusinessDashboardPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.business_center_outlined, size: 64, color: Colors.grey),
+          const Icon(
+            Icons.business_center_outlined,
+            size: 64,
+            color: Colors.grey,
+          ),
           const SizedBox(height: 16),
-          const Text("No businesses found", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text(
+            "No businesses found",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 8),
           const Text("Add your first business to get started"),
           const SizedBox(height: 24),
           ElevatedButton(
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BusinessCreationFlowPage())),
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE11D48)),
-            child: const Text("Add New Business", style: TextStyle(color: Colors.white)),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const BusinessCreationFlowPage(),
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFE11D48),
+            ),
+            child: const Text(
+              "Add New Business",
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -65,11 +94,19 @@ class _BusinessDashboardPageState extends State<BusinessDashboardPage> {
         final biz = businesses[index];
         return Card(
           margin: const EdgeInsets.only(bottom: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: ExpansionTile(
-            title: Text(biz.businessName, style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(
+              biz.businessName,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             subtitle: Text("ID: ${biz.id} • ${biz.registrationType}"),
-            leading: CircleAvatar(backgroundColor: _getColor(biz.registrationType), child: const Icon(Icons.business, color: Colors.white)),
+            leading: CircleAvatar(
+              backgroundColor: _getColor(biz.registrationType),
+              child: const Icon(Icons.business, color: Colors.white),
+            ),
             children: [
               Padding(
                 padding: const EdgeInsets.all(16),
@@ -84,9 +121,15 @@ class _BusinessDashboardPageState extends State<BusinessDashboardPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        TextButton(onPressed: () {}, child: const Text("Edit Details")),
+                        TextButton(
+                          onPressed: () {},
+                          child: const Text("Edit Details"),
+                        ),
                         const SizedBox(width: 8),
-                        ElevatedButton(onPressed: () {}, child: const Text("View Full Overview")),
+                        ElevatedButton(
+                          onPressed: () {},
+                          child: const Text("View Full Overview"),
+                        ),
                       ],
                     ),
                   ],
@@ -101,15 +144,25 @@ class _BusinessDashboardPageState extends State<BusinessDashboardPage> {
 
   Widget _infoRow(IconData icon, String text) => Padding(
     padding: const EdgeInsets.only(bottom: 8),
-    child: Row(children: [Icon(icon, size: 16, color: Colors.grey), const SizedBox(width: 8), Text(text, style: const TextStyle(fontSize: 13))]),
+    child: Row(
+      children: [
+        Icon(icon, size: 16, color: Colors.grey),
+        const SizedBox(width: 8),
+        Text(text, style: const TextStyle(fontSize: 13)),
+      ],
+    ),
   );
 
   Color _getColor(String? type) {
     switch (type) {
-      case 'Propagator': return const Color(0xFF8B5CF6);
-      case 'Partner': return const Color(0xFF3B82F6);
-      case 'Supplier': return const Color(0xFFE11D48);
-      default: return Colors.grey;
+      case 'Propagator':
+        return const Color(0xFF8B5CF6);
+      case 'Partner':
+        return const Color(0xFF3B82F6);
+      case 'Supplier':
+        return const Color(0xFFE11D48);
+      default:
+        return Colors.grey;
     }
   }
 }

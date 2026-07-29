@@ -5,6 +5,7 @@ import 'providers.dart';
 import 'home_page.dart';
 import 'services/captcha_service.dart';
 import 'auth_service.dart';
+import 'password_page.dart';
 
 class SecretImageSetupPage extends ConsumerStatefulWidget {
   final String identifier;
@@ -50,9 +51,9 @@ class _SecretImageSetupPageState extends ConsumerState<SecretImageSetupPage> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoadingCategories = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load images: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to load images: $e')));
       }
     }
   }
@@ -88,7 +89,11 @@ class _SecretImageSetupPageState extends ConsumerState<SecretImageSetupPage> {
                             color: Colors.grey.shade200,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.close, size: 20, color: Colors.black54),
+                          child: const Icon(
+                            Icons.close,
+                            size: 20,
+                            color: Colors.black54,
+                          ),
                         ),
                       ),
                     ),
@@ -106,7 +111,9 @@ class _SecretImageSetupPageState extends ConsumerState<SecretImageSetupPage> {
                             height: 180,
                             width: 180,
                             color: Colors.grey.shade200,
-                            child: const Center(child: CircularProgressIndicator()),
+                            child: const Center(
+                              child: CircularProgressIndicator(),
+                            ),
                           );
                         },
                         errorBuilder: (context, error, stackTrace) {
@@ -128,7 +135,10 @@ class _SecretImageSetupPageState extends ConsumerState<SecretImageSetupPage> {
                             ? null
                             : () async {
                                 setStateDialog(() => _isSaving = true);
-                                await _registerAndLogin(category, dialogContext);
+                                await _registerAndLogin(
+                                  category,
+                                  dialogContext,
+                                );
                                 if (mounted) {
                                   setStateDialog(() => _isSaving = false);
                                 }
@@ -143,10 +153,15 @@ class _SecretImageSetupPageState extends ConsumerState<SecretImageSetupPage> {
                             ? const SizedBox(
                                 width: 24,
                                 height: 24,
-                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
                               )
                             : Text(
-                                widget.isExistingUser ? "Save Login Image" : "Create Account & Login",
+                                widget.isExistingUser
+                                    ? "Save Login Image"
+                                    : "Create Account & Login",
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -179,7 +194,7 @@ class _SecretImageSetupPageState extends ConsumerState<SecretImageSetupPage> {
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -190,11 +205,16 @@ class _SecretImageSetupPageState extends ConsumerState<SecretImageSetupPage> {
     );
   }
 
-  Future<void> _registerAndLogin(CaptchaCategory category, BuildContext dialogContext) async {
+  Future<void> _registerAndLogin(
+    CaptchaCategory category,
+    BuildContext dialogContext,
+  ) async {
     try {
       final userService = ref.read(userServiceProvider);
-      
-      if (!widget.isExistingUser && widget.password != null && widget.pin != null) {
+
+      if (!widget.isExistingUser &&
+          widget.password != null &&
+          widget.pin != null) {
         final data = await userService.getUserData();
         final String name = data['name'] ?? 'User';
         final String email = data['email'] ?? '';
@@ -207,9 +227,7 @@ class _SecretImageSetupPageState extends ConsumerState<SecretImageSetupPage> {
         debugPrint("EMAIL: $email");
         debugPrint("ADDRESS: $address");
         debugPrint("PIN: ${widget.pin}");
-        debugPrint("CAPTCHA: ${category.image}");
-
-        await AuthService().register(
+        debugPrint("CAPTCHA: ${category.image}");        await AuthService().register(
           phoneNumber: mobile,
           email: email,
           password: widget.password!,
@@ -220,34 +238,57 @@ class _SecretImageSetupPageState extends ConsumerState<SecretImageSetupPage> {
           captchaImageId: category.id,
         );
 
-        try {
-          final String? token = await AuthService().getToken();
-          if (token == null || token.trim().isEmpty) {
-            final String loginIdentifier = mobile.isNotEmpty ? mobile : email;
-            final loginResponse = await AuthService().login(
-              identifier: loginIdentifier,
-              password: widget.password!,
-            );
-            final userData = loginResponse['data']?['data'];
-            if (userData != null) {
-              await userService.saveFromApiUser(userData);
-            }
-          }
-        } catch (loginErr) {
-          debugPrint("Programmatic login failed: $loginErr");
-        }
-
         await userService.saveUserData(
           phone: mobile,
           email: email,
-          isLoggedIn: true,
         );
+
+        // Save secret image locally so PasswordPage knows we have an image
+        await userService.saveUserSecretImage(
+          identifier: mobile.isNotEmpty ? mobile : email,
+          imageUrl: category.id.toString(), 
+        );
+
+        if (!mounted) return;
+        Navigator.pop(dialogContext); // Close dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registration Successful! Please verify your password and secret image.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PasswordPage(
+              phoneNumber: mobile.isNotEmpty ? mobile : email,
+              email: email,
+              isExistingUser: true,
+              passedIdentifier: mobile.isNotEmpty ? mobile : email,
+            ),
+          ),
+          (route) => false,
+        );
+        return;
+      } else if (widget.isExistingUser && widget.password != null) {
+        debugPrint("========== VERIFY CAPTCHA FOR EXISTING USER ==========");
+        final loginResponse = await AuthService().login(
+          identifier: widget.identifier,
+          password: widget.password!,
+          captchaImageId: category.id,
+        );
+        final userData = loginResponse['data']?['data'] ?? loginResponse['data'];
+        if (userData != null && userData is Map<String, dynamic>) {
+          await userService.saveFromApiUser(userData);
+        }
+        await userService.saveUserData(isLoggedIn: true);
       }
 
       // Save secret image locally using the image URL/ID for verification later
       await userService.saveUserSecretImage(
         identifier: widget.identifier,
-        imageUrl: category.id.toString(), // We store ID as the secret to match against API IDs
+        imageUrl: category.id
+            .toString(), // We store ID as the secret to match against API IDs
       );
 
       if (!mounted) return;
@@ -259,16 +300,18 @@ class _SecretImageSetupPageState extends ConsumerState<SecretImageSetupPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFEFF6FF), // Light blue background like the screenshot
+      backgroundColor: const Color(
+        0xFFEFF6FF,
+      ), // Light blue background like the screenshot
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -325,7 +368,7 @@ class _SecretImageSetupPageState extends ConsumerState<SecretImageSetupPage> {
                         ],
                       ),
                     ),
-                    
+
                     Padding(
                       padding: const EdgeInsets.all(24.0),
                       child: Column(
@@ -341,14 +384,16 @@ class _SecretImageSetupPageState extends ConsumerState<SecretImageSetupPage> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            widget.isExistingUser ? "Choose your image to proceed" : "Choose an image to secure your new account",
+                            widget.isExistingUser
+                                ? "Choose your image to proceed"
+                                : "Choose an image to secure your new account",
                             style: const TextStyle(
                               fontSize: 14,
                               color: Colors.black54,
                             ),
                           ),
                           const SizedBox(height: 24),
-                          
+
                           if (_isLoadingCategories)
                             const Center(
                               child: Padding(
@@ -367,11 +412,12 @@ class _SecretImageSetupPageState extends ConsumerState<SecretImageSetupPage> {
                             GridView.builder(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
-                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 3,
-                                crossAxisSpacing: 10,
-                                mainAxisSpacing: 10,
-                              ),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 3,
+                                    crossAxisSpacing: 10,
+                                    mainAxisSpacing: 10,
+                                  ),
                               itemCount: _categories.length,
                               itemBuilder: (context, index) {
                                 final category = _categories[index];
@@ -387,33 +433,41 @@ class _SecretImageSetupPageState extends ConsumerState<SecretImageSetupPage> {
                                     child: Image.network(
                                       category.image,
                                       fit: BoxFit.cover,
-                                      loadingBuilder: (context, child, progress) {
-                                        if (progress == null) return child;
-                                        return Container(
-                                          color: Colors.grey.shade100,
-                                          child: const Center(
-                                            child: SizedBox(
-                                              width: 20,
-                                              height: 20,
-                                              child: CircularProgressIndicator(strokeWidth: 2),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                      errorBuilder: (context, error, stackTrace) {
-                                        return Container(
-                                          color: Colors.grey.shade100,
-                                          child: const Icon(Icons.error, color: Colors.grey),
-                                        );
-                                      },
+                                      loadingBuilder:
+                                          (context, child, progress) {
+                                            if (progress == null) return child;
+                                            return Container(
+                                              color: Colors.grey.shade100,
+                                              child: const Center(
+                                                child: SizedBox(
+                                                  width: 20,
+                                                  height: 20,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                        strokeWidth: 2,
+                                                      ),
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                            return Container(
+                                              color: Colors.grey.shade100,
+                                              child: const Icon(
+                                                Icons.error,
+                                                color: Colors.grey,
+                                              ),
+                                            );
+                                          },
                                     ),
                                   ),
                                 );
                               },
                             ),
-                            
+
                           const SizedBox(height: 30),
-                          
+
                           Center(
                             child: Column(
                               children: [
@@ -437,7 +491,7 @@ class _SecretImageSetupPageState extends ConsumerState<SecretImageSetupPage> {
                                 ),
                               ],
                             ),
-                          )
+                          ),
                         ],
                       ),
                     ),
