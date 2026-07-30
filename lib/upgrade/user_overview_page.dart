@@ -23,7 +23,7 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
   late int _currentPageIndex; // 0: Overview (Page 1), 1: Upgrade Account (Page 2), 2: Identify Verification (Page 3)
 
   // Data retrieved from API only
-  String _userMainId = "9508383027";
+  String _userMainId = ""; // Will be loaded from SharedPreferences after login
   String _panNumber = "";
   String _gender = "";
   String _accountType = "Registered";
@@ -95,14 +95,14 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
     final userMainId = userData['user_main_id']?.toString() ?? '';
     
     setState(() {
-      _userMainId = userMainId.isNotEmpty ? userMainId : '9508383027';
+      _userMainId = userMainId; // Do NOT fallback to hardcoded ID
       // Clear any stale local data - start fresh from API only
       _panNumber = '';
       _gender = '';
       _isVerified = false;
     });
 
-    if (_userMainId.isNotEmpty && _userMainId != '9508383027') {
+    if (_userMainId.isNotEmpty) {
       final verifiedData = await UserService().getVerificationDetails(_userMainId);
       if (verifiedData != null && mounted) {
         setState(() {
@@ -226,6 +226,16 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
   }
 
   void _submitVerification() async {
+    // Guard: user_main_id must be loaded before submitting
+    if (_userMainId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("User session not loaded. Please go back and try again."),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
     final pan = _panController.text.trim().toUpperCase();
     if (pan.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(

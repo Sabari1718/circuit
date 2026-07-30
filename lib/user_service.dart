@@ -552,11 +552,15 @@ class UserService extends ChangeNotifier {
   /// Check if user exists in user_register table (REGISTERED USER upgrade)
   Future<bool> checkUserRegisterStatus(String userMainId) async {
     // Try the user_register endpoint to check if user has registered
-    final url = 'https://managelogin.jobes24x7.com/api/user_register/user/$userMainId';
+    final url = 'https://managelogin.jobes24x7.com/api/api/user_register/$userMainId';
     try {
+      final token = await AuthService().getToken();
       final response = await http.get(
         Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
       );
       debugPrint('[UserRegister] GET $url → ${response.statusCode}');
       debugPrint('[UserRegister] Body: ${response.body}');
@@ -565,11 +569,21 @@ class UserService extends ChangeNotifier {
         // Try nested response: {"data": {"result": "...", "code": 200, "data": {...}}}
         final inner = decoded['data'];
         if (inner is Map && inner['code'] == 200 && inner['data'] != null) {
+          final innerData = inner['data'];
+          if ((innerData is List && innerData.isEmpty) || (innerData is Map && innerData.isEmpty)) {
+            debugPrint('[UserRegister] ❌ Empty nested data found');
+            return false;
+          }
           debugPrint('[UserRegister] ✅ Registered user found!');
           return true;
         }
         // Try flat response: {"success": true, "data": {...}}
         if (decoded['success'] == true && decoded['data'] != null) {
+          final data = decoded['data'];
+          if ((data is List && data.isEmpty) || (data is Map && data.isEmpty)) {
+            debugPrint('[UserRegister] ❌ Empty flat data found');
+            return false;
+          }
           debugPrint('[UserRegister] ✅ Registered user found (flat)!');
           return true;
         }
@@ -584,9 +598,13 @@ class UserService extends ChangeNotifier {
   Future<Map<String, dynamic>?> registerUserUpgrade(Map<String, dynamic> payload) async {
     final url = 'https://managelogin.jobes24x7.com/api/user_register/create';
     try {
+      final token = await AuthService().getToken();
       final response = await http.post(
         Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
         body: jsonEncode(payload),
       );
       // Always return decoded body so the caller can read success or error message

@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'verified_upgrade_intro_page.dart';
 import 'verified_user_profile_page.dart';
 import '../../upgrade/new_business_register_page.dart';
+import '../../upgrade/user_overview_page.dart';
 import '../../user_service.dart' as legacy;
 
 class UserUpgradePage extends StatefulWidget {
@@ -14,6 +15,7 @@ class UserUpgradePage extends StatefulWidget {
 
 class _UserUpgradePageState extends State<UserUpgradePage> {
   bool _isVerified = false;
+  bool _isRegistered = false;
   bool _isLoading = true;
 
   @override
@@ -27,10 +29,15 @@ class _UserUpgradePageState extends State<UserUpgradePage> {
       final prefs = await SharedPreferences.getInstance();
       final userMainId = prefs.getString('user_main_id') ?? '';
       if (userMainId.isNotEmpty) {
-        final isVerified = await legacy.UserService().checkVerificationStatus(userMainId);
+        // Fetch both VERIFIED and REGISTERED status from DB (cross-device sync)
+        final results = await Future.wait([
+          legacy.UserService().checkVerificationStatus(userMainId),
+          legacy.UserService().checkUserRegisterStatus(userMainId),
+        ]);
         if (mounted) {
           setState(() {
-            _isVerified = isVerified;
+            _isVerified = results[0];
+            _isRegistered = results[1];
             _isLoading = false;
           });
         }
@@ -124,7 +131,7 @@ class _UserUpgradePageState extends State<UserUpgradePage> {
         "iconBg": const Color(0xFFEEF2FF),
         "description": "Full access to standard features & profile management",
         "btnText": "Upgrade to REGISTERED",
-        "isActive": false,
+        "isActive": _isRegistered, // ← API-driven from DB
       },
       {
         "title": "BUSINESS",
@@ -247,6 +254,14 @@ class _UserUpgradePageState extends State<UserUpgradePage> {
                       context,
                       MaterialPageRoute(builder: (context) => const VerifiedUserProfilePage()),
                     );
+                  } else if (item['title'] == 'REGISTERED') {
+                    // View registered user data from DB
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const UserOverviewPage(initialPage: 0),
+                      ),
+                    ).then((_) => _loadVerificationStatus());
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -264,11 +279,19 @@ class _UserUpgradePageState extends State<UserUpgradePage> {
               height: 42,
               child: ElevatedButton(
                 onPressed: () {
-                  if (item['title'] == "VERIFIED") {
+                  if (item['title'] == "REGISTERED") {
+                    // Navigate to upgrade flow for registered user
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const UserOverviewPage(initialPage: 1),
+                      ),
+                    ).then((_) => _loadVerificationStatus());
+                  } else if (item['title'] == "VERIFIED") {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => const VerifiedUpgradeIntroPage()),
-                    );
+                    ).then((_) => _loadVerificationStatus());
                   } else if (item['title'] == "BUSINESS") {
                     if (_isVerified) {
                       Navigator.push(

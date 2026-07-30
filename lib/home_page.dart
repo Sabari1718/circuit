@@ -219,18 +219,13 @@ class _HomePageState extends State<HomePage> {
       final verificationDetails = await UserService().getVerificationDetails(uid);
       if (verificationDetails != null) {
         final userType = verificationDetails['user_type']?.toString().toLowerCase();
-        if (userType == 'register' || userType == 'verified') {
-          isRegistered = true;
-        }
         if (userType == 'verified') {
           isVerified = true;
         }
       }
       
-      // Check 2: user_register table (for REGISTERED users who upgraded)
-      if (!isRegistered) {
-        isRegistered = await UserService().checkUserRegisterStatus(uid);
-      }
+      // Check 2: user_register table (for REGISTERED users)
+      isRegistered = await UserService().checkUserRegisterStatus(uid);
     }
 
     if (mounted) {
@@ -298,14 +293,14 @@ class _HomePageState extends State<HomePage> {
             builder: (context) => const EmployeeDashboardPage(),
           ),
         );
-      } else if (moduleId == "verified" || moduleId == "registered") {
+      } else if (moduleId == "verified") {
+        // Verified user already upgraded — show their overview (view mode)
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) =>
-                UserOverviewPage(initialPage: isCompleted ? 0 : 1),
+            builder: (context) => const UserOverviewPage(initialPage: 0),
           ),
-        );
+        ).then((_) => _loadUserSession());
       } else {
         ScaffoldMessenger.of(
           context,
