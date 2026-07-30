@@ -44,18 +44,18 @@ class ApplicationModel {
 
   factory ApplicationModel.fromJson(Map<String, dynamic> json) {
     return ApplicationModel(
-      id: json['id'] ?? 0,
+      id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
       userMainId: json['user_main_id']?.toString() ?? '',
-      userName: json['user_name'] ?? 'Unknown',
-      email: json['email'] ?? '',
+      userName: json['user_name']?.toString() ?? 'Unknown',
+      email: json['email']?.toString() ?? '',
       companyId: json['company_id']?.toString() ?? '',
-      companyName: json['company_name'] ?? '',
-      jobName: json['job_name'] ?? '',
-      jobDescription: json['job_description'] ?? '',
-      jobType: json['job_type'] ?? '',
-      status: json['status'] ?? 'Pending',
-      createdAt: json['created_at'] ?? '',
-      updatedAt: json['updated_at'] ?? '',
+      companyName: json['company_name']?.toString() ?? '',
+      jobName: json['job_name']?.toString() ?? '',
+      jobDescription: json['job_description']?.toString() ?? '',
+      jobType: json['job_type']?.toString() ?? '',
+      status: json['status']?.toString() ?? 'Pending',
+      createdAt: json['created_at']?.toString() ?? '',
+      updatedAt: json['updated_at']?.toString() ?? '',
     );
   }
 

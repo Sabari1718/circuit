@@ -4,11 +4,12 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
 import 'business_user_store.dart';
 import 'business_created_page.dart';
 import 'business_registration_overview_page.dart';
 import '../user_service.dart';
+import '../services/captcha_service.dart';
 
 class UserOverviewPage extends StatefulWidget {
   final int initialPage;
@@ -21,7 +22,7 @@ class UserOverviewPage extends StatefulWidget {
 class _UserOverviewPageState extends State<UserOverviewPage> {
   late int _currentPageIndex; // 0: Overview (Page 1), 1: Upgrade Account (Page 2), 2: Identify Verification (Page 3)
 
-  // Data retrieved from SharedPreferences
+  // Data retrieved from API only
   String _userMainId = "9508383027";
   String _panNumber = "";
   String _gender = "";
@@ -32,11 +33,17 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
 
   // Identity Verification Form Controllers
   final TextEditingController _panController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
   String _selectedGender = "";
-  String? _uploadFileName;
+  String _uploadFileName = "No file chosen";
   Uint8List? _uploadFileBytes;
-  String? _profileFileName;
   Uint8List? _profileFileBytes;
+  String? _profileFileName;
+
+  List<CaptchaCategory> _captchaCategories = [];
+  bool _isLoadingCaptcha = true;
+  CaptchaCategory? _selectedCaptchaCategory;
   String? _profilePhotoUrl;
   String? _panPhotoUrl;
   
@@ -84,29 +91,24 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
   }
 
   Future<void> _loadVerificationData() async {
-    final prefs = await SharedPreferences.getInstance();
     final userData = await UserService().getUserData();
+    final userMainId = userData['user_main_id']?.toString() ?? '';
+    
     setState(() {
-      _userMainId = userData['user_main_id'] ?? "9508383027";
-      if (_userMainId.isEmpty) _userMainId = "9508383027";
-      _panNumber = prefs.getString('user_pan') ?? "";
-      _gender = prefs.getString('user_gender') ?? "";
-      _accountType = prefs.getString('user_account_type') ?? "Registered";
-      _panPhotoName = prefs.getString('user_pan_photo_name');
-      final base64Photo = prefs.getString('user_pan_photo_bytes');
-      if (base64Photo != null && base64Photo.isNotEmpty) {
-        _panPhotoBytes = base64Decode(base64Photo);
-      }
-      _isVerified = _panNumber.isNotEmpty;
+      _userMainId = userMainId.isNotEmpty ? userMainId : '9508383027';
+      // Clear any stale local data - start fresh from API only
+      _panNumber = '';
+      _gender = '';
+      _isVerified = false;
     });
 
-    if (_userMainId.isNotEmpty && _userMainId != "9508383027") {
+    if (_userMainId.isNotEmpty && _userMainId != '9508383027') {
       final verifiedData = await UserService().getVerificationDetails(_userMainId);
       if (verifiedData != null && mounted) {
         setState(() {
           _isVerified = true;
-          _panNumber = verifiedData['pan_number']?.toString() ?? _panNumber;
-          _gender = verifiedData['gender']?.toString() ?? _gender;
+          _panNumber = verifiedData['pan_number']?.toString() ?? '';
+          _gender = verifiedData['gender']?.toString() ?? '';
           
           final profilePath = verifiedData['profile_photo_path']?.toString();
           _parseImageField(profilePath, (url) => _profilePhotoUrl = url, (bytes) => _profileFileBytes = bytes);
@@ -130,25 +132,45 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
              _parseImageField(proofPath, (url) => _addressProofUrl = url, (bytes) => _addressProofBytes = bytes);
           }
         });
+      } else if (mounted) {
+        // No data in DB - ensure everything is cleared
+        setState(() {
+          _isVerified = false;
+          _panNumber = '';
+          _gender = '';
+          _profilePhotoUrl = null;
+          _profileFileBytes = null;
+          _panPhotoUrl = null;
+          _uploadFileBytes = null;
+          _govIdType = null;
+          _govIdPhotoUrl = null;
+          _govIdPhotoBytes = null;
+          _addressType = null;
+          _pincode = null;
+          _addressProofType = null;
+          _addressProofUrl = null;
+          _addressProofBytes = null;
+        });
       }
     }
+    
+    _loadCaptchaCategories();
   }
 
-  Future<void> _saveVerificationData(
-    String pan,
-    String gender,
-    String photoName,
-    Uint8List photoBytes,
-  ) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('user_pan', pan);
-    await prefs.setString('user_gender', gender);
-    await prefs.setString('user_account_type', 'Registered');
-    await prefs.setString('user_pan_photo_name', photoName);
-    await prefs.setString('user_pan_photo_bytes', base64Encode(photoBytes));
-    // Also save in UserService
-    await UserService().saveUserData(accountType: 'Registered');
-    await _loadVerificationData();
+  Future<void> _loadCaptchaCategories() async {
+    try {
+      final categories = await CaptchaService().getCategories();
+      if (mounted) {
+        setState(() {
+          _captchaCategories = categories;
+          _isLoadingCaptcha = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingCaptcha = false);
+      }
+    }
   }
 
   Future<void> _pickFile() async {
@@ -254,31 +276,65 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
     }
 
     setState(() => _isSubmitting = true);
-    await Future.delayed(
-      const Duration(milliseconds: 1500),
-    ); // Simulate API response
-    await _saveVerificationData(
-      pan,
-      _selectedGender,
-      _uploadFileName ?? "PAN Card",
-      _uploadFileBytes!,
-    );
+    
+    // Convert bytes to base64 with data URI prefix
+    String panBase64 = "data:image/jpeg;base64," + base64Encode(_uploadFileBytes!);
+    String profileBase64 = "data:image/jpeg;base64," + base64Encode(_profileFileBytes!);
+
+    final payload = {
+      "user_main_id": _userMainId,
+      "pan_number": pan,
+      "gender": _selectedGender.toLowerCase(),
+      "is_verified": 0,
+      "pan_front_photo": panBase64,
+      "profile_photo": profileBase64,
+      "user_type": "register"
+    };
+
+    final response = await UserService().registerUserUpgrade(payload);
 
     if (mounted) {
       setState(() {
         _isSubmitting = false;
-        _currentPageIndex = 3; // Go to Secure Manager Account (Page 4)
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            "save successfully",
-            style: TextStyle(fontWeight: FontWeight.bold),
+      if (response != null) {
+        // API returns: {"data": {"result": "...", "code": 200, "message": "..."}}
+        final inner = response['data'] as Map<String, dynamic>?;
+        final code = inner?['code'];
+        if (code == 200) {
+          setState(() {
+            _currentPageIndex = 3; // Go to Verification Success (Page 3.5)
+          });
+          // Wait for 2 seconds, then go to Secure Manager Account (Page 4)
+          Future.delayed(const Duration(seconds: 2), () {
+            if (mounted) {
+              setState(() {
+                _currentPageIndex = 4;
+              });
+            }
+          });
+        } else {
+          // Show specific error from API (e.g. "Duplicate entry for PAN number")
+          final rawMsg = inner?['message']?.toString() ?? 'Failed to submit verification data';
+          final errorMsg = rawMsg.contains('Duplicate entry')
+              ? 'This PAN number is already registered. Please use a different PAN.'
+              : rawMsg;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMsg),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Network error. Please try again."),
+            backgroundColor: Colors.red,
           ),
-          backgroundColor: Color(0xFF10B981),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+        );
+      }
     }
   }
 
@@ -287,6 +343,7 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
     final width = MediaQuery.of(context).size.width;
     final isDesktop = width > 1024;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final title = _accountType.toUpperCase();
 
     return Scaffold(
       backgroundColor: isDark
@@ -299,9 +356,14 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
         title: Text(
           _currentPageIndex == 0
               ? "Account Verification Overview"
-              : (_currentPageIndex == 1
-                    ? "Upgrade Account"
-                    : (_currentPageIndex == 2 ? "Identity Verification" : "Secure Your Manager Account")),
+              : "User Privilege / ${title == "REGISTERED" ? "Registered User" : title == "VERIFIED" ? "Verified User" : title == "PREMIUM" ? "Premium User" : "Business User"} / " +
+              (_currentPageIndex == 1
+                  ? "Upgrade Account"
+                  : (_currentPageIndex == 2 
+                      ? "Identity Verification" 
+                      : (_currentPageIndex == 3 
+                          ? "Verification Success" 
+                          : "Secure Your Manager Account"))),
           style: TextStyle(
             color: isDark ? Colors.white : const Color(0xFF1E293B),
             fontWeight: FontWeight.w900,
@@ -363,9 +425,10 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
       case 2:
         return _buildPage3(isDark);
       case 3:
-        return _buildPage4(isDark);
+        return _buildVerificationSuccess(isDark);
+      case 4:
       default:
-        return _buildPage1(isDark, isDesktop);
+        return _buildPage4(isDark);
     }
   }
 
@@ -529,6 +592,94 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
           ),
         ),
       ],
+    );
+  }
+
+  // --- Verification Success (Page 3.5) ---
+  Widget _buildVerificationSuccess(bool isDark) {
+    return Center(
+      child: Container(
+        width: double.infinity,
+        constraints: const BoxConstraints(maxWidth: 500),
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: const Color(0xFF10B981).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.check_circle,
+                color: Color(0xFF10B981),
+                size: 40,
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              "Verification Success!",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF0F172A),
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              "Your PAN details are under verification. Until now, you were a guest user; after verification, your account will switch to a registered user.",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF64748B),
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 32),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Color(0xFF10B981),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  "Proceeding to security setup...",
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white70 : Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1254,18 +1405,6 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  String? _selectedCaptcha;
-  final List<String> _captchaImages = [
-    'assets/captcha/dog.jpg',
-    'assets/captcha/cat.jpg',
-    'assets/captcha/parrot.jpg',
-    'assets/captcha/car.jpg',
-    'assets/captcha/sports_bike.jpg',
-    'assets/captcha/train.jpg',
-    'assets/captcha/airplane.jpg',
-    'assets/captcha/coconut_tree.jpg',
-    'assets/captcha/sunflower.jpg',
-  ];
 
   Widget _buildPage4(bool isDark) {
     return Center(
@@ -1332,36 +1471,74 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
                 const SizedBox(height: 4),
                 const Text("Choose a custom captcha configuration token", style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
                 const SizedBox(height: 16),
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 1.5,
-                  ),
-                  itemCount: 9,
-                  itemBuilder: (context, index) {
-                    final asset = _captchaImages[index];
-                    final isSelected = _selectedCaptcha == asset;
-                    return GestureDetector(
-                      onTap: () => setState(() => _selectedCaptcha = asset),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: isSelected ? const Color(0xFF2563EB) : Colors.transparent, width: 3),
-                          image: DecorationImage(
-                            image: AssetImage(asset),
-                            fit: BoxFit.cover,
-                            onError: (e, s) => null, // fallback if asset not found
+                if (_isLoadingCaptcha)
+                  const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
+                else if (_captchaCategories.isEmpty)
+                  const Center(child: Text("No captcha images available."))
+                else
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                    ),
+                    itemCount: _captchaCategories.length,
+                    itemBuilder: (context, index) {
+                      final category = _captchaCategories[index];
+                      final isSelected = _selectedCaptchaCategory?.id == category.id;
+                      return GestureDetector(
+                        onTap: () => setState(() => _selectedCaptchaCategory = category),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.network(
+                                category.image,
+                                fit: BoxFit.cover,
+                                loadingBuilder: (context, child, progress) {
+                                  if (progress == null) return child;
+                                  return Container(
+                                    color: Colors.grey.shade100,
+                                    child: const Center(
+                                      child: SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      ),
+                                    ),
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) => Container(
+                                  color: Colors.grey.shade200,
+                                  child: const Icon(Icons.error, color: Colors.grey),
+                                ),
+                              ),
+                              if (isSelected)
+                                Container(
+                                  color: const Color(0xFF2563EB).withOpacity(0.4),
+                                  child: const Center(
+                                    child: Icon(Icons.check_circle, color: Colors.white, size: 32),
+                                  ),
+                                ),
+                              if (isSelected)
+                                Positioned(
+                                  top: 0, bottom: 0, left: 0, right: 0,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: const Color(0xFF2563EB), width: 4),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
-                          color: Colors.grey[200], // fallback color
                         ),
-                      ),
-                    );
-                  },
-                ),
+                      );
+                    },
+                  ),
               ],
             ),
             const SizedBox(height: 40),
@@ -1372,16 +1549,65 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
                 width: 200,
                 child: ElevatedButton(
                   onPressed: () async {
-                    final prefs = await SharedPreferences.getInstance();
-                    await prefs.setBool('is_registered_upgraded', true);
-                    if (mounted) {
-                      Navigator.pop(context);
+                    final pwd = _passwordController.text;
+                    final cpwd = _confirmPasswordController.text;
+                    
+                    if (pwd.isEmpty || pwd != cpwd) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Credentials Saved Successfully!"),
-                          backgroundColor: Color(0xFF10B981),
-                        ),
+                        const SnackBar(content: Text("Passwords do not match or are empty"), backgroundColor: Colors.red),
                       );
+                      return;
+                    }
+                    if (_selectedCaptchaCategory == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Please select a captcha image"), backgroundColor: Colors.red),
+                      );
+                      return;
+                    }
+                    
+                    final payload = {
+                      "user_main_id": _userMainId,
+                      "manage_captcha_id": _selectedCaptchaCategory!.id,
+                      "password": pwd,
+                      "key": "Manage_login_pass",
+                      "image": _selectedCaptchaCategory!.image
+                    };
+                    
+                    final response = await UserService().createManageCaptcha(payload);
+                    
+                    if (response != null) {
+                      // API returns: {"data": {"result": "...", "code": 200, "message": "..."}}
+                      final inner = response['data'] as Map<String, dynamic>?;
+                      final code = inner?['code'];
+                      if (code == 200) {
+                        if (mounted) {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Credentials Saved Successfully!"),
+                              backgroundColor: Color(0xFF10B981),
+                              duration: Duration(seconds: 3),
+                            ),
+                          );
+                        }
+                      } else {
+                        final rawMsg = inner?['message']?.toString() ?? 'Failed to save credentials';
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(rawMsg),
+                              backgroundColor: Colors.red,
+                              duration: const Duration(seconds: 4),
+                            ),
+                          );
+                        }
+                      }
+                    } else {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Network error. Please try again."), backgroundColor: Colors.red),
+                        );
+                      }
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -1440,6 +1666,7 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
               ),
               Expanded(
                 child: TextField(
+                  controller: _passwordController,
                   obscureText: _obscurePassword,
                   decoration: const InputDecoration(
                     hintText: "Enter password",
@@ -1479,6 +1706,7 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
               ),
               Expanded(
                 child: TextField(
+                  controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
                   decoration: const InputDecoration(
                     hintText: "Confirm password",

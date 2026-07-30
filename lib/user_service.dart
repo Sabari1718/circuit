@@ -505,8 +505,9 @@ class UserService extends ChangeNotifier {
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
-        if (decoded['success'] == true && decoded['data'] != null && decoded['data']['id'] != null) {
-          // If the API returns success and data with a valid id exists, it means the user has a verified user record
+        if (decoded['success'] == true &&
+            decoded['data'] != null &&
+            decoded['data']['verification'] != null) {
           return true;
         }
       }
@@ -528,12 +529,86 @@ class UserService extends ChangeNotifier {
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
-        if (decoded['success'] == true && decoded['data'] != null && decoded['data']['id'] != null) {
-          return decoded['data'] as Map<String, dynamic>;
+        if (decoded['success'] == true && decoded['data'] != null) {
+          final data = decoded['data'] as Map<String, dynamic>;
+          final verification = data['verification'] as Map<String, dynamic>?;
+          if (verification != null) {
+            // Merge addresses and address_proof into the verification map for easy access
+            return {
+              ...verification,
+              'addresses': data['addresses'] ?? [],
+              'address_proof': data['address_proof'],
+              'selected_address_id': data['selected_address_id'],
+            };
+          }
         }
       }
     } catch (e) {
       debugPrint('Error getting verification details: $e');
+    }
+    return null;
+  }
+
+  /// Check if user exists in user_register table (REGISTERED USER upgrade)
+  Future<bool> checkUserRegisterStatus(String userMainId) async {
+    // Try the user_register endpoint to check if user has registered
+    final url = 'https://managelogin.jobes24x7.com/api/user_register/user/$userMainId';
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+      );
+      debugPrint('[UserRegister] GET $url → ${response.statusCode}');
+      debugPrint('[UserRegister] Body: ${response.body}');
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        // Try nested response: {"data": {"result": "...", "code": 200, "data": {...}}}
+        final inner = decoded['data'];
+        if (inner is Map && inner['code'] == 200 && inner['data'] != null) {
+          debugPrint('[UserRegister] ✅ Registered user found!');
+          return true;
+        }
+        // Try flat response: {"success": true, "data": {...}}
+        if (decoded['success'] == true && decoded['data'] != null) {
+          debugPrint('[UserRegister] ✅ Registered user found (flat)!');
+          return true;
+        }
+      }
+    } catch (e) {
+      debugPrint('[UserRegister] Error: $e');
+    }
+    debugPrint('[UserRegister] ❌ No register record found for $userMainId');
+    return false;
+  }
+
+  Future<Map<String, dynamic>?> registerUserUpgrade(Map<String, dynamic> payload) async {
+    final url = 'https://managelogin.jobes24x7.com/api/user_register/create';
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      );
+      // Always return decoded body so the caller can read success or error message
+      return jsonDecode(response.body);
+    } catch (e) {
+      debugPrint('Error in registerUserUpgrade: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> createManageCaptcha(Map<String, dynamic> payload) async {
+    final url = 'https://managelogin.jobes24x7.com/api/manage-captcha/create';
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      );
+      // Always return decoded body so the caller can read success or error message
+      return jsonDecode(response.body);
+    } catch (e) {
+      debugPrint('Error in createManageCaptcha: $e');
     }
     return null;
   }

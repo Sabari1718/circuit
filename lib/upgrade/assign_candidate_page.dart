@@ -46,7 +46,7 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
       final token = prefs.getString('auth_token') ?? '';
       
       final res = await http.get(
-        Uri.parse('https://user.jobes24x7.com/api/job-approved'),
+        Uri.parse('https://managelogin.jobes24x7.com/api/assigned-interviewers'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -785,26 +785,7 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
   }
 
   Widget _buildEmployeeTable(bool isDark) {
-    List<ApplicationModel> filteredEmployees = [];
-    if (_selectedJob != null) {
-      final jobPostedId = _selectedJob!['job_posted_id']?.toString() ?? '';
-      final jobTitle = _selectedJob!['job_title']?.toString() ?? '';
-      filteredEmployees = _employees.where((e) => 
-        e.jobPostedId == jobPostedId || e.jobName == jobTitle
-      ).toList();
-    }
-
-    if (_selectedJob == null) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 32),
-        child: Center(
-          child: Text(
-            "Please select a job to view applied candidates.",
-            style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-          ),
-        ),
-      );
-    }
+    List<ApplicationModel> filteredEmployees = _employees;
 
     if (filteredEmployees.isEmpty) {
       return Padding(

@@ -210,11 +210,27 @@ class _HomePageState extends State<HomePage> {
     final prefs = await SharedPreferences.getInstance();
 
     bool isVerified = false;
+    bool isRegistered = false;
     final userMainId = data['user_main_id'];
     if (userMainId != null && userMainId.toString().isNotEmpty) {
-      isVerified = await UserService().checkVerificationStatus(
-        userMainId.toString(),
-      );
+      final uid = userMainId.toString();
+      
+      // Check 1: verified-user table (for VERIFIED users)
+      final verificationDetails = await UserService().getVerificationDetails(uid);
+      if (verificationDetails != null) {
+        final userType = verificationDetails['user_type']?.toString().toLowerCase();
+        if (userType == 'register' || userType == 'verified') {
+          isRegistered = true;
+        }
+        if (userType == 'verified') {
+          isVerified = true;
+        }
+      }
+      
+      // Check 2: user_register table (for REGISTERED users who upgraded)
+      if (!isRegistered) {
+        isRegistered = await UserService().checkUserRegisterStatus(uid);
+      }
     }
 
     if (mounted) {
@@ -225,8 +241,7 @@ class _HomePageState extends State<HomePage> {
         _accountType = data['accountType'] ?? widget.accountType;
         _isMainBusinessRegistered =
             prefs.getBool('is_main_business_registered') ?? false;
-        _isRegisteredUpgraded =
-            prefs.getBool('is_registered_upgraded') ?? false;
+        _isRegisteredUpgraded = isRegistered;
         _isVerified = isVerified;
 
         // Initialize dropdown from store if business exists

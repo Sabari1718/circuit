@@ -25,7 +25,8 @@ class BusinessCreatedPage extends ConsumerStatefulWidget {
   const BusinessCreatedPage({super.key, this.showSelection = false});
 
   @override
-  ConsumerState<BusinessCreatedPage> createState() => _BusinessCreatedPageState();
+  ConsumerState<BusinessCreatedPage> createState() =>
+      _BusinessCreatedPageState();
 }
 
 class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
@@ -33,7 +34,7 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
   String? _selectedRegType;
   bool _isBusinessExpanded = true;
   bool _isJobsExpanded = false;
-  
+
   bool _isLoadingBusinesses = true;
   List<BusinessUser> _apiBusinesses = [];
   String _userMainId = '';
@@ -50,21 +51,22 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
     setState(() => _isLoadingBusinesses = true);
     final prefs = await SharedPreferences.getInstance();
     String userMainId = prefs.getString('user_main_id') ?? '';
-    
+
     // 🚨 TEMP FIX: Override ghost user ID to fetch the correct dashboard data
     if (userMainId == '8059210846') {
       userMainId = '6102066450';
     }
 
     _userMainId = userMainId;
-    _isMainBusinessRegistered = prefs.getBool('is_main_business_registered') ?? false;
-    
+    _isMainBusinessRegistered =
+        prefs.getBool('is_main_business_registered') ?? false;
+
     if (userMainId.isNotEmpty) {
       final res = await ApiService().getBusinesses(userMainId);
       if (mounted) {
         List<BusinessUser> loaded = [];
         List<dynamic> rawList = [];
-        
+
         if (res is List) {
           rawList = res as List<dynamic>;
         } else if (res['data'] is List) {
@@ -89,7 +91,9 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
               debugPrint('Error parsing business item: $e');
             }
           }
-          debugPrint('[BusinessCreatedPage] rawList size: ${rawList.length}, parsed size: ${loaded.length}');
+          debugPrint(
+            '[BusinessCreatedPage] rawList size: ${rawList.length}, parsed size: ${loaded.length}',
+          );
         } else {
           debugPrint('[BusinessCreatedPage] No data found in response: $res');
         }
@@ -147,17 +151,17 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
     {
       "title": "Propagator",
       "icon": Icons.hub_rounded,
-      "color": const Color(0xFF8B5CF6)
+      "color": const Color(0xFF8B5CF6),
     },
     {
       "title": "Partner",
       "icon": Icons.handshake_rounded,
-      "color": const Color(0xFF3B82F6)
+      "color": const Color(0xFF3B82F6),
     },
     {
       "title": "Create Supplier",
       "icon": Icons.inventory_2_rounded,
-      "color": const Color(0xFFE11D48)
+      "color": const Color(0xFFE11D48),
     },
   ];
 
@@ -184,11 +188,9 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
 
     Future.delayed(const Duration(milliseconds: 220), () {
       if (!mounted) return;
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => const PostedJobsPage(),
-        ),
-      );
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (context) => const PostedJobsPage()));
     });
   }
 
@@ -209,9 +211,7 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
     } else if (type == "Propagator") {
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (context) => const CreateBusinessUserPage(),
-        ),
+        MaterialPageRoute(builder: (context) => const CreateBusinessUserPage()),
       ).then((_) {
         setState(() {
           _showRegTypeSelection = false;
@@ -242,12 +242,11 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+      backgroundColor: isDark
+          ? const Color(0xFF0F172A)
+          : const Color(0xFFF1F5F9),
       drawer: !isDesktop
-          ? Drawer(
-        elevation: 0,
-        child: _buildSidebar(context, isDrawer: true),
-      )
+          ? Drawer(elevation: 0, child: _buildSidebar(context, isDrawer: true))
           : null,
       body: SafeArea(
         top: false,
@@ -270,7 +269,8 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
                               padding: EdgeInsets.only(top: 32),
                               child: Center(child: CircularProgressIndicator()),
                             )
-                          else if (!_isMainBusinessRegistered && businesses.isEmpty)
+                          else if (!_isMainBusinessRegistered &&
+                              businesses.isEmpty)
                             _buildEmptyState(context, isDesktop)
                           else ...[
                             _buildHeaderSection(context, isDesktop),
@@ -279,11 +279,13 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
                             const SizedBox(height: 24),
                             _buildAddNewBusinessCard(context),
                           ],
-                          if (_showRegTypeSelection && !_isLoadingBusinesses) ...[
+                          if (_showRegTypeSelection &&
+                              !_isLoadingBusinesses) ...[
                             const SizedBox(height: 16),
                             _buildRegistrationTypeSelector(context),
                           ],
-                          if (!_isLoadingBusinesses && businesses.isNotEmpty) ...[
+                          if (!_isLoadingBusinesses &&
+                              businesses.isNotEmpty) ...[
                             if (businesses.isNotEmpty) ...[
                               const SizedBox(height: 32),
                               _buildYourBusinessesHeader(
@@ -292,47 +294,93 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
                               ),
                               const SizedBox(height: 24),
                             ],
-                          
-                          if (businesses.any((b) => b.registrationType == 'Supplier')) ...[
-                            _buildCategoryHeader(
-                              context,
-                              "Supplier Businesses",
-                              businesses.where((b) => b.registrationType == 'Supplier').length,
-                            ),
-                            const SizedBox(height: 16),
-                            ...businesses
-                                .where((b) => b.registrationType == 'Supplier')
-                                .map((biz) => _buildBusinessCard(context, biz, isDesktop))
-                                .toList(),
-                            const SizedBox(height: 24),
-                          ],
 
-                          if (businesses.any((b) => b.registrationType == 'Partner')) ...[
-                            _buildCategoryHeader(
-                              context,
-                              "Partner Businesses",
-                              businesses.where((b) => b.registrationType == 'Partner').length,
-                            ),
-                            const SizedBox(height: 16),
-                            ...businesses
-                                .where((b) => b.registrationType == 'Partner')
-                                .map((biz) => _buildBusinessCard(context, biz, isDesktop))
-                                .toList(),
-                            const SizedBox(height: 24),
-                          ],
+                            if (businesses.any(
+                              (b) => b.registrationType == 'Supplier',
+                            )) ...[
+                              _buildCategoryHeader(
+                                context,
+                                "Supplier Businesses",
+                                businesses
+                                    .where(
+                                      (b) => b.registrationType == 'Supplier',
+                                    )
+                                    .length,
+                              ),
+                              const SizedBox(height: 16),
+                              ...businesses
+                                  .where(
+                                    (b) => b.registrationType == 'Supplier',
+                                  )
+                                  .map(
+                                    (biz) => _buildBusinessCard(
+                                      context,
+                                      biz,
+                                      isDesktop,
+                                    ),
+                                  )
+                                  .toList(),
+                              const SizedBox(height: 24),
+                            ],
 
-                          if (businesses.any((b) => b.registrationType == 'Propagator' || b.registrationType == null)) ...[
-                            _buildCategoryHeader(
-                              context,
-                              "Proprietor / Propagator Businesses",
-                              businesses.where((b) => b.registrationType == 'Propagator' || b.registrationType == null).length,
-                            ),
-                            const SizedBox(height: 16),
-                            ...businesses
-                                .where((b) => b.registrationType == 'Propagator' || b.registrationType == null)
-                                .map((biz) => _buildBusinessCard(context, biz, isDesktop))
-                                .toList(),
-                          ],
+                            if (businesses.any(
+                              (b) => b.registrationType == 'Partner',
+                            )) ...[
+                              _buildCategoryHeader(
+                                context,
+                                "Partner Businesses",
+                                businesses
+                                    .where(
+                                      (b) => b.registrationType == 'Partner',
+                                    )
+                                    .length,
+                              ),
+                              const SizedBox(height: 16),
+                              ...businesses
+                                  .where((b) => b.registrationType == 'Partner')
+                                  .map(
+                                    (biz) => _buildBusinessCard(
+                                      context,
+                                      biz,
+                                      isDesktop,
+                                    ),
+                                  )
+                                  .toList(),
+                              const SizedBox(height: 24),
+                            ],
+
+                            if (businesses.any(
+                              (b) =>
+                                  b.registrationType == 'Propagator' ||
+                                  b.registrationType == null,
+                            )) ...[
+                              _buildCategoryHeader(
+                                context,
+                                "Proprietor / Propagator Businesses",
+                                businesses
+                                    .where(
+                                      (b) =>
+                                          b.registrationType == 'Propagator' ||
+                                          b.registrationType == null,
+                                    )
+                                    .length,
+                              ),
+                              const SizedBox(height: 16),
+                              ...businesses
+                                  .where(
+                                    (b) =>
+                                        b.registrationType == 'Propagator' ||
+                                        b.registrationType == null,
+                                  )
+                                  .map(
+                                    (biz) => _buildBusinessCard(
+                                      context,
+                                      biz,
+                                      isDesktop,
+                                    ),
+                                  )
+                                  .toList(),
+                            ],
                           ], // Close else block
                           const SizedBox(height: 48),
                         ],
@@ -351,82 +399,128 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
   Widget _buildEmptyState(BuildContext context, bool isDesktop) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return FutureBuilder<Map<String, String>>(
-        future: UserService().getUserData(),
-        builder: (context, snapshot) {
-          final name = snapshot.data?['name']?.split(' ').first ?? 'Sabari';
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text("Welcome Back, $name! 👋", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 4),
-              const Text("Create a new business user account", style: TextStyle(color: Color(0xFF64748B), fontSize: 14)),
-              const SizedBox(height: 32),
-              Center(
-                child: Container(
-                  width: isDesktop ? 600 : double.infinity,
-                  padding: const EdgeInsets.all(40),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: isDark ? Colors.white24 : const Color(0xFFCBD5E1), style: BorderStyle.solid),
-                  ),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 64, height: 64,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFE11D48),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Center(
-                          child: Icon(Icons.business_center_rounded, color: Colors.white, size: 32),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      const Text("Create New Business User", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-                      const SizedBox(height: 12),
-                      const Text(
-                        "Click the button below to start the registration process.\nYou'll need to provide business details and required documents",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Color(0xFF64748B), fontSize: 13, height: 1.5),
-                      ),
-                      const SizedBox(height: 32),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const BusinessUpgradePage(),
-                            ),
-                          ).then((_) {
-                            _fetchApiBusinesses();
-                          });
-                        },
-                        icon: const Icon(Icons.add_circle_outline, color: Colors.white, size: 20),
-                        label: const Text("Create Business User", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF8B5CF6),
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                          elevation: 0,
-                        ),
-                      ),
-                    ],
+      future: UserService().getUserData(),
+      builder: (context, snapshot) {
+        final name = snapshot.data?['name']?.split(' ').first ?? 'Sabari';
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Welcome Back, $name! 👋",
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              "Create a new business user account",
+              style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
+            ),
+            const SizedBox(height: 32),
+            Center(
+              child: Container(
+                width: isDesktop ? 600 : double.infinity,
+                padding: const EdgeInsets.all(40),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? Colors.white24 : const Color(0xFFCBD5E1),
+                    style: BorderStyle.solid,
                   ),
                 ),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFE11D48),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.business_center_rounded,
+                          color: Colors.white,
+                          size: 32,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      "Create New Business User",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      "Click the button below to start the registration process.\nYou'll need to provide business details and required documents",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 13,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const BusinessUpgradePage(),
+                          ),
+                        ).then((_) {
+                          _fetchApiBusinesses();
+                        });
+                      },
+                      icon: const Icon(
+                        Icons.add_circle_outline,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      label: const Text(
+                        "Create Business User",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF8B5CF6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        elevation: 0,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 32),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.lock_outline, size: 14, color: Color(0xFF94A3B8)),
-                  SizedBox(width: 8),
-                  Text("All information is encrypted and securely stored", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12, fontWeight: FontWeight.w500)),
-                ],
-              ),
-            ],
-          );
-        }
+            ),
+            const SizedBox(height: 32),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Icon(Icons.lock_outline, size: 14, color: Color(0xFF94A3B8)),
+                SizedBox(width: 8),
+                Text(
+                  "All information is encrypted and securely stored",
+                  style: TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -464,7 +558,9 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                  color: isDark
+                      ? const Color(0xFF0F172A)
+                      : const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
@@ -490,7 +586,9 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
               height: 46,
               constraints: const BoxConstraints(maxWidth: 500),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                color: isDark
+                    ? const Color(0xFF0F172A)
+                    : const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: isDark ? Colors.white12 : const Color(0xFFCBD5E1),
@@ -524,10 +622,7 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
 
           const SizedBox(width: 10),
 
-          _topPlainIcon(
-            Icons.notifications_none_outlined,
-            isDark: isDark,
-          ),
+          _topPlainIcon(Icons.notifications_none_outlined, isDark: isDark),
 
           const SizedBox(width: 6),
 
@@ -580,33 +675,30 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
     );
   }
 
-  Widget _topPlainIcon(
-      IconData icon, {
-        required bool isDark,
-      }) =>
-      Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
-          ),
-        ),
-        child: IconButton(
-          icon: Icon(
-            icon,
-            size: 22,
-            color: isDark ? Colors.white : const Color(0xFF1E293B),
-          ),
-          onPressed: () {},
-        ),
-      );
+  Widget _topPlainIcon(IconData icon, {required bool isDark}) => Container(
+    width: 42,
+    height: 42,
+    decoration: BoxDecoration(
+      color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(
+        color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+      ),
+    ),
+    child: IconButton(
+      icon: Icon(
+        icon,
+        size: 22,
+        color: isDark ? Colors.white : const Color(0xFF1E293B),
+      ),
+      onPressed: () {},
+    ),
+  );
 
   Widget _buildHeaderSection(BuildContext context, bool isDesktop) {
-    final biz =
-    BusinessUserStore().businesses.isNotEmpty ? BusinessUserStore().businesses.first : null;
+    final biz = BusinessUserStore().businesses.isNotEmpty
+        ? BusinessUserStore().businesses.first
+        : null;
 
     return FutureBuilder<Map<String, String>>(
       future: UserService().getUserData(),
@@ -684,29 +776,31 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
                             const SizedBox(width: 8),
                             GestureDetector(
                               onTap: () {
-                                final activeBiz = biz ?? BusinessUser(
-                                  id: "9508383027",
-                                  registrationType: "Propagator",
-                                  businessName: "Sabari Voxo",
-                                  email: "sabari@voxo.com",
-                                  phone: "9508383027",
-                                  panNumber: "ABCDE1234F",
-                                  gstNumber: "22AAAAA1111A1Z5",
-                                  accountNumber: "1234567890",
-                                  bankDocType: "Bank Statement",
-                                  doorNumber: "123",
-                                  streetName: "Main Street",
-                                  area: "Central Area",
-                                  district: "Chennai",
-                                  pincode: "600001",
-                                  state: "Tamil Nadu",
-                                  country: "India",
-                                  businessTypes: ["IT", "Services"],
-                                  yearOfEstablishment: "2024",
-                                  employeeRange: "11-50",
-                                  createdDate: DateTime.now(),
-                                  status: "Active",
-                                );
+                                final activeBiz =
+                                    biz ??
+                                    BusinessUser(
+                                      id: "9508383027",
+                                      registrationType: "Propagator",
+                                      businessName: "Sabari Voxo",
+                                      email: "sabari@voxo.com",
+                                      phone: "9508383027",
+                                      panNumber: "ABCDE1234F",
+                                      gstNumber: "22AAAAA1111A1Z5",
+                                      accountNumber: "1234567890",
+                                      bankDocType: "Bank Statement",
+                                      doorNumber: "123",
+                                      streetName: "Main Street",
+                                      area: "Central Area",
+                                      district: "Chennai",
+                                      pincode: "600001",
+                                      state: "Tamil Nadu",
+                                      country: "India",
+                                      businessTypes: ["IT", "Services"],
+                                      yearOfEstablishment: "2024",
+                                      employeeRange: "11-50",
+                                      createdDate: DateTime.now(),
+                                      status: "Active",
+                                    );
                                 if (biz == null) {
                                   BusinessUserStore().addBusiness(activeBiz);
                                 }
@@ -781,11 +875,7 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
                   color: Colors.yellow[600],
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.history,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                child: const Icon(Icons.history, color: Colors.white, size: 20),
               ),
               const SizedBox(width: 12),
               const Flexible(
@@ -833,10 +923,7 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
         children: [
           const Text(
             "Ready to add a new business?",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 12),
           const Text(
@@ -904,10 +991,7 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
         children: [
           const Text(
             "Select Registration Type",
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
-              fontSize: 14,
-            ),
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
           ),
           const SizedBox(height: 16),
           Container(
@@ -926,22 +1010,22 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
                 items: _regTypes
                     .map(
                       (type) => DropdownMenuItem<String>(
-                    value: type['title'],
-                    child: Row(
-                      children: [
-                        Icon(type['icon'], color: type['color'], size: 20),
-                        const SizedBox(width: 12),
-                        Text(
-                          type['title'],
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
+                        value: type['title'],
+                        child: Row(
+                          children: [
+                            Icon(type['icon'], color: type['color'], size: 20),
+                            const SizedBox(width: 12),
+                            Text(
+                              type['title'],
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                )
+                      ),
+                    )
                     .toList(),
                 onChanged: (val) {
                   setState(() {
@@ -970,10 +1054,7 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
         const SizedBox(width: 8),
         Text(
           "$label ($count)",
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w800,
-          ),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
         ),
       ],
     );
@@ -993,7 +1074,11 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
     );
   }
 
-  Widget _buildBusinessCard(BuildContext context, BusinessUser biz, bool isDesktop) {
+  Widget _buildBusinessCard(
+    BuildContext context,
+    BusinessUser biz,
+    bool isDesktop,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return LayoutBuilder(
@@ -1013,11 +1098,17 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFE11D48),
                         borderRadius: BorderRadius.circular(6),
@@ -1058,28 +1149,38 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
                           if (biz.registrationType == 'Supplier') {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (_) => CreateSupplierBusinessPage(existingBusiness: biz)),
+                              MaterialPageRoute(
+                                builder: (_) => CreateSupplierBusinessPage(
+                                  existingBusiness: biz,
+                                ),
+                              ),
                             ).then((_) => _fetchApiBusinesses());
-                          } else if (biz.registrationType == 'Propagator' || biz.registrationType == null) {
+                          } else if (biz.registrationType == 'Propagator' ||
+                              biz.registrationType == null) {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (_) => CreateBusinessUserPage(existingBusiness: biz)),
+                              MaterialPageRoute(
+                                builder: (_) => CreateBusinessUserPage(
+                                  existingBusiness: biz,
+                                ),
+                              ),
                             ).then((_) => _fetchApiBusinesses());
                           } else if (biz.registrationType == 'Partner') {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (_) => CreatePartnerBusinessPage(existingBusiness: biz)),
+                              MaterialPageRoute(
+                                builder: (_) => CreatePartnerBusinessPage(
+                                  existingBusiness: biz,
+                                ),
+                              ),
                             ).then((_) => _fetchApiBusinesses());
                           }
                         } else if (value == 'delete') {
-                           _handleDelete(biz);
+                          _handleDelete(biz);
                         }
                       },
                       itemBuilder: (context) => [
-                        const PopupMenuItem(
-                          value: 'edit',
-                          child: Text('Edit'),
-                        ),
+                        const PopupMenuItem(value: 'edit', child: Text('Edit')),
                         const PopupMenuItem(
                           value: 'delete',
                           child: Text('Delete'),
@@ -1102,16 +1203,24 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
                           decoration: BoxDecoration(
                             color: const Color(0xFFE11D48),
                             shape: BoxShape.circle,
-                            image: biz.companyLogoFileName != null && biz.companyLogoFileName!.isNotEmpty
+                            image:
+                                biz.companyLogoFileName != null &&
+                                    biz.companyLogoFileName!.isNotEmpty
                                 ? DecorationImage(
-                                    image: NetworkImage(biz.companyLogoFileName!.startsWith('http') 
-                                      ? biz.companyLogoFileName! 
-                                      : 'https://user.jobes24x7.com/${biz.companyLogoFileName}'),
+                                    image: NetworkImage(
+                                      biz.companyLogoFileName!.startsWith(
+                                            'http',
+                                          )
+                                          ? biz.companyLogoFileName!
+                                          : 'https://user.jobes24x7.com/${biz.companyLogoFileName}',
+                                    ),
                                     fit: BoxFit.cover,
                                   )
                                 : null,
                           ),
-                          child: biz.companyLogoFileName != null && biz.companyLogoFileName!.isNotEmpty
+                          child:
+                              biz.companyLogoFileName != null &&
+                                  biz.companyLogoFileName!.isNotEmpty
                               ? null
                               : const Center(
                                   child: Icon(
@@ -1216,10 +1325,10 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
     if (isSmall) {
       return Column(
         children: items
-            .map((w) => Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: w,
-        ))
+            .map(
+              (w) =>
+                  Padding(padding: const EdgeInsets.only(bottom: 12), child: w),
+            )
             .toList(),
       );
     }
@@ -1265,11 +1374,7 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
 
   Widget _buildInfoLine(IconData icon, String text) => Row(
     children: [
-      Icon(
-        icon,
-        size: 13,
-        color: const Color(0xFF94A3B8),
-      ),
+      Icon(icon, size: 13, color: const Color(0xFF94A3B8)),
       const SizedBox(width: 8),
       Expanded(
         child: Text(
@@ -1363,7 +1468,11 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
           const SizedBox(height: 4),
 
           // ── Business (toggleable expandable) ────────────────────────────
-          _buildBusinessExpansion(context, isDrawer: isDrawer, pinkColor: pinkColor),
+          _buildBusinessExpansion(
+            context,
+            isDrawer: isDrawer,
+            pinkColor: pinkColor,
+          ),
           const SizedBox(height: 4),
 
           // ── Jobs (expandable) ────────────────────────────────────────────
@@ -1440,7 +1549,8 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
               ),
             ),
             dense: true,
-            onTap: () => setState(() => _isBusinessExpanded = !_isBusinessExpanded),
+            onTap: () =>
+                setState(() => _isBusinessExpanded = !_isBusinessExpanded),
           ),
         ),
 
@@ -1472,7 +1582,8 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => const UserOverviewPage()),
+                      builder: (context) => const UserOverviewPage(),
+                    ),
                   );
                 },
               ),
@@ -1507,8 +1618,11 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
       children: [
         // ── Jobs header ──────────────────────────────────────────────
         ListTile(
-          leading: const Icon(Icons.work_outline_rounded,
-              color: Colors.white60, size: 20),
+          leading: const Icon(
+            Icons.work_outline_rounded,
+            color: Colors.white60,
+            size: 20,
+          ),
           title: const Text(
             "Jobs",
             style: TextStyle(color: Colors.white60, fontSize: 14),
@@ -1516,8 +1630,11 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
           trailing: AnimatedRotation(
             turns: _isJobsExpanded ? 0.5 : 0,
             duration: const Duration(milliseconds: 250),
-            child: const Icon(Icons.keyboard_arrow_down_rounded,
-                color: Colors.white38, size: 20),
+            child: const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: Colors.white38,
+              size: 20,
+            ),
           ),
           dense: true,
           onTap: () => setState(() => _isJobsExpanded = !_isJobsExpanded),
@@ -1536,6 +1653,18 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
               const SizedBox(height: 2),
 
               _sidebarSubItem(
+                "Post Job",
+                onTap: () {
+                  if (isDrawer) Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PostJobPage(),
+                    ),
+                  );
+                },
+              ),
+              _sidebarSubItem(
                 "View Posted Jobs",
                 onTap: () {
                   _openPostedJobs(context, isDrawer: isDrawer);
@@ -1550,7 +1679,9 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (_) => const AppliedListPage(isBusinessMode: true)),
+                        builder: (_) =>
+                            const AppliedListPage(isBusinessMode: true),
+                      ),
                     );
                   });
                 },
@@ -1564,7 +1695,8 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                          builder: (_) => const AssignCandidatePage()),
+                        builder: (_) => const AssignCandidatePage(),
+                      ),
                     );
                   });
                 },
@@ -1577,43 +1709,52 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
     );
   }
 
-  Widget _sidebarItem(IconData icon, String title, {VoidCallback? onTap}) => ListTile(
+  Widget _sidebarItem(IconData icon, String title, {VoidCallback? onTap}) =>
+      ListTile(
         leading: Icon(icon, color: Colors.white60, size: 20),
-        title: Text(title, style: const TextStyle(color: Colors.white60, fontSize: 14)),
-        onTap: onTap,
-        dense: true,
-      );
-
-  Widget _sidebarSubItem(String title, {Color? textColor, VoidCallback? onTap}) => ListTile(
-        contentPadding: const EdgeInsets.only(left: 54),
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              "-",
-              style: TextStyle(color: Colors.white30, fontSize: 14, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              title,
-              style: TextStyle(
-                color: textColor ?? Colors.white60,
-                fontSize: 13,
-                fontWeight: FontWeight.normal,
-              ),
-            ),
-          ],
+        title: Text(
+          title,
+          style: const TextStyle(color: Colors.white60, fontSize: 14),
         ),
         onTap: onTap,
         dense: true,
       );
 
+  Widget _sidebarSubItem(
+    String title, {
+    Color? textColor,
+    VoidCallback? onTap,
+  }) => ListTile(
+    contentPadding: const EdgeInsets.only(left: 54),
+    title: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text(
+          "-",
+          style: TextStyle(
+            color: Colors.white30,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: TextStyle(
+            color: textColor ?? Colors.white60,
+            fontSize: 13,
+            fontWeight: FontWeight.normal,
+          ),
+        ),
+      ],
+    ),
+    onTap: onTap,
+    dense: true,
+  );
+
   Widget _topIcon(IconData icon, {String? badge}) => Stack(
     children: [
-      IconButton(
-        icon: Icon(icon, size: 22),
-        onPressed: () {},
-      ),
+      IconButton(icon: Icon(icon, size: 22), onPressed: () {}),
       if (badge != null)
         Positioned(
           right: 12,
@@ -1624,10 +1765,7 @@ class _BusinessCreatedPageState extends ConsumerState<BusinessCreatedPage> {
               color: const Color(0xFFE11D48),
               borderRadius: BorderRadius.circular(6),
             ),
-            constraints: const BoxConstraints(
-              minWidth: 12,
-              minHeight: 12,
-            ),
+            constraints: const BoxConstraints(minWidth: 12, minHeight: 12),
             child: Text(
               badge,
               style: const TextStyle(

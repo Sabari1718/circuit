@@ -5,6 +5,11 @@ import '../widgets/common_dashboard_app_bar.dart';
 import '../widgets/business_sidebar_menu.dart';
 import '../features/upgrade/add_business_welcome_widget.dart';
 import '../features/store/store_configuration_widget.dart';
+import '../features/store/create_store_page.dart';
+import 'posted_jobs_page.dart';
+import 'post_job_page.dart';
+import 'applied_list_page.dart';
+import 'assign_candidate_page.dart';
 
 class NewBusinessRegisterPage extends StatefulWidget {
   const NewBusinessRegisterPage({super.key});
@@ -29,7 +34,7 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
   final _pinCodeCtrl = TextEditingController();
 
   bool _isConfirmed = false;
-  
+
   String _activeItem = 'business_overview';
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -73,12 +78,27 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
   }
 
   void _onSectionChanged(String newItem) {
-    setState(() {
-      _activeItem = newItem;
-    });
     if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
       _scaffoldKey.currentState?.closeDrawer();
     }
+    
+    if (newItem == 'post_job') {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => PostJobPage()));
+      return;
+    } else if (newItem == 'view_posted_jobs') {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const PostedJobsPage()));
+      return;
+    } else if (newItem == 'applied_candidates') {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const AppliedListPage(isBusinessMode: true)));
+      return;
+    } else if (newItem == 'assign_candidate') {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const AssignCandidatePage()));
+      return;
+    }
+
+    setState(() {
+      _activeItem = newItem;
+    });
   }
 
   @override
@@ -129,11 +149,9 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
         ),
       );
     } else if (_activeItem == 'create_store_category') {
-      return StoreConfigurationWidget(
-        onContinue: () {
-          // Handle continue action if needed
-        },
-      );
+      return StoreConfigurationWidget(onContinue: () {});
+    } else if (_activeItem == 'create_store') {
+      return const CreateStorePage();
     } else {
       return _buildRegistrationForm();
     }
@@ -165,9 +183,7 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
                 onSectionChanged: _onSectionChanged,
               ),
             ),
-          Expanded(
-            child: _buildMainContent(),
-          ),
+          Expanded(child: _buildMainContent()),
         ],
       ),
     );
