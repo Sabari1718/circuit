@@ -9,6 +9,7 @@ import 'upgrade/job_categories_page.dart';
 import 'upgrade/kovil_categories_page.dart';
 import 'features/upgrade/verified_upgrade_intro_page.dart';
 import 'upgrade/user_overview_page.dart';
+import 'features/upgrade/verified_user_profile_page.dart';
 import 'user_service.dart';
 import 'widgets/common_dashboard_app_bar.dart';
 import 'widgets/account_type_card.dart';
@@ -63,9 +64,7 @@ class _HomePageState extends State<HomePage> {
 
   final TextEditingController _searchController = TextEditingController();
   late List<ActivityCardData> _activities;
-  late List<ActivityCardData> _careerChildActivities;
   List<ActivityCardData> _filteredActivities = [];
-  bool _isCareerExpanded = false;
 
   @override
   void initState() {
@@ -112,27 +111,8 @@ class _HomePageState extends State<HomePage> {
         color: const Color(0xFF7C3AED),
       ),
       ActivityCardData(
-        id: "jobs",
-        title: "CAREER",
-        subtitle: "PORTAL",
-        description: "Showcase your career, skills & professional achievements",
-        icon: "👨‍💻",
-        color: const Color(0xFF6366F1),
-      ),
-      ActivityCardData(
-        id: "trust",
-        title: "TRUST",
-        subtitle: "Organization",
-        description: "Manage trust funds, charity & non-profit organizations",
-        icon: "🏛️",
-        color: const Color(0xFF94A3B8),
-      ),
-    ];
-
-    _careerChildActivities = [
-      ActivityCardData(
         id: "job_career",
-        title: "Job Management",
+        title: "JOB MANAGEMENT",
         subtitle: "HIRING DESK",
         description: "Search for jobs, apply, and track your applications",
         icon: "💼",
@@ -140,7 +120,7 @@ class _HomePageState extends State<HomePage> {
       ),
       ActivityCardData(
         id: "employee",
-        title: "Employee Portal",
+        title: "EMPLOYEE PORTAL",
         subtitle: "STAFF DIRECTORY",
         description: "Employee access to business features",
         icon: "👥",
@@ -148,7 +128,7 @@ class _HomePageState extends State<HomePage> {
       ),
       ActivityCardData(
         id: "business_career",
-        title: "Business Register",
+        title: "BUSINESS REGISTER",
         subtitle: "BI SUITE",
         description: "Access to business analytics & team management",
         icon: "📈",
@@ -159,27 +139,18 @@ class _HomePageState extends State<HomePage> {
         title: "MY BUSINESS",
         subtitle: "ENTERPRISE",
         description: "Analytics & Team tools for businesses",
-        icon: "💼",
+        icon: "🏢",
         color: const Color(0xFF8B5CF6),
       ),
+      ActivityCardData(
+        id: "trust",
+        title: "TRUST",
+        subtitle: "Organization",
+        description: "Manage trust funds, charity & non-profit organizations",
+        icon: "🏛️",
+        color: const Color(0xFF94A3B8),
+      ),
     ];
-  }
-
-  void _toggleCareerExpanded() {
-    setState(() {
-      _isCareerExpanded = !_isCareerExpanded;
-      if (_isCareerExpanded) {
-        int idx = _activities.indexWhere((c) => c.id == 'jobs');
-        if (idx != -1) {
-          _activities.insertAll(idx + 1, _careerChildActivities);
-        }
-      } else {
-        _activities.removeWhere(
-          (c) => _careerChildActivities.any((child) => child.id == c.id),
-        );
-      }
-      _filterActivities(_searchController.text);
-    });
   }
 
   void _filterActivities(String query) {
@@ -298,7 +269,11 @@ class _HomePageState extends State<HomePage> {
         Navigator.push(
           context,
           MaterialPageRoute(
+<<<<<<< HEAD
             builder: (context) => const UserOverviewPage(initialPage: 0),
+=======
+            builder: (context) => const VerifiedUserProfilePage(),
+>>>>>>> 46759b2 (update)
           ),
         ).then((_) => _loadUserSession());
       } else {
@@ -502,33 +477,42 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
       child: Container(
-        height: 55,
+        height: 56,
         decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(15),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+              color: Colors.blue.withOpacity(0.08),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
             ),
           ],
+          border: Border.all(color: Colors.grey.shade100, width: 1.5),
         ),
         child: TextField(
           controller: _searchController,
           onChanged: _filterActivities,
+          style: const TextStyle(fontWeight: FontWeight.w500, color: Color(0xFF1E293B)),
           decoration: InputDecoration(
-            hintText: "Search activities...",
-            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-            prefixIcon: Icon(Icons.search_rounded, color: Colors.grey.shade400),
+            hintText: "Search activities & modules...",
+            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14, fontWeight: FontWeight.w500),
+            prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF3B82F6), size: 22),
             suffixIcon: _searchController.text.isNotEmpty
                 ? IconButton(
-                    icon: const Icon(
-                      Icons.clear_rounded,
-                      size: 20,
-                      color: Colors.grey,
+                    icon: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.close_rounded,
+                        size: 14,
+                        color: Colors.grey,
+                      ),
                     ),
                     onPressed: () {
                       _searchController.clear();
@@ -537,7 +521,7 @@ class _HomePageState extends State<HomePage> {
                   )
                 : null,
             border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(vertical: 15),
+            contentPadding: const EdgeInsets.symmetric(vertical: 16),
           ),
         ),
       ),
@@ -546,49 +530,60 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildSectionHeader() {
     final title = _selectedSection == DashboardSection.activities
-        ? "Activities"
-        : "User Privilege";
+        ? "Explore Modules"
+        : "User Privileges";
     final subtitle = _selectedSection == DashboardSection.activities
-        ? "Manage user access levels"
-        : "Manage user roles & permissions";
+        ? "Discover and manage your access levels"
+        : "Manage your active roles & permissions";
     final icon = _selectedSection == DashboardSection.activities
-        ? Icons.bolt
-        : Icons.shield_outlined;
+        ? Icons.explore_rounded
+        : Icons.shield_rounded;
     final iconColor = _selectedSection == DashboardSection.activities
-        ? Colors.blue
-        : Colors.blue.shade700;
+        ? const Color(0xFF3B82F6)
+        : const Color(0xFF7C3AED);
 
     return Padding(
-      padding: const EdgeInsets.only(top: 24, bottom: 8),
-      child: Column(
+      padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
+      child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: iconColor, size: 20),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            alignment: WrapAlignment.center,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 8.0,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E293B),
-                ),
+              gradient: LinearGradient(
+                colors: [iconColor.withOpacity(0.2), iconColor.withOpacity(0.05)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-            ],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: iconColor.withOpacity(0.1)),
+            ),
+            child: Icon(icon, color: iconColor, size: 24),
           ),
-          Text(
-            subtitle,
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.5,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -628,9 +623,9 @@ class _HomePageState extends State<HomePage> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: 2,
-      mainAxisSpacing: 16,
-      crossAxisSpacing: 16,
-      childAspectRatio: 0.75,
+      mainAxisSpacing: 20,
+      crossAxisSpacing: 20,
+      childAspectRatio: 0.65, // Give more height to prevent bottom overflow
       onReorder: (oldIndex, newIndex) {
         setState(() {
           final element = _filteredActivities.removeAt(oldIndex);
@@ -659,27 +654,6 @@ class _HomePageState extends State<HomePage> {
         builder: (context, _) {
           final isCompleted = _checkCompletion(card.id);
 
-          Widget? topRightAction;
-          if (card.id == "jobs") {
-            topRightAction = GestureDetector(
-              onTap: _toggleCareerExpanded,
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  _isCareerExpanded
-                      ? Icons.keyboard_arrow_up
-                      : Icons.keyboard_arrow_down,
-                  size: 16,
-                  color: Colors.grey.shade700,
-                ),
-              ),
-            );
-          }
-
           return AccountTypeCard(
             title: card.title,
             subtitle: card.subtitle,
@@ -691,9 +665,7 @@ class _HomePageState extends State<HomePage> {
             customDescriptionWidget: (card.id == "business" && isCompleted)
                 ? _buildBusinessDropdown(context)
                 : null,
-            // REMOVED: hidePrimaryButton so that VIEW button appears for Business
             hidePrimaryButton: false,
-            topRightAction: topRightAction,
             onPrimaryTap: () => _handleNavigation(card.id, card.title),
             onReadMoreTap: () => _showReadMore(card.title),
           );
@@ -707,9 +679,9 @@ class _HomePageState extends State<HomePage> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: 2,
-      mainAxisSpacing: 16,
-      crossAxisSpacing: 16,
-      childAspectRatio: 0.75,
+      mainAxisSpacing: 20,
+      crossAxisSpacing: 20,
+      childAspectRatio: 0.65,
       children: [
         AccountTypeCard(
           title: "Registered",

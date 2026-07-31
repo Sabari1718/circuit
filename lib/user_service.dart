@@ -551,8 +551,18 @@ class UserService extends ChangeNotifier {
 
   /// Check if user exists in user_register table (REGISTERED USER upgrade)
   Future<bool> checkUserRegisterStatus(String userMainId) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool('is_registered_$userMainId') == true) {
+      debugPrint('[UserRegister] ✅ Registered user found locally for $userMainId!');
+      return true;
+    }
+
     // Try the user_register endpoint to check if user has registered
+<<<<<<< HEAD
     final url = 'https://managelogin.jobes24x7.com/api/api/user_register/$userMainId';
+=======
+    final url = 'https://managelogin.jobes24x7.com/api/user_register/$userMainId';
+>>>>>>> 46759b2 (update)
     try {
       final token = await AuthService().getToken();
       final response = await http.get(
@@ -566,37 +576,102 @@ class UserService extends ChangeNotifier {
       debugPrint('[UserRegister] Body: ${response.body}');
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
-        // Try nested response: {"data": {"result": "...", "code": 200, "data": {...}}}
         final inner = decoded['data'];
         if (inner is Map && inner['code'] == 200 && inner['data'] != null) {
           final innerData = inner['data'];
           if ((innerData is List && innerData.isEmpty) || (innerData is Map && innerData.isEmpty)) {
+<<<<<<< HEAD
             debugPrint('[UserRegister] ❌ Empty nested data found');
             return false;
           }
           debugPrint('[UserRegister] ✅ Registered user found!');
+=======
+            return false;
+          }
+          await prefs.setBool('is_registered_$userMainId', true);
+>>>>>>> 46759b2 (update)
           return true;
         }
-        // Try flat response: {"success": true, "data": {...}}
         if (decoded['success'] == true && decoded['data'] != null) {
           final data = decoded['data'];
           if ((data is List && data.isEmpty) || (data is Map && data.isEmpty)) {
+<<<<<<< HEAD
             debugPrint('[UserRegister] ❌ Empty flat data found');
             return false;
           }
           debugPrint('[UserRegister] ✅ Registered user found (flat)!');
+=======
+            return false;
+          }
+          await prefs.setBool('is_registered_$userMainId', true);
+>>>>>>> 46759b2 (update)
           return true;
         }
       }
     } catch (e) {
       debugPrint('[UserRegister] Error: $e');
     }
-    debugPrint('[UserRegister] ❌ No register record found for $userMainId');
     return false;
+  }
+
+  /// Get details of a registered user by user_main_id
+  Future<Map<String, dynamic>?> getRegisterDetails(String userMainId) async {
+    final url = 'https://managelogin.jobes24x7.com/api/user_register/main/$userMainId';
+    debugPrint('=== API REQUEST: GET $url ===');
+    try {
+      final token = await AuthService().getToken();
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+      debugPrint('=== API RESPONSE [${response.statusCode}] ===');
+      debugPrint('Body: ${response.body}');
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final decoded = jsonDecode(response.body);
+        
+        // Handle Structure 1: { data: { code: 200, data: [...] } }
+        if (decoded['data'] is Map) {
+          final inner = decoded['data'];
+          if (inner['data'] is List && (inner['data'] as List).isNotEmpty) {
+            return inner['data'].first as Map<String, dynamic>;
+          }
+          if (inner['data'] is Map) {
+            return inner['data'] as Map<String, dynamic>;
+          }
+          // What if the map itself is the data?
+          if (inner['user_main_id'] != null) {
+            return inner as Map<String, dynamic>;
+          }
+        }
+        
+        // Handle Structure 2: { data: [...] }
+        if (decoded['data'] is List && (decoded['data'] as List).isNotEmpty) {
+          return decoded['data'].first as Map<String, dynamic>;
+        }
+        
+        // Handle Structure 3: The decoded object is the data
+        if (decoded['user_main_id'] != null) {
+          return decoded as Map<String, dynamic>;
+        }
+        
+        // Handle Structure 4: List directly returned
+        if (decoded is List && decoded.isNotEmpty) {
+          return decoded.first as Map<String, dynamic>;
+        }
+      }
+    } catch (e) {
+      debugPrint('Error getting register details: $e');
+    }
+    return null;
   }
 
   Future<Map<String, dynamic>?> registerUserUpgrade(Map<String, dynamic> payload) async {
     final url = 'https://managelogin.jobes24x7.com/api/user_register/create';
+    debugPrint('=== API REQUEST: POST $url ===');
+    debugPrint('Payload: $payload');
     try {
       final token = await AuthService().getToken();
       final response = await http.post(
@@ -607,8 +682,21 @@ class UserService extends ChangeNotifier {
         },
         body: jsonEncode(payload),
       );
-      // Always return decoded body so the caller can read success or error message
-      return jsonDecode(response.body);
+      debugPrint('=== API RESPONSE [${response.statusCode}] ===');
+      debugPrint('Body: ${response.body}');
+      final decoded = jsonDecode(response.body);
+      
+      // Save locally to bypass the broken GET endpoint
+      bool isSuccess = false;
+      if (decoded['code'] == 200) isSuccess = true;
+      if (decoded['data'] != null && decoded['data']['code'] == 200) isSuccess = true;
+      
+      if (isSuccess && payload.containsKey('user_main_id')) {
+         final prefs = await SharedPreferences.getInstance();
+         await prefs.setBool('is_registered_${payload['user_main_id']}', true);
+      }
+      
+      return decoded;
     } catch (e) {
       debugPrint('Error in registerUserUpgrade: $e');
     }
@@ -617,16 +705,54 @@ class UserService extends ChangeNotifier {
 
   Future<Map<String, dynamic>?> createManageCaptcha(Map<String, dynamic> payload) async {
     final url = 'https://managelogin.jobes24x7.com/api/manage-captcha/create';
+    debugPrint('=== API REQUEST: POST $url ===');
+    debugPrint('Payload: $payload');
     try {
       final response = await http.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(payload),
       );
-      // Always return decoded body so the caller can read success or error message
+      debugPrint('=== API RESPONSE [${response.statusCode}] ===');
+      debugPrint('Body: ${response.body}');
       return jsonDecode(response.body);
     } catch (e) {
       debugPrint('Error in createManageCaptcha: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getManageLoginUser(String userMainId) async {
+    final url = 'https://managelogin.jobes24x7.com/api/login/$userMainId';
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      debugPrint('Error in getManageLoginUser: $e');
+    }
+    return null;
+  }
+
+  Future<List<dynamic>?> getCaptchaImages(int categoryId) async {
+    final url = 'https://managelogin.jobes24x7.com/api/outsideapis/captcha/sub-image/$categoryId';
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+      );
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded['success'] == true) {
+          return decoded['data'];
+        }
+      }
+    } catch (e) {
+      debugPrint('Error in getCaptchaImages: $e');
     }
     return null;
   }

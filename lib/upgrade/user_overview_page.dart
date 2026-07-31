@@ -4,12 +4,14 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:http/http.dart' as http;
 
 import 'business_user_store.dart';
 import 'business_created_page.dart';
 import 'business_registration_overview_page.dart';
 import '../user_service.dart';
 import '../services/captcha_service.dart';
+import '../auth_service.dart';
 
 class UserOverviewPage extends StatefulWidget {
   final int initialPage;
@@ -60,6 +62,7 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
   String? _addressProofUrl;
   
   bool _isSubmitting = false;
+  String? _debugError; // Debug variable to catch API errors on mobile
 
   void _parseImageField(String? path, void Function(String? url) setUrl, void Function(Uint8List? bytes) setBytes) {
     if (path == null || path.isEmpty) return;
@@ -104,20 +107,29 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
 
     if (_userMainId.isNotEmpty) {
       final verifiedData = await UserService().getVerificationDetails(_userMainId);
+      final registerData = await UserService().getRegisterDetails(_userMainId);
+
+      if (registerData != null && mounted) {
+        setState(() {
+          _panNumber = registerData['pan_number']?.toString() ?? '';
+          _gender = registerData['gender']?.toString() ?? '';
+          
+          final profilePath = registerData['profile_photo']?.toString();
+          _parseImageField(profilePath, (url) => _profilePhotoUrl = url, (bytes) => _profileFileBytes = bytes);
+          
+          final panPath = registerData['pan_front_photo']?.toString();
+          _parseImageField(panPath, (url) => _panPhotoUrl = url, (bytes) => _uploadFileBytes = bytes);
+        });
+      }
+
       if (verifiedData != null && mounted) {
         setState(() {
           _isVerified = true;
-          _panNumber = verifiedData['pan_number']?.toString() ?? '';
-          _gender = verifiedData['gender']?.toString() ?? '';
           
-          final profilePath = verifiedData['profile_photo_path']?.toString();
-          _parseImageField(profilePath, (url) => _profilePhotoUrl = url, (bytes) => _profileFileBytes = bytes);
-          
-          final panPath = verifiedData['pan_document_path']?.toString();
-          _parseImageField(panPath, (url) => _panPhotoUrl = url, (bytes) => _uploadFileBytes = bytes);
+          // Note: pan_number, gender, profile_photo are loaded from registerData above.
           
           _govIdType = verifiedData['government_id_type']?.toString();
-          final govIdPath = verifiedData['government_id_document_path']?.toString();
+          final govIdPath = verifiedData['government_id_document_path']?.toString() ?? verifiedData['government_id_document']?.toString();
           _parseImageField(govIdPath, (url) => _govIdPhotoUrl = url, (bytes) => _govIdPhotoBytes = bytes);
           
           if (verifiedData['addresses'] != null && verifiedData['addresses'] is List && (verifiedData['addresses'] as List).isNotEmpty) {
@@ -133,7 +145,24 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
           }
         });
       } else if (mounted) {
+        setState(() {
+          _isVerified = false; // Just registered
+        });
+      }
+
+      if (registerData == null && verifiedData == null && mounted) {
         // No data in DB - ensure everything is cleared
+        try {
+          final token = await AuthService().getToken();
+          final url = 'https://managelogin.jobes24x7.com/api/user_register/main/$_userMainId';
+          final response = await http.get(Uri.parse(url), headers: {'Content-Type': 'application/json', if (token != null) 'Authorization': 'Bearer $token'});
+          setState(() {
+            _debugError = 'DEBUG HTTP ${response.statusCode}:\n${response.body}';
+          });
+        } catch (e) {
+          setState(() { _debugError = 'Exception: $e'; });
+        }
+        
         setState(() {
           _isVerified = false;
           _panNumber = '';
@@ -165,10 +194,32 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
           _captchaCategories = categories;
           _isLoadingCaptcha = false;
         });
+      } else {
+        // Debug mode: Fetch it manually just to see the string response
+        try {
+          final token = await AuthService().getToken();
+          final url = 'https://managelogin.jobes24x7.com/api/user_register/main/$_userMainId';
+          final response = await http.get(Uri.parse(url), headers: {'Content-Type': 'application/json', if (token != null) 'Authorization': 'Bearer $token'});
+          if (mounted) {
+            setState(() {
+              _debugError = 'HTTP ${response.statusCode}: ${response.body}';
+            });
+          }
+        } catch (e) {
+          if (mounted) setState(() { _debugError = 'Exception: $e'; });
+        }
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isLoadingCaptcha = false);
+        setState(() {
+          _debugError = 'Exception: $e';
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingCaptcha = false;
+        });
       }
     }
   }
@@ -442,6 +493,52 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
     }
   }
 
+  void _showPhotoDialog(String title, String? url, Uint8List? bytes) {
+    if (url == null && bytes == null) return;
+    
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.all(16),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                constraints: const BoxConstraints(maxWidth: 600, maxHeight: 800),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  image: DecorationImage(
+                    image: url != null 
+                        ? NetworkImage(url) 
+                        : MemoryImage(bytes!) as ImageProvider,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 0,
+                right: 0,
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.close, color: Colors.white, size: 24),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildPage1(bool isDark, bool isDesktop) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -478,15 +575,15 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
         ),
         const SizedBox(height: 32),
 
-        // Main Card
+        // Main Card identical to screenshot
         Container(
           width: double.infinity,
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF1E293B) : Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withOpacity(0.06),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -494,90 +591,197 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
           ),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final isSmall = constraints.maxWidth < 700;
+              final isSmall = constraints.maxWidth < 650;
               
               final leftContent = Container(
                 padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: const Color(0xFF2563EB), // Solid blue as in screenshot
                   borderRadius: isSmall 
-                      ? const BorderRadius.vertical(top: Radius.circular(20)) 
-                      : const BorderRadius.horizontal(left: Radius.circular(20)),
+                      ? const BorderRadius.vertical(top: Radius.circular(16)) 
+                      : const BorderRadius.horizontal(left: Radius.circular(16)),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(
-                      width: 90,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
-                      ),
-                      child: const Icon(Icons.verified_user_rounded, color: Colors.white, size: 44),
-                    ),
+                    const Icon(Icons.shield, color: Colors.white, size: 64),
                     const SizedBox(height: 24),
-                    const Text("VERIFIED ACCOUNT", style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
+                    Text(_isVerified ? "VERIFIED USER" : "REGISTERED USER", style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
                     const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white.withOpacity(0.3)),
                       ),
-                      child: Text(_accountType.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800)),
+                      child: Text(_isVerified ? "verified" : "register", style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
                     ),
                     const SizedBox(height: 32),
-                    const Text("USER ID", style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
-                    const SizedBox(height: 4),
-                    Text(_userMainId, style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                    const Text("USER MAIN ID", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                    const SizedBox(height: 8),
+                    Text(_userMainId, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                    
+                    if (_debugError != null) ...[
+                      const SizedBox(height: 20),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        color: Colors.red.withOpacity(0.8),
+                        child: Text(_debugError!, style: const TextStyle(color: Colors.white, fontSize: 10)),
+                      )
+                    ]
                   ],
                 ),
               );
 
-              final rightContent = Padding(
-                padding: const EdgeInsets.all(32.0),
-                child: isSmall ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              Widget buildProfilePhoto() {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    _buildProfileSection(),
-                    const SizedBox(height: 40),
-                    _buildDetailsSection(),
-                    const SizedBox(height: 40),
-                    _buildDocumentSection(),
+                    const Text("Profile Photo", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                    const SizedBox(height: 12),
+                    GestureDetector(
+                      onTap: () => _showPhotoDialog("Profile Photo", _profilePhotoUrl, _profileFileBytes),
+                      child: Container(
+                        width: 90,
+                        height: 90,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+                          image: _profilePhotoUrl != null 
+                              ? DecorationImage(image: NetworkImage(_profilePhotoUrl!), fit: BoxFit.cover)
+                              : (_profileFileBytes != null ? DecorationImage(image: MemoryImage(_profileFileBytes!), fit: BoxFit.cover) : null),
+                        ),
+                        child: _profilePhotoUrl == null && _profileFileBytes == null 
+                            ? const Center(child: Icon(Icons.person, color: Color(0xFFCBD5E1), size: 40))
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2563EB),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text("REGISTER", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                    ),
                   ],
-                ) : Row(
+                );
+              }
+
+              Widget buildDetails() {
+                return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      flex: 4,
+
+                    Row(
+                      children: [
+                         const Icon(Icons.badge, size: 18, color: Color(0xFF2563EB)),
+                         const SizedBox(width: 8),
+                         const Text("PERSONAL DETAILS", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF1E293B), letterSpacing: 0.5)),
+                      ]
+                    ),
+                    const SizedBox(height: 20),
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                         color: const Color(0xFFF8FAFC),
+                         borderRadius: BorderRadius.circular(16),
+                         border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildProfileSection(),
-                          const SizedBox(height: 40),
-                          _buildDocumentSection(),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: _buildDetailItem("PAN NUMBER", _panNumber.isNotEmpty ? _panNumber : "-")),
+                              Expanded(child: _buildDetailItem("GENDER", _gender.isNotEmpty ? _gender.toUpperCase() : "-")),
+                            ]
+                          ),
+                          if (_isVerified) ...[
+                            const SizedBox(height: 24),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(child: _buildDetailItem("GOV ID TYPE", _govIdType ?? "-")),
+                                Expanded(child: _buildDetailItem("ADDRESS TYPE", _addressType ?? "-")),
+                              ]
+                            ),
+                            const SizedBox(height: 24),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(child: _buildDetailItem("PINCODE", _pincode ?? "-")),
+                                Expanded(child: _buildDetailItem("ADDRESS PROOF", _addressProofType ?? "-")),
+                              ]
+                            ),
+                          ],
                         ]
                       )
+                    )
+                  ],
+                );
+              }
+
+              Widget buildPanDocument() {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                         const Icon(Icons.folder_shared, size: 18, color: Color(0xFF2563EB)),
+                         const SizedBox(width: 8),
+                         const Text("UPLOADED DOCUMENTS", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF1E293B), letterSpacing: 0.5)),
+                      ]
                     ),
-                    Container(
-                      width: 1,
-                      height: 400,
-                      color: const Color(0xFFE2E8F0),
-                      margin: const EdgeInsets.symmetric(horizontal: 32),
-                    ),
-                    Expanded(
-                      flex: 6,
-                      child: _buildDetailsSection(),
+                    const SizedBox(height: 20),
+                    Wrap(
+                      spacing: 16,
+                      runSpacing: 16,
+                      children: [
+                        _buildDocThumbnail("PAN Card", _panPhotoUrl, _uploadFileBytes),
+                        if (_isVerified) _buildDocThumbnail("Gov ID", _govIdPhotoUrl, _govIdPhotoBytes),
+                        if (_isVerified) _buildDocThumbnail("Address Proof", _addressProofUrl, _addressProofBytes),
+                      ],
                     ),
                   ],
-                ),
+                );
+              }
+
+              final rightContent = Padding(
+                padding: EdgeInsets.symmetric(horizontal: isSmall ? 16.0 : 32.0, vertical: 40.0),
+                child: isSmall 
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        buildProfilePhoto(),
+                        const SizedBox(height: 32),
+                        Container(
+                          width: double.infinity,
+                          height: 1,
+                          color: const Color(0xFFE2E8F0),
+                        ),
+                        const SizedBox(height: 32),
+                        buildDetails(),
+                        const SizedBox(height: 32),
+                        buildPanDocument(),
+                      ],
+                    )
+                  : Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        buildProfilePhoto(),
+                        Container(
+                          width: 1,
+                          height: 140,
+                          color: const Color(0xFFE2E8F0),
+                          margin: const EdgeInsets.symmetric(horizontal: 32),
+                        ),
+                        Expanded(child: buildDetails()),
+                        buildPanDocument(),
+                      ],
+                    ),
               );
 
               if (isSmall) {

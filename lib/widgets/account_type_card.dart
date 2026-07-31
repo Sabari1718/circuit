@@ -41,23 +41,28 @@ class AccountTypeCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isCompleted ? greenColor : const Color(0xFFE2E8F0),
-          width: isCompleted ? 2.0 : 1.0,
+          color: isCompleted ? greenColor.withOpacity(0.5) : Colors.transparent,
+          width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
+            color: (isCompleted ? greenColor : color).withOpacity(0.15),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Stack(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 14.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -68,29 +73,37 @@ class AccountTypeCard extends StatelessWidget {
                       width: 50,
                       height: 50,
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.1),
+                        gradient: LinearGradient(
+                          colors: [
+                            color.withOpacity(0.2),
+                            color.withOpacity(0.05),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
                         shape: BoxShape.circle,
+                        border: Border.all(color: color.withOpacity(0.2), width: 1.5),
                       ),
                       child: Center(
                         child: Text(
                           icon,
-                          style: const TextStyle(fontSize: 24),
+                          style: const TextStyle(fontSize: 26),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     // Title Bold Uppercase
                     Text(
                       title.toUpperCase(),
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontWeight: FontWeight.w900,
-                        fontSize: 14,
-                        letterSpacing: 0.5,
-                        color: Color(0xFF1E293B),
+                        fontSize: 15,
+                        letterSpacing: 0.8,
+                        color: Color(0xFF0F172A),
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 4),
                     // Subtitle
                     Text(
                       subtitle.toUpperCase(),
@@ -98,7 +111,8 @@ class AccountTypeCard extends StatelessWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 10,
-                        color: Colors.grey.shade600,
+                        letterSpacing: 1.2,
+                        color: color.withOpacity(0.8),
                       ),
                     ),
                   ],
@@ -111,8 +125,9 @@ class AccountTypeCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(8),
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade100),
                     ),
                     child: Text(
                       description,
@@ -121,8 +136,9 @@ class AccountTypeCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 10,
-                        color: Color(0xFF64748B),
-                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF475569),
+                        fontWeight: FontWeight.w600,
+                        height: 1.4,
                       ),
                     ),
                   ),
@@ -134,23 +150,48 @@ class AccountTypeCard extends StatelessWidget {
                       Expanded(
                         child: customPrimaryWidget ?? SizedBox(
                           height: 34,
-                          child: ElevatedButton(
-                            onPressed: onPrimaryTap,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isCompleted ? greenColor : purpleColor,
-                              foregroundColor: Colors.white,
-                              padding: EdgeInsets.zero,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              gradient: isCompleted
+                                  ? const LinearGradient(
+                                      colors: [Color(0xFF10B981), Color(0xFF059669)],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    )
+                                  : LinearGradient(
+                                      colors: [color, color.withOpacity(0.8)],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: (isCompleted ? greenColor : color).withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                )
+                              ],
                             ),
-                            child: Text(
-                              primaryButtonText ?? "UPGRADE",
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 9, // Slightly smaller to fit longer text
-                                fontWeight: FontWeight.w900,
+                            child: ElevatedButton(
+                              onPressed: onPrimaryTap,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.zero,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                              child: Text(
+                                primaryButtonText ?? "UPGRADE",
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.5,
+                                ),
                               ),
                             ),
                           ),
@@ -164,18 +205,19 @@ class AccountTypeCard extends StatelessWidget {
                         child: OutlinedButton(
                           onPressed: onReadMoreTap,
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFFE2E8F0)),
+                            side: BorderSide(color: Colors.grey.shade300, width: 1.5),
                             padding: EdgeInsets.zero,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(20),
                             ),
+                            foregroundColor: const Color(0xFF475569),
                           ),
                           child: const Text(
-                            "View Details",
+                            "Details",
                             style: TextStyle(
                               fontSize: 10,
-                              fontWeight: FontWeight.w900,
-                              color: Color(0xFF475569),
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.2,
                             ),
                           ),
                         ),
@@ -188,13 +230,20 @@ class AccountTypeCard extends StatelessWidget {
           ),
           if (isCompleted)
             Positioned(
-              top: 10,
-              right: 10,
+              top: 12,
+              right: 12,
               child: Container(
-                padding: const EdgeInsets.all(2),
-                decoration: const BoxDecoration(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
                   color: greenColor,
                   shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: greenColor.withOpacity(0.4),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: const Icon(
                   Icons.check,

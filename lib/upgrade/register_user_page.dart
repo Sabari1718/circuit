@@ -5,7 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../widgets/common_dashboard_app_bar.dart';
-
+import '../user_service.dart';
+import 'dart:convert';
 class RegisterUserPage extends StatefulWidget {
   const RegisterUserPage({super.key});
 
@@ -96,7 +97,7 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
     return null;
   }
 
-  void _submit() {
+  void _submit() async {
     FocusScope.of(context).unfocus();
 
     if (_formKey.currentState!.validate()) {
@@ -105,8 +106,84 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
         return;
       }
 
-      _showSnackBar("Account upgraded to REGISTERED!", isError: false);
-      Navigator.pop(context);
+      setState(() {
+        _isUploading = true;
+      });
+
+      try {
+        final userData = await UserService().getUserData();
+        final String userMainId = userData['user_main_id'] ?? '';
+        if (userMainId.isEmpty) {
+          _showSnackBar("User ID not found, please login again");
+          return;
+        }
+
+        final panBytes = await _panImageFile!.readAsBytes();
+        final panBase64 = 'data:image/jpeg;base64,' + base64Encode(panBytes);
+
+        String profilePhotoBase64 = '';
+        if (UserService().profilePhotoBytes != null) {
+          profilePhotoBase64 = 'data:image/jpeg;base64,' + base64Encode(UserService().profilePhotoBytes!);
+        }
+
+        // 1. Register User Upgrade
+        final registerPayload = {
+          "user_main_id": userMainId,
+          "pan_number": _panController.text.trim().toUpperCase(),
+          "gender": "male",
+          "is_verified": 0,
+          "pan_front_photo": panBase64,
+          "profile_photo": profilePhotoBase64,
+          "user_type": "register"
+        };
+
+        final registerRes = await UserService().registerUserUpgrade(registerPayload);
+        
+        bool isSuccess = false;
+        if (registerRes != null) {
+           if (registerRes['code'] == 200) {
+              isSuccess = true;
+           } else if (registerRes['data'] != null && registerRes['data']['code'] == 200) {
+              isSuccess = true;
+           }
+        }
+
+        if (!isSuccess) {
+          _showSnackBar("Failed to register upgrade");
+          return;
+        }
+
+        // 2. Fetch User from Login API
+        await UserService().getManageLoginUser(userMainId);
+
+        // 3. Fetch Captcha Images
+        final captchaImages = await UserService().getCaptchaImages(3);
+        if (captchaImages != null && captchaImages.isNotEmpty) {
+          final firstImage = captchaImages[0];
+          
+          // 4. Create Manage Captcha
+          final captchaPayload = {
+            "user_main_id": userMainId,
+            "manage_captcha_id": firstImage['id'],
+            "password": "123456", 
+            "key": "Manage_login_pass",
+            "image": firstImage['image_path']
+          };
+
+          await UserService().createManageCaptcha(captchaPayload);
+        }
+
+        _showSnackBar("Account upgraded to REGISTERED!", isError: false);
+        if (mounted) Navigator.pop(context);
+      } catch (e) {
+        _showSnackBar("An error occurred during upgrade");
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isUploading = false;
+          });
+        }
+      }
     }
   }
 

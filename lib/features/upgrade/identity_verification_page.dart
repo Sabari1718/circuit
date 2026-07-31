@@ -6,7 +6,9 @@ import 'dart:io';
 import 'addresses_and_proof_page.dart';
 
 class IdentityVerificationPage extends StatefulWidget {
-  const IdentityVerificationPage({super.key});
+  final Map<String, dynamic>? initialData;
+
+  const IdentityVerificationPage({super.key, this.initialData});
 
   @override
   State<IdentityVerificationPage> createState() => _IdentityVerificationPageState();
@@ -24,7 +26,37 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
   String? panDocBase64;
   String? idDocBase64;
   
-  final TextEditingController _panController = TextEditingController();
+  late final TextEditingController _panController;
+
+  @override
+  void initState() {
+    super.initState();
+    _panController = TextEditingController(text: widget.initialData?['pan_number']?.toString() ?? '');
+    
+    // Set initial dropdown values if they match the lists
+    final initialGender = widget.initialData?['gender']?.toString();
+    if (initialGender != null && ["Male", "Female", "Other"].contains(initialGender)) {
+      selectedGender = initialGender;
+    }
+    
+    final initialIdType = widget.initialData?['government_id_type']?.toString();
+    if (initialIdType != null && ["Aadhaar Card", "Passport", "Driving Licence", "Voter ID Card"].contains(initialIdType)) {
+      selectedIdType = initialIdType;
+    }
+
+    final initialProfilePath = widget.initialData?['profile_photo_path']?.toString();
+    if (initialProfilePath != null && initialProfilePath.isNotEmpty) {
+      profilePhotoName = initialProfilePath.split('/').last;
+    }
+    final initialPanPath = widget.initialData?['pan_document_path']?.toString();
+    if (initialPanPath != null && initialPanPath.isNotEmpty) {
+      panDocName = initialPanPath.split('/').last;
+    }
+    final initialIdDocPath = widget.initialData?['government_id_document_path']?.toString();
+    if (initialIdDocPath != null && initialIdDocPath.isNotEmpty) {
+      idDocName = initialIdDocPath.split('/').last;
+    }
+  }
 
   Future<void> _pickFile(Function(String?, String?) onPicked) async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
@@ -197,12 +229,16 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
                         ),
                         child: ElevatedButton.icon(
                           onPressed: () {
+                            bool hasProfile = profilePhotoBase64 != null || (widget.initialData?['profile_photo_path'] != null);
+                            bool hasPanDoc = panDocBase64 != null || (widget.initialData?['pan_document_path'] != null);
+                            bool hasIdDoc = idDocBase64 != null || (widget.initialData?['government_id_document_path'] != null);
+
                             if (selectedGender == null || 
                                 _panController.text.isEmpty ||
-                                profilePhotoBase64 == null ||
-                                panDocBase64 == null ||
+                                !hasProfile ||
+                                !hasPanDoc ||
                                 selectedIdType == null ||
-                                idDocBase64 == null) {
+                                !hasIdDoc) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text('Please fill all required fields and upload images')),
                               );
@@ -216,9 +252,10 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
                                   gender: selectedGender!,
                                   idType: selectedIdType!,
                                   panNumber: _panController.text,
-                                  profilePhotoBase64: profilePhotoBase64!,
-                                  panDocBase64: panDocBase64!,
-                                  idDocBase64: idDocBase64!,
+                                  profilePhotoBase64: profilePhotoBase64 ?? '',
+                                  panDocBase64: panDocBase64 ?? '',
+                                  idDocBase64: idDocBase64 ?? '',
+                                  initialData: widget.initialData,
                                 ),
                               ),
                             );

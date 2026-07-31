@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../user_service.dart';
+import 'identity_verification_page.dart';
 
 class VerifiedUserProfilePage extends StatefulWidget {
   const VerifiedUserProfilePage({super.key});
@@ -103,6 +104,7 @@ class _VerifiedUserProfilePageState extends State<VerifiedUserProfilePage> {
 
     final addresses = v['addresses'] as List? ?? [];
     final addressProof = v['address_proof'] as Map<String, dynamic>?;
+    final addressProofDocUrl = addressProof != null ? _buildImageUrl(addressProof['proof_document']?.toString()) : '';
 
     final isActive = verificationStatus.toLowerCase() == 'active' ||
         verificationStatus.toLowerCase() == 'verified' ||
@@ -176,7 +178,14 @@ class _VerifiedUserProfilePageState extends State<VerifiedUserProfilePage> {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => IdentityVerificationPage(initialData: _verificationData),
+                      ),
+                    ).then((_) => _loadData());
+                  },
                   icon: const Icon(Icons.edit_outlined, size: 16),
                   label: const Text('Edit Details'),
                   style: OutlinedButton.styleFrom(
@@ -205,85 +214,121 @@ class _VerifiedUserProfilePageState extends State<VerifiedUserProfilePage> {
           ),
           const SizedBox(height: 20),
 
-          // ─── Personal Details Card ───
-          _buildCard(
-            title: 'Personal Details',
-            icon: Icons.person_outline,
-            child: Column(
-              children: [
-                _buildDetailRow('Full Name', _userName.isNotEmpty ? _userName : 'N/A'),
-                _buildDivider(),
-                _buildDetailRow('Gender', gender),
-                _buildDivider(),
-                _buildDetailRow('User ID', _userMainId),
-                _buildDivider(),
-                _buildDetailRow('PAN Number', panNumber),
-                _buildDivider(),
-                _buildDetailRow('Identity ID Type', govIdType),
-                if (addresses.isNotEmpty) ...[
-                  _buildDivider(),
-                  _buildDetailRow('Address Type', addresses.first['address_type']?.toString() ?? 'N/A'),
-                  _buildDivider(),
-                  _buildDetailRow('Pincode', addresses.first['pincode']?.toString() ?? 'N/A'),
-                ],
-                if (addressProof != null) ...[
-                  _buildDivider(),
-                  _buildDetailRow('Address Proof Type', addressProof['proof_type']?.toString() ?? 'N/A'),
-                ] else ...[
-                  _buildDivider(),
-                  _buildDetailRow('Address Proof Type', 'N/A'),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // ─── Uploaded Documents Card ───
-          _buildCard(
-            title: 'Uploaded Documents',
-            icon: Icons.folder_outlined,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (profilePhotoUrl.isNotEmpty) ...[
-                  _buildDocumentRow(
-                    label: 'Profile Photo',
-                    imageUrl: profilePhotoUrl,
-                    buttonLabel: 'Open Profile Photo',
-                    buttonIcon: Icons.image_outlined,
-                    buttonColor: const Color(0xFF6366F1),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                if (panDocUrl.isNotEmpty) ...[
-                  _buildDocumentRow(
-                    label: 'PAN Document',
-                    imageUrl: panDocUrl,
-                    buttonLabel: 'Open PAN Document',
-                    buttonIcon: Icons.description_outlined,
-                    buttonColor: const Color(0xFF0EA5E9),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                if (govIdDocUrl.isNotEmpty)
-                  _buildDocumentRow(
-                    label: '$govIdType Document',
-                    imageUrl: govIdDocUrl,
-                    buttonLabel: 'Open ID Document',
-                    buttonIcon: Icons.badge_outlined,
-                    buttonColor: const Color(0xFF10B981),
-                  ),
-                if (profilePhotoUrl.isEmpty && panDocUrl.isEmpty && govIdDocUrl.isEmpty)
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Text('No documents uploaded yet', style: TextStyle(color: Color(0xFF94A3B8))),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isDesktop = constraints.maxWidth > 800;
+              
+              final personalDetailsCard = _buildCard(
+                title: 'Personal Details',
+                icon: Icons.badge_outlined, // Changed to badge icon to match screenshot
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildDetailRow('Full Name', _userName.isNotEmpty ? _userName : 'N/A', isBlue: false),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(child: _buildDetailRow('Gender', gender, isBlue: false)),
+                        const SizedBox(width: 16),
+                        Expanded(child: _buildDetailRow('User ID', _userMainId, isBlue: false)),
+                      ],
                     ),
-                  ),
-              ],
-            ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(child: _buildDetailRow('PAN Number', panNumber, isBlue: true)),
+                        const SizedBox(width: 16),
+                        Expanded(child: _buildDetailRow('Identity ID Type', govIdType, isBlue: false)),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _buildDetailRow('Address Proof Type', addressProof != null ? (addressProof['proof_type']?.toString() ?? 'N/A') : 'N/A', isBlue: false),
+                  ],
+                ),
+              );
+
+              final uploadedDocumentsCard = _buildCard(
+                title: 'Uploaded Documents',
+                icon: Icons.description_outlined,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (profilePhotoUrl.isNotEmpty) ...[
+                      _buildDocumentRow(
+                        label: 'Profile Photo',
+                        imageUrl: profilePhotoUrl,
+                        buttonLabel: 'Open Profile Photo',
+                        buttonIcon: Icons.open_in_new_rounded,
+                        buttonColor: const Color(0xFF2563EB),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    if (panDocUrl.isNotEmpty) ...[
+                      _buildDocumentRow(
+                        label: 'PAN Card Document', // Match screenshot label
+                        imageUrl: panDocUrl,
+                        buttonLabel: 'Open PAN Card Document', // Match screenshot text
+                        buttonIcon: Icons.open_in_new_rounded,
+                        buttonColor: const Color(0xFF2563EB),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    if (govIdDocUrl.isNotEmpty) ...[
+                      _buildDocumentRow(
+                        label: 'Identity Proof Document', // Match screenshot label
+                        imageUrl: govIdDocUrl,
+                        buttonLabel: 'Open Identity Proof', // Match screenshot text
+                        buttonIcon: Icons.open_in_new_rounded,
+                        buttonColor: const Color(0xFF2563EB),
+                      ),
+                      if (addressProofDocUrl.isNotEmpty) const SizedBox(height: 16),
+                    ],
+                    if (addressProofDocUrl.isNotEmpty)
+                      _buildDocumentRow(
+                        label: 'Address Proof Document',
+                        imageUrl: addressProofDocUrl,
+                        buttonLabel: 'Open Address Proof',
+                        buttonIcon: Icons.open_in_new_rounded,
+                        buttonColor: const Color(0xFF2563EB),
+                      ),
+                    if (profilePhotoUrl.isEmpty && panDocUrl.isEmpty && govIdDocUrl.isEmpty && addressProofDocUrl.isEmpty)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Text('No documents uploaded yet', style: TextStyle(color: Color(0xFF94A3B8))),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+
+              if (isDesktop) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: personalDetailsCard),
+                    const SizedBox(width: 24),
+                    Expanded(child: uploadedDocumentsCard),
+                  ],
+                );
+              } else {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    personalDetailsCard,
+                    const SizedBox(height: 16),
+                    uploadedDocumentsCard,
+                  ],
+                );
+              }
+            }
           ),
-          const SizedBox(height: 16),
+
+          
+          // ─── Verified Addresses Details ───
+          _buildAddressesCard(addresses),
+          
+          const SizedBox(height: 24),
 
           // ─── Verification Status Card ───
           _buildCard(
@@ -334,9 +379,8 @@ class _VerifiedUserProfilePageState extends State<VerifiedUserProfilePage> {
       width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade100),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 3))],
+        borderRadius: BorderRadius.circular(10), // Screenshot shows slightly less rounded corners
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -346,12 +390,12 @@ class _VerifiedUserProfilePageState extends State<VerifiedUserProfilePage> {
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(color: Color(0xFFEDE9FE), shape: BoxShape.circle),
-                  child: Icon(icon, color: const Color(0xFF6366F1), size: 18),
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(6)),
+                  child: Icon(icon, color: const Color(0xFF64748B), size: 16),
                 ),
                 const SizedBox(width: 10),
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B))),
+                Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF0F172A))),
               ],
             ),
           ),
@@ -362,24 +406,132 @@ class _VerifiedUserProfilePageState extends State<VerifiedUserProfilePage> {
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
+  Widget _buildAddressesCard(List<dynamic> addresses) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 140,
-            child: Text(label, style: const TextStyle(color: Color(0xFF64748B), fontSize: 13)),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF1E293B)),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Row(
+              children: [
+                const Icon(Icons.location_on, color: Color(0xFF2563EB), size: 20),
+                const SizedBox(width: 8),
+                const Text('Verified Addresses Details', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF2563EB))),
+              ],
             ),
           ),
+          Divider(color: Colors.grey.shade200, height: 1),
+          if (addresses.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(child: Text('No verified addresses found', style: TextStyle(color: Color(0xFF94A3B8)))),
+            )
+          else
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: 800), // Ensure it takes some space on desktop
+                child: DataTable(
+                  headingTextStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF64748B)),
+                  dataTextStyle: const TextStyle(fontSize: 13, color: Color(0xFF334155)),
+                  headingRowColor: WidgetStateProperty.all(Colors.transparent),
+                  dividerThickness: 0.5,
+                  columns: const [
+                    DataColumn(label: Text('ADDRESS TYPE')),
+                    DataColumn(label: Text('PROPERTY & LOCATION DETAILS')),
+                    DataColumn(label: Text('FULL ADDRESS')),
+                    DataColumn(label: Text('STATUS')),
+                  ],
+                  rows: addresses.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final addr = entry.value as Map<String, dynamic>;
+                    
+                    final addressType = addr['address_type']?.toString() ?? 'N/A';
+                    final propertyType = addr['property_type']?.toString() ?? 'N/A';
+                    final pincode = addr['pincode']?.toString() ?? 'N/A';
+                    
+                    // Create full address string (matches the screenshot format roughly)
+                    final parts = [
+                      addr['house_no'], addr['street_name'], addr['city'], addr['state'], 'India'
+                    ];
+                    final fullAddress = parts.where((p) => p != null && p.toString().isNotEmpty).join(', ');
+
+                    return DataRow(
+                      cells: [
+                        DataCell(
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(color: const Color(0xFFF0FDF4), borderRadius: BorderRadius.circular(6)),
+                                child: const Icon(Icons.home, color: Color(0xFF10B981), size: 16),
+                              ),
+                              const SizedBox(width: 12),
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(addressType, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                                  Text('Index #${index + 1}', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                                ],
+                              ),
+                            ],
+                          )
+                        ),
+                        DataCell(
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Property: $propertyType', style: const TextStyle(fontWeight: FontWeight.w600)),
+                              Text('Pincode: $pincode', style: const TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold)),
+                            ],
+                          )
+                        ),
+                        DataCell(Text(fullAddress)),
+                        DataCell(
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade300),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Text('Saved', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                          )
+                        ),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
         ],
       ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value, {bool isBlue = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label + ":", style: const TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: FontWeight.w700, 
+            fontSize: 14, 
+            color: isBlue ? const Color(0xFF2563EB) : const Color(0xFF0F172A)
+          ),
+        ),
+      ],
     );
   }
 
@@ -390,47 +542,24 @@ class _VerifiedUserProfilePageState extends State<VerifiedUserProfilePage> {
     required String imageUrl,
     required String buttonLabel,
     required IconData buttonIcon,
-    required Color buttonColor,
+    required Color buttonColor, // Keeping the parameter but overriding it to match the solid blue in the screenshot
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF334155))),
-        const SizedBox(height: 10),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: Image.network(
-            imageUrl,
-            height: 140,
-            width: double.infinity,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(
-              height: 80,
-              decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
-              child: const Center(child: Icon(Icons.broken_image_outlined, color: Colors.grey)),
-            ),
-            loadingBuilder: (context, child, progress) {
-              if (progress == null) return child;
-              return Container(
-                height: 80,
-                decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
-                child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 8),
+        Text(label + ":", style: const TextStyle(fontWeight: FontWeight.normal, fontSize: 13, color: Color(0xFF64748B))),
+        const SizedBox(height: 6),
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: () => _showImageFullScreen(imageUrl, label),
             icon: Icon(buttonIcon, size: 16),
-            label: Text(buttonLabel, style: const TextStyle(fontSize: 13)),
+            label: Text(buttonLabel, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
-              backgroundColor: buttonColor,
+              backgroundColor: const Color(0xFF2563EB), // Solid blue matching screenshot
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
               elevation: 0,
             ),
           ),

@@ -12,6 +12,7 @@ class AddressesAndProofPage extends StatefulWidget {
   final String profilePhotoBase64;
   final String panDocBase64;
   final String idDocBase64;
+  final Map<String, dynamic>? initialData;
 
   const AddressesAndProofPage({
     super.key,
@@ -21,6 +22,7 @@ class AddressesAndProofPage extends StatefulWidget {
     required this.profilePhotoBase64,
     required this.panDocBase64,
     required this.idDocBase64,
+    this.initialData,
   });
 
   @override
@@ -62,6 +64,49 @@ class _AddressesAndProofPageState extends State<AddressesAndProofPage> {
   String? addressProofFileName;
   String? addressProofBase64;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialData != null) {
+      final addresses = widget.initialData!['addresses'] as List?;
+      if (addresses != null && addresses.isNotEmpty) {
+        final address = addresses.first;
+        isAddressAdded = true;
+        isAddressSelected = true;
+        _pincodeController.text = address['pincode']?.toString() ?? '';
+        
+        final propType = address['property_type']?.toString();
+        if (propType != null && [
+          "Independent House", "Apartment / Flat", "Row House", "PG (Paying Guest)", "Other"
+        ].contains(propType)) {
+          selectedPropertyType = propType;
+        }
+
+        // We can optionally populate other fields if they are in the DB, 
+        // but for now setting the minimum required fields is enough to pass validation
+        _addressTypeController.text = address['address_type']?.toString() ?? '';
+        _cityController.text = address['city']?.toString() ?? '';
+        _stateController.text = address['state']?.toString() ?? '';
+      }
+
+      final addressProof = widget.initialData!['address_proof'] as Map<String, dynamic>?;
+      if (addressProof != null) {
+        final proofType = addressProof['proof_type']?.toString();
+        if (proofType != null && [
+          "Passport", "Driving Licence", "Electricity Bill", "Water Bill",
+          "Gas Connection Bill", "Rental Agreement (if accepted)", "Property Tax Receipt"
+        ].contains(proofType)) {
+          selectedDocumentType = proofType;
+        }
+        
+        final proofDoc = addressProof['proof_document']?.toString();
+        if (proofDoc != null && proofDoc.isNotEmpty) {
+          addressProofFileName = proofDoc.split('/').last;
+        }
+      }
+    }
+  }
 
   Future<void> _pickFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
@@ -542,7 +587,9 @@ class _AddressesAndProofPageState extends State<AddressesAndProofPage> {
                       ),
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : () async {
-                          if (!isAddressAdded || !isAddressSelected || selectedDocumentType == null || addressProofBase64 == null) {
+                          bool hasAddressProof = addressProofBase64 != null || (widget.initialData?['address_proof'] != null && widget.initialData!['address_proof']['proof_document'] != null);
+                          
+                          if (!isAddressAdded || !isAddressSelected || selectedDocumentType == null || !hasAddressProof) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Please complete all required fields and upload address proof')),
                             );
@@ -567,7 +614,7 @@ class _AddressesAndProofPageState extends State<AddressesAndProofPage> {
                             "gender": widget.gender,
                             "address_proof": {
                               "proof_type": selectedDocumentType,
-                              "proof_document": addressProofBase64,
+                              "proof_document": addressProofBase64 ?? "",
                             },
                             "addresses": [
                               {
