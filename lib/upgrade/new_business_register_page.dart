@@ -1,18 +1,25 @@
 import 'dart:typed_data';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/common_dashboard_app_bar.dart';
 import '../widgets/business_sidebar_menu.dart';
 import '../features/upgrade/add_business_welcome_widget.dart';
 import '../features/store/store_configuration_widget.dart';
 import '../features/store/create_store_page.dart';
+import '../core/services/user_service.dart';
 import 'posted_jobs_page.dart';
 import 'post_job_page.dart';
 import 'applied_list_page.dart';
 import 'assign_candidate_page.dart';
 
+import 'business_user_model.dart';
+
 class NewBusinessRegisterPage extends StatefulWidget {
-  const NewBusinessRegisterPage({super.key});
+  final BusinessUser? existingBusiness;
+  const NewBusinessRegisterPage({super.key, this.existingBusiness});
 
   @override
   State<NewBusinessRegisterPage> createState() =>
@@ -23,6 +30,17 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
   int _currentStep = 0;
   final _accNumberCtrl = TextEditingController();
   final _confirmAccNumberCtrl = TextEditingController();
+  
+  final _doorCtrl = TextEditingController();
+  final _streetCtrl = TextEditingController();
+  final _buildingCtrl = TextEditingController();
+  final _landmarkCtrl = TextEditingController();
+  final _areaCtrl = TextEditingController();
+  final _cityCtrl = TextEditingController();
+  final _districtCtrl = TextEditingController();
+  final _stateCtrl = TextEditingController();
+  final _countryCtrl = TextEditingController(text: 'India');
+  final _pinCodeCtrl = TextEditingController();
 
   String _selectedBankDocType = 'Passbook / Bank Statement';
   Uint8List? _bankDocBytes;
@@ -31,7 +49,80 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
   Uint8List? _addressDocBytes;
 
   String _selectedAddressType = '-- Select Address Type --';
-  final _pinCodeCtrl = TextEditingController();
+  
+  Map<String, dynamic>? _verifiedUserDetails;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVerifiedUserDetails();
+    if (widget.existingBusiness != null) {
+      final biz = widget.existingBusiness!;
+      _accNumberCtrl.text = biz.accountNumber;
+      _confirmAccNumberCtrl.text = biz.accountNumber;
+      _doorCtrl.text = biz.doorNumber;
+      _streetCtrl.text = biz.streetName;
+      _buildingCtrl.text = biz.buildingName ?? '';
+      _landmarkCtrl.text = biz.landmark ?? '';
+      _areaCtrl.text = biz.area;
+      _districtCtrl.text = biz.district;
+      _stateCtrl.text = biz.state;
+      _pinCodeCtrl.text = biz.pincode;
+      
+      if (biz.bankDocType.toLowerCase() == 'cheque') {
+        _selectedBankDocType = 'Cancelled Cheque';
+      } else {
+        _selectedBankDocType = 'Passbook / Bank Statement';
+      }
+      
+      if (biz.addressDocType != null && biz.addressDocType!.isNotEmpty) {
+        switch (biz.addressDocType!.toLowerCase()) {
+          case 'aadhar': _selectedAddressDocType = 'Aadhar Card'; break;
+          case 'passport': _selectedAddressDocType = 'Passport'; break;
+          case 'voter': _selectedAddressDocType = 'Voter ID'; break;
+          case 'driving': _selectedAddressDocType = 'Driving License'; break;
+          case 'utility': _selectedAddressDocType = 'Utility Bill'; break;
+          default: _selectedAddressDocType = 'Select document type'; break;
+        }
+      }
+      
+      if (biz.addressType != null && biz.addressType!.isNotEmpty) {
+        switch (biz.addressType!.toLowerCase()) {
+          case 'factory': _selectedAddressType = 'Factory'; break;
+          case 'warehouse': _selectedAddressType = 'Warehouse / Godown'; break;
+          case 'office': _selectedAddressType = 'Office'; break;
+          case 'other': _selectedAddressType = 'Other'; break;
+        }
+      }
+    }
+  }
+
+  Future<void> _loadVerifiedUserDetails() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userMainId = prefs.getString('user_main_id') ?? '';
+    if (userMainId.isEmpty) return;
+
+    final url = 'https://managelogin.jobes24x7.com/api/api/verified-user/$userMainId';
+    try {
+      final response = await http.get(Uri.parse(url), headers: {'Content-Type': 'application/json'});
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded['success'] == true && decoded['data'] != null) {
+          final data = decoded['data'] as Map<String, dynamic>;
+          final verification = data['verification'] as Map<String, dynamic>?;
+          if (verification != null && mounted) {
+            setState(() {
+              _verifiedUserDetails = verification;
+            });
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error getting verification details: $e');
+    }
+  }
+
+  bool _isLoading = false;
 
   bool _isConfirmed = false;
 
@@ -56,11 +147,164 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
     }
   }
 
-  void _submitRegistration() {
-    // Show success dialog or navigate
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Registration Submitted Successfully!")),
-    );
+  Future<void> _submitRegistration() async {
+    if (_accNumberCtrl.text.isEmpty || _doorCtrl.text.isEmpty || _streetCtrl.text.isEmpty || _areaCtrl.text.isEmpty || _districtCtrl.text.isEmpty || _stateCtrl.text.isEmpty || _pinCodeCtrl.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please fill all required fields")));
+      return;
+    }
+    
+    if (_selectedAddressType == '-- Select Address Type --') {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please select an Address Type")));
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userMainId = prefs.getString('user_main_id') ?? '';
+      
+      String? bankDocBase64;
+      if (_bankDocBytes != null) {
+        bankDocBase64 = "data:image/jpeg;base64," + base64Encode(_bankDocBytes!);
+      }
+      
+      String? addressDocBase64;
+      if (_addressDocBytes != null) {
+        addressDocBase64 = "data:image/jpeg;base64," + base64Encode(_addressDocBytes!);
+      }
+
+      String addressDocTypeMapped = '';
+      switch (_selectedAddressDocType) {
+        case 'Aadhar Card': addressDocTypeMapped = 'aadhar'; break;
+        case 'Passport': addressDocTypeMapped = 'passport'; break;
+        case 'Voter ID': addressDocTypeMapped = 'voter'; break;
+        case 'Driving License': addressDocTypeMapped = 'driving'; break;
+        case 'Utility Bill': addressDocTypeMapped = 'utility'; break;
+        default: addressDocTypeMapped = ''; break;
+      }
+      
+      String bankDocToSend = bankDocBase64 ?? '';
+      if (bankDocBase64 == null && widget.existingBusiness?.bankDocFileName != null) {
+        bankDocToSend = widget.existingBusiness!.bankDocFileName!;
+      }
+      
+      String addressDocToSend = addressDocBase64 ?? '';
+      if (addressDocBase64 == null && widget.existingBusiness?.addressDocFileName != null) {
+        addressDocToSend = widget.existingBusiness!.addressDocFileName!;
+      }
+      
+      String mappedAddressType = '';
+      if (_selectedAddressType == 'Factory') mappedAddressType = 'factory';
+      else if (_selectedAddressType == 'Warehouse / Godown') mappedAddressType = 'warehouse';
+      else if (_selectedAddressType == 'Office') mappedAddressType = 'office';
+      else if (_selectedAddressType == 'Other') mappedAddressType = 'other';
+
+      final payload = {
+        "user_main_id": userMainId,
+        "bank_account_number": _accNumberCtrl.text.trim(),
+        "bank_document_type": _selectedBankDocType == 'Passbook / Bank Statement' ? 'passbook' : 'cheque',
+        "bank_document": bankDocToSend,
+        "address_doc_type": addressDocTypeMapped,
+        "address_proof": addressDocToSend,
+        "address_type": mappedAddressType,
+        "selected_address_type": _selectedAddressType,
+        "customer_address_type": _selectedAddressType,
+        "door_number": _doorCtrl.text.trim(),
+        "street_name": _streetCtrl.text.trim(),
+        "street": _streetCtrl.text.trim(),
+        "building_name": _buildingCtrl.text.trim(),
+        "landmark": _landmarkCtrl.text.trim(),
+        "area": _areaCtrl.text.trim(),
+        "district": _districtCtrl.text.trim(),
+        "pincode": _pinCodeCtrl.text.trim(),
+        "state": _stateCtrl.text.trim(),
+        "country": _countryCtrl.text.trim(),
+        "factory_name": _selectedAddressType == 'Factory' ? _buildingCtrl.text.trim() : "",
+        "unit_no": _doorCtrl.text.trim(),
+        "plat_no": "",
+        "indus_estate": _areaCtrl.text.trim(),
+        "warehouse_name": _selectedAddressType == 'Warehouse / Godown' ? _buildingCtrl.text.trim() : "",
+        "warehouse_no": "",
+        "plot_no": "",
+        "block": "",
+        "office_name": _selectedAddressType == 'Office' ? _buildingCtrl.text.trim() : "",
+        "office_num": "",
+        "bloack_wing": "",
+        "floor": ""
+      };
+
+      bool isEdit = widget.existingBusiness != null;
+      String url = isEdit
+          ? 'https://managelogin.jobes24x7.com/api/business-reg/update/${widget.existingBusiness!.actualId ?? widget.existingBusiness!.id}'
+          : 'https://managelogin.jobes24x7.com/api/business-reg/create';
+
+      final response = isEdit 
+          ? await http.put(
+              Uri.parse(url),
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode(payload),
+            )
+          : await http.post(
+              Uri.parse(url),
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode(payload),
+            );
+
+      debugPrint("=== API REQUEST: ${isEdit ? 'PUT' : 'POST'} $url ===");
+      // debugPrint("Payload: ${jsonEncode(payload)}"); // Don't print full payload because base64 is huge
+      debugPrint("=== API RESPONSE [${response.statusCode}] ===");
+      debugPrint("Body: ${response.body}");
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Refresh all user state APIs as requested
+        try {
+          // 1. Refresh Login User
+          await http.get(Uri.parse('https://managelogin.jobes24x7.com/api/login/$userMainId'));
+          
+          // 2. Refresh Business Registration User
+          await http.get(Uri.parse('https://managelogin.jobes24x7.com/api/business-reg/user/$userMainId'));
+          
+          // 3. Refresh User Register Main
+          await http.get(Uri.parse('https://managelogin.jobes24x7.com/api/user_register/main/$userMainId'));
+          
+          // 4. Refresh Verified User (Note the /api/api/ path as provided)
+          await http.get(Uri.parse('https://managelogin.jobes24x7.com/api/api/verified-user/$userMainId'));
+        } catch (e) {
+          debugPrint("Error fetching refresh APIs: $e");
+        }
+
+        // Also update shared preferences that business is registered locally
+        await prefs.setBool('is_main_business_registered', true);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Registration Submitted Successfully!"), backgroundColor: Colors.green,),
+          );
+          Navigator.pop(context, true); // Pop with success true
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Failed to register business. Error: ${response.statusCode}")),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e")),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   void _nextStep() {
@@ -81,18 +325,29 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
     if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
       _scaffoldKey.currentState?.closeDrawer();
     }
-    
+
     if (newItem == 'post_job') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => PostJobPage()));
       return;
     } else if (newItem == 'view_posted_jobs') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => const PostedJobsPage()));
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const PostedJobsPage()),
+      );
       return;
     } else if (newItem == 'applied_candidates') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => const AppliedListPage(isBusinessMode: true)));
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const AppliedListPage(isBusinessMode: true),
+        ),
+      );
       return;
     } else if (newItem == 'assign_candidate') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => const AssignCandidatePage()));
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const AssignCandidatePage()),
+      );
       return;
     }
 
@@ -105,6 +360,15 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
   void dispose() {
     _accNumberCtrl.dispose();
     _confirmAccNumberCtrl.dispose();
+    _doorCtrl.dispose();
+    _streetCtrl.dispose();
+    _buildingCtrl.dispose();
+    _landmarkCtrl.dispose();
+    _areaCtrl.dispose();
+    _cityCtrl.dispose();
+    _districtCtrl.dispose();
+    _stateCtrl.dispose();
+    _countryCtrl.dispose();
     _pinCodeCtrl.dispose();
     super.dispose();
   }
@@ -765,13 +1029,13 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
               'Office',
               'Other (Custom Address Type)',
             ]),
-            _buildTextField("Door Number", "Door Number", required: true),
-            _buildTextField("Street Name", "Street Name", required: true),
+            _buildTextField("Door Number", "Door Number", required: true, controller: _doorCtrl),
+            _buildTextField("Street Name", "Street Name", required: true, controller: _streetCtrl),
           ]),
           const SizedBox(height: 16),
           _buildResponsiveGrid(context, [
-            _buildTextField("Building Name", "Building Name"),
-            _buildTextField("Landmark (Optional)", "Landmark (Optional)"),
+            _buildTextField("Building Name", "Building Name", controller: _buildingCtrl),
+            _buildTextField("Landmark (Optional)", "Landmark (Optional)", controller: _landmarkCtrl),
             const SizedBox(),
           ]),
           const SizedBox(height: 32),
@@ -798,15 +1062,16 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
               "Area / Locality",
               "Enter Area / Locality",
               required: true,
+              controller: _areaCtrl,
             ),
-            _buildTextField("City", "Enter City"),
-            _buildTextField("District", "District", required: true),
+            _buildTextField("City", "Enter City", controller: _cityCtrl),
+            _buildTextField("District", "District", required: true, controller: _districtCtrl),
           ]),
           const SizedBox(height: 16),
           _buildResponsiveGrid(context, [
             _buildPinCodeField(),
-            _buildTextField("State", "State", required: true),
-            _buildTextField("Country", "India", required: true),
+            _buildTextField("State", "State", required: true, controller: _stateCtrl),
+            _buildTextField("Country", "India", required: true, controller: _countryCtrl),
           ]),
           const SizedBox(height: 24),
 
@@ -865,7 +1130,7 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
     );
   }
 
-  Widget _buildTextField(String label, String hint, {bool required = false}) {
+  Widget _buildTextField(String label, String hint, {bool required = false, TextEditingController? controller}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -887,7 +1152,10 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
           ],
         ),
         const SizedBox(height: 8),
-        TextFormField(decoration: _inputDecoration(hint)),
+        TextFormField(
+          controller: controller,
+          decoration: _inputDecoration(hint),
+        ),
       ],
     );
   }
@@ -1140,15 +1408,53 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
             title: "Verified User Details",
             icon: Icons.person_outline,
             children: [
-              _buildPreviewRow("Full Name:", "---"),
-              _buildPreviewRow("Gender:", "---"),
-              _buildPreviewRow("PAN Number:", "---", isLink: true),
+              _buildPreviewRow("Full Name:", _verifiedUserDetails?['name']?.toString() ?? "---"),
+              _buildPreviewRow("Gender:", _verifiedUserDetails?['gender']?.toString() ?? "---"),
+              _buildPreviewRow("PAN Number:", _verifiedUserDetails?['pan_number']?.toString() ?? "---", isLink: true),
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Expanded(child: _buildPreviewImage("Profile Photo:", null)),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Profile Photo:", style: TextStyle(color: Colors.grey[600], fontSize: 13, fontWeight: FontWeight.w500)),
+                        const SizedBox(height: 4),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFE2E8F0))),
+                          child: Center(
+                            child: Text(
+                              _verifiedUserDetails?['profile_photo'] != null ? "Uploaded" : "Not uploaded",
+                              style: TextStyle(color: _verifiedUserDetails?['profile_photo'] != null ? Colors.green : Colors.grey[400], fontSize: 12, fontWeight: FontWeight.w500),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(width: 16),
-                  Expanded(child: _buildPreviewImage("PAN Photo:", null)),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("PAN Photo:", style: TextStyle(color: Colors.grey[600], fontSize: 13, fontWeight: FontWeight.w500)),
+                        const SizedBox(height: 4),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFE2E8F0))),
+                          child: Center(
+                            child: Text(
+                              _verifiedUserDetails?['pan_document'] != null ? "Uploaded" : "Not uploaded",
+                              style: TextStyle(color: _verifiedUserDetails?['pan_document'] != null ? Colors.green : Colors.grey[400], fontSize: 12, fontWeight: FontWeight.w500),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -1181,18 +1487,18 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
                     ? "---"
                     : _selectedAddressType,
               ),
-              _buildPreviewRow("Door No.:", "---"),
-              _buildPreviewRow("Street:", "---"),
-              _buildPreviewRow("Landmark:", "---"),
-              _buildPreviewRow("Area:", "---"),
-              _buildPreviewRow("City:", "---"),
-              _buildPreviewRow("District:", "---"),
+              _buildPreviewRow("Door No.:", _doorCtrl.text.isNotEmpty ? _doorCtrl.text : "---"),
+              _buildPreviewRow("Street:", _streetCtrl.text.isNotEmpty ? _streetCtrl.text : "---"),
+              _buildPreviewRow("Landmark:", _landmarkCtrl.text.isNotEmpty ? _landmarkCtrl.text : "---"),
+              _buildPreviewRow("Area:", _areaCtrl.text.isNotEmpty ? _areaCtrl.text : "---"),
+              _buildPreviewRow("City:", _cityCtrl.text.isNotEmpty ? _cityCtrl.text : "---"),
+              _buildPreviewRow("District:", _districtCtrl.text.isNotEmpty ? _districtCtrl.text : "---"),
               _buildPreviewRow(
                 "Pincode:",
                 _pinCodeCtrl.text.isNotEmpty ? _pinCodeCtrl.text : "---",
               ),
-              _buildPreviewRow("State:", "---"),
-              _buildPreviewRow("Country:", "---"),
+              _buildPreviewRow("State:", _stateCtrl.text.isNotEmpty ? _stateCtrl.text : "---"),
+              _buildPreviewRow("Country:", _countryCtrl.text.isNotEmpty ? _countryCtrl.text : "---"),
             ],
           ),
           _buildPreviewCard(
@@ -1430,7 +1736,7 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
         ),
         ElevatedButton(
           onPressed: _currentStep == 3
-              ? (_isConfirmed ? _submitRegistration : null)
+              ? (_isConfirmed && !_isLoading ? _submitRegistration : null)
               : _nextStep,
           style: ElevatedButton.styleFrom(
             backgroundColor: _currentStep == 3
@@ -1444,8 +1750,16 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (_isLoading) ...[
+                const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                ),
+                const SizedBox(width: 8),
+              ],
               Text(
-                _currentStep == 3 ? "Submit Registration" : "Next",
+                _isLoading ? "Submitting..." : (_currentStep == 3 ? "Submit Registration" : "Next"),
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,

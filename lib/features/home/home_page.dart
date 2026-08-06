@@ -3,8 +3,11 @@ import 'package:circuit/features/upgrade/business_created_page.dart';
 import 'package:circuit/features/business/register_user_page.dart';
 import 'package:circuit/features/upgrade/employee_upgrade_page.dart';
 import 'package:circuit/core/services/user_service.dart';
+import 'package:circuit/core/services/api_service.dart';
 import 'package:circuit/widgets/common_dashboard_app_bar.dart';
 import 'package:circuit/upgrade/kovil_categories_page.dart';
+import 'package:circuit/upgrade/business_user_model.dart';
+import 'package:circuit/upgrade/business_registration_overview_page.dart';
 
 import '../../upgrade/business_created_page.dart';
 
@@ -28,12 +31,61 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   String _currentUserName = "User";
+  bool _isBusinessRegistered = false;
+  BusinessUser? _myBusiness;
 
   @override
   void initState() {
     super.initState();
     _currentUserName = widget.userName;
     _loadUserSession();
+    _checkBusinessStatus();
+  }
+
+  Future<void> _checkBusinessStatus() async {
+    final data = await UserService().getUserData();
+    final userMainId = data['user_main_id'] ?? '';
+    if (userMainId.isNotEmpty) {
+      List<dynamic> rawList = [];
+      
+      // 1. Try the new business-reg API first (matches the website)
+      final resReg = await ApiService().getBusinessRegUser(userMainId);
+      if (resReg['data'] != null) {
+        final innerData = resReg['data'];
+        if (innerData is List) {
+          rawList = innerData;
+        } else if (innerData is Map) {
+          if (innerData['data'] != null) {
+            if (innerData['data'] is List) {
+              rawList = innerData['data'];
+            } else if (innerData['data'] is Map) {
+              rawList = [innerData['data']];
+            }
+          } else {
+            rawList = [innerData];
+          }
+        }
+      } else if (resReg['business'] != null && resReg['business'] is List) {
+        rawList = resReg['business'];
+      }
+
+      // 2. If empty, fallback to the old business-cre API
+      if (rawList.isEmpty) {
+        final res = await ApiService().getBusinesses(userMainId);
+        if (res['data'] != null && res['data'] is List) {
+          rawList = res['data'];
+        }
+      }
+
+      if (rawList.isNotEmpty) {
+        if (mounted) {
+          setState(() {
+            _isBusinessRegistered = true;
+            _myBusiness = BusinessUser.fromJson(rawList[0]);
+          });
+        }
+      }
+    }
   }
 
   Future<void> _loadUserSession() async {
@@ -232,6 +284,9 @@ class _HomePageState extends State<HomePage> {
       Color color, {
         String? buttonText,
       }) {
+    bool isBusiness = title == "BUSINESS";
+    String finalBtnText = buttonText ?? (isBusiness && _isBusinessRegistered ? "VIEW" : "Upgrade to $title");
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -314,12 +369,21 @@ class _HomePageState extends State<HomePage> {
             child: ElevatedButton(
               onPressed: () {
                 if (title == "BUSINESS") {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const BusinessCreatedPage(),
-                    ),
-                  );
+                  if (_isBusinessRegistered && _myBusiness != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => BusinessRegistrationOverviewPage(business: _myBusiness!),
+                      ),
+                    );
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const BusinessCreatedPage(),
+                      ),
+                    );
+                  }
                 } else if (title == "REGISTERED") {
                   Navigator.push(
                     context,
@@ -353,7 +417,7 @@ class _HomePageState extends State<HomePage> {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
               ),
               child: Text(
-                buttonText ?? "Upgrade to $title",
+                finalBtnText,
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,

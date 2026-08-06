@@ -12,6 +12,8 @@ import 'job_list_page.dart';
 import 'posted_jobs_page.dart';
 import 'post_job_page.dart';
 import 'user_overview_page.dart';
+import '../widgets/business_sidebar_menu.dart';
+import 'new_business_register_page.dart';
 
 class ApplicationModel {
   final int id;
@@ -274,12 +276,25 @@ class _AppliedListPageState extends ConsumerState<AppliedListPage> {
       onDrawerChanged: (opened) =>
           debugPrint(opened ? 'Drawer opened' : 'Drawer closed'),
       drawer: !isDesktop
-          ? Drawer(elevation: 0, child: _buildSidebar(context, isDrawer: true))
+          ? Drawer(
+              elevation: 0,
+              child: BusinessSidebarMenu(
+                activeItem: 'applied_candidates',
+                onSectionChanged: _onSectionChanged,
+              ),
+            )
           : null,
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (isDesktop) _buildSidebar(context, isDrawer: false),
+          if (isDesktop)
+            SizedBox(
+              width: 250,
+              child: BusinessSidebarMenu(
+                activeItem: 'applied_candidates',
+                onSectionChanged: _onSectionChanged,
+              ),
+            ),
           Expanded(
             child: Column(
               children: [
@@ -308,6 +323,22 @@ class _AppliedListPageState extends ConsumerState<AppliedListPage> {
         ],
       ),
     );
+  }
+  
+  void _onSectionChanged(String newItem) {
+    if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+      _scaffoldKey.currentState?.closeDrawer();
+    }
+
+    if (newItem == 'post_job') {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => PostJobPage()));
+    } else if (newItem == 'view_posted_jobs') {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const PostedJobsPage()));
+    } else if (newItem == 'assign_candidate') {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AssignCandidatePage()));
+    } else if (newItem == 'add_business' || newItem == 'create_store_category' || newItem == 'create_store') {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const NewBusinessRegisterPage()));
+    }
   }
 
   Widget _buildTopBar(BuildContext context, bool isDesktop) {

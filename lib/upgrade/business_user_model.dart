@@ -23,6 +23,7 @@ class PartnerModel {
 
 class BusinessUser {
   final String id;
+  final String? actualId;
   final String? registrationType; // Propagator, Partner, etc.
   final String businessName;
   final String email;
@@ -54,8 +55,12 @@ class BusinessUser {
   final String bankDocType; // Bank Statement, etc.
   final String? bankDocFileName;
   final Uint8List? bankDocFileBytes;
+  
+  final String? addressDocType;
+  final String? addressDocFileName;
 
   // Address
+  final String? addressType;
   final String doorNumber;
   final String streetName;
   final String? buildingName;
@@ -81,6 +86,7 @@ class BusinessUser {
 
   BusinessUser({
     required this.id,
+    this.actualId,
     this.registrationType,
     required this.businessName,
     required this.email,
@@ -104,6 +110,9 @@ class BusinessUser {
     required this.bankDocType,
     this.bankDocFileName,
     this.bankDocFileBytes,
+    this.addressDocType,
+    this.addressDocFileName,
+    this.addressType,
     required this.doorNumber,
     required this.streetName,
     this.buildingName,
@@ -148,14 +157,15 @@ class BusinessUser {
 
     return BusinessUser(
       id: json['business_id']?.toString() ?? json['id']?.toString() ?? '',
+      actualId: json['id']?.toString(),
       registrationType: regType,
       businessName: json['business_name']?.toString() ?? '',
       email: json['business_email']?.toString() ?? '',
       phone: json['business_phone']?.toString() ?? '',
       website: json['website']?.toString(),
-      panNumber: json['pan_number']?.toString() ?? '',
-      gstNumber: json['gst_number']?.toString() ?? '',
-      accountNumber: json['current_account_number']?.toString() ?? '',
+      panNumber: json['pan_number']?.toString() ?? json['pan']?.toString() ?? '',
+      gstNumber: json['gst_number']?.toString() ?? json['gst']?.toString() ?? '',
+      accountNumber: json['current_account_number']?.toString() ?? json['bank_account_number']?.toString() ?? '',
       bankDocType: json['bank_document_type']?.toString() ?? 'statement',
       doorNumber: json['door_number']?.toString() ?? '',
       streetName: json['street_name']?.toString() ?? '',
@@ -175,7 +185,12 @@ class BusinessUser {
       sectorTitle: json['sector_title']?.toString(),
       sector: json['sector']?.toString(),
       subSector: json['sub_sector']?.toString(),
-      companyLogoFileName: json['company_logo']?.toString(),
+      companyLogoFileName: json['company_logo']?.toString() ?? json['profile_photo']?.toString(),
+      panFileName: json['pan_front_photo']?.toString(),
+      bankDocFileName: json['bank_document']?.toString(),
+      addressDocType: json['address_doc_type']?.toString(),
+      addressDocFileName: json['address_proof']?.toString(),
+      addressType: json['address_type']?.toString() ?? json['customer_address_type']?.toString(),
     );
   }
 }

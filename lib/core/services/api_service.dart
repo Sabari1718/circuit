@@ -498,6 +498,31 @@ class ApiService {
   }
 
   // --- Fetch Businesses ---
+  Future<Map<String, dynamic>> getBusinessRegUser(String userMainId) async {
+    final token = await getAuthToken();
+    final url = Uri.parse('$manageLoginBaseUrl/business-reg/user/$userMainId');
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          if (token != null) 'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        },
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final decoded = jsonDecode(response.body);
+        debugPrint('[ApiService] getBusinessRegUser: $decoded');
+        return decoded is Map<String, dynamic> ? decoded : {'data': decoded};
+      } else {
+        return {'status': 'error', 'message': 'Failed to fetch business reg: ${response.statusCode}'};
+      }
+    } catch (e) {
+      debugPrint('[ApiService] getBusinessRegUser error: $e');
+      return {'status': 'error', 'message': e.toString()};
+    }
+  }
+
   Future<Map<String, dynamic>> getBusinesses(String userMainId) async {
     final token = await getAuthToken();
     final url = Uri.parse('$jobesBaseUrl/business-cre/main/$userMainId');

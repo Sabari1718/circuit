@@ -8,6 +8,9 @@ import 'user_overview_page.dart';
 import 'business_created_page.dart';
 import 'applied_list_page.dart';
 import 'posted_jobs_page.dart';
+import '../widgets/business_sidebar_menu.dart';
+import 'new_business_register_page.dart';
+import 'post_job_page.dart';
 
 class AssignCandidatePage extends StatefulWidget {
   const AssignCandidatePage({super.key});
@@ -17,13 +20,14 @@ class AssignCandidatePage extends StatefulWidget {
 }
 
 class _AssignCandidatePageState extends State<AssignCandidatePage> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _isLoading = true;
   List<BusinessUser> _businesses = [];
   bool _isBusinessExpanded = false;
   bool _isJobsExpanded = true; // Open by default as we are in Jobs section
 
   BusinessUser? _selectedBusiness;
-  
+
   List<dynamic> _allJobsCache = [];
   List<dynamic> _postedJobs = [];
   bool _isLoadingJobs = false;
@@ -44,22 +48,27 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('auth_token') ?? '';
-      
+
       final res = await http.get(
-        Uri.parse('https://managelogin.jobes24x7.com/api/assigned-interviewers'),
+        Uri.parse(
+          'https://user.jobes24x7.com/api/assigned-interviewers',
+        ),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
         },
       );
       if (res.statusCode == 200 || res.statusCode == 201) {
         final data = jsonDecode(res.body);
         if (data['data'] != null) {
           final listData = data['data'];
-          final List list = (listData is Map && listData.containsKey('data')) 
-              ? listData['data'] 
+          final List list = (listData is Map && listData.containsKey('data'))
+              ? listData['data']
               : (listData is List ? listData : []);
-              
+
           setState(() {
             _employees = list.map((e) => ApplicationModel.fromJson(e)).toList();
           });
@@ -76,9 +85,11 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('auth_token') ?? '';
-      
+
       final res = await http.get(
-        Uri.parse('https://user.jobes24x7.com/api/outsideapis/job/employer-jobs/$userMainId'),
+        Uri.parse(
+          'https://managelogin.jobes24x7.com/api/outsideapis/job/employer-jobs/$userMainId',
+        ),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -89,7 +100,9 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
       );
       if (res.statusCode == 200 || res.statusCode == 201) {
         final data = jsonDecode(res.body);
-        if (data['success'] == true || data['success'] == 'true' || data['data'] != null) {
+        if (data['success'] == true ||
+            data['success'] == 'true' ||
+            data['data'] != null) {
           if (mounted) {
             setState(() {
               _allJobsCache = List<dynamic>.from(data['data'] ?? []);
@@ -105,14 +118,17 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
   Future<void> _fetchJobs(String userMainId) async {
     setState(() => _isLoadingJobs = true);
     await _fetchAllJobsForCache(userMainId);
-    
+
     if (mounted) {
       setState(() {
         if (_selectedBusiness != null) {
-          _postedJobs = _allJobsCache.where((j) => 
-            j['business_id']?.toString() == _selectedBusiness!.id ||
-            j['business_cre_id']?.toString() == _selectedBusiness!.id
-          ).toList();
+          _postedJobs = _allJobsCache
+              .where(
+                (j) =>
+                    j['business_id']?.toString() == _selectedBusiness!.id ||
+                    j['business_cre_id']?.toString() == _selectedBusiness!.id,
+              )
+              .toList();
         } else {
           _postedJobs = _allJobsCache;
         }
@@ -122,25 +138,29 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
   }
 
   Future<void> _assignInterviewer() async {
-    if (_selectedBusiness == null || _selectedJob == null || _selectedEmployeeIds.isEmpty) {
+    if (_selectedBusiness == null ||
+        _selectedJob == null ||
+        _selectedEmployeeIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please select a business, a job, and at least one employee.'),
+          content: Text(
+            'Please select a business, a job, and at least one employee.',
+          ),
           backgroundColor: Colors.red,
         ),
       );
       return;
     }
-    
+
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('auth_token') ?? '';
-      
+
       bool allSuccess = true;
 
       for (int empId in _selectedEmployeeIds) {
         final emp = _employees.firstWhere((e) => e.id == empId);
-        
+
         final payload = {
           "user_main_id": emp.userMainId,
           "user_name": emp.userName,
@@ -148,24 +168,28 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
           "company_id": _selectedBusiness!.id,
           "job_name": _selectedJob!['job_title']?.toString() ?? '',
         };
-        
+
         debugPrint('Assigning payload for ${emp.userName}: $payload');
-        
+
         final res = await http.post(
-          Uri.parse('https://user.jobes24x7.com/api/assigned-interviewers/create'),
+          Uri.parse(
+            'https://user.jobes24x7.com/api/assigned-interviewers/create',
+          ),
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer $token',
           },
           body: jsonEncode(payload),
         );
-        
+
         if (res.statusCode != 200 && res.statusCode != 201) {
           allSuccess = false;
-          debugPrint('Failed to assign ${emp.userName}: ${res.statusCode} ${res.body}');
+          debugPrint(
+            'Failed to assign ${emp.userName}: ${res.statusCode} ${res.body}',
+          );
         }
       }
-      
+
       if (mounted) {
         if (allSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -177,7 +201,9 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Some interviewer assignments failed. Check console.'),
+              content: Text(
+                'Some interviewer assignments failed. Check console.',
+              ),
               backgroundColor: Colors.orange,
             ),
           );
@@ -196,27 +222,45 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
     try {
       final prefs = await SharedPreferences.getInstance();
       String userMainId = prefs.getString('user_main_id') ?? '';
-      
+
       if (userMainId == '8059210846') {
         userMainId = '6102066450';
       }
 
       if (userMainId.isEmpty) throw Exception('User Main ID not found');
 
-      final res = await ApiService().getBusinesses(userMainId);
-      
-      if (res['status'] == 'success' || res.containsKey('data')) {
-        final rawData = res['data'];
-        final List<dynamic> data = rawData is Map && rawData.containsKey('data') 
-            ? rawData['data'] 
-            : (rawData is List ? rawData : []);
+      final token = prefs.getString('auth_token') ?? '';
 
-        setState(() {
-          _businesses = data.map((b) => BusinessUser.fromJson(b)).toList();
-          _isLoading = false;
-        });
-        
-        _fetchAllJobsForCache(userMainId);
+      final url = Uri.parse(
+        'https://managelogin.jobes24x7.com/api/business-cre/main/$userMainId',
+      );
+      final response = await http.get(
+        url,
+        headers: {
+          if (token.isNotEmpty) 'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final res = jsonDecode(response.body);
+        if (res['status'] == 'success' || res.containsKey('data')) {
+          final rawData = res['data'];
+          final List<dynamic> data =
+              rawData is Map && rawData.containsKey('data')
+              ? rawData['data']
+              : (rawData is List ? rawData : []);
+
+          setState(() {
+            _businesses = data.map((b) => BusinessUser.fromJson(b)).toList();
+            _isLoading = false;
+          });
+
+          _fetchAllJobsForCache(userMainId);
+        }
       } else {
         setState(() {
           _isLoading = false;
@@ -237,16 +281,26 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
     final isDesktop = screenWidth > 900;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+      key: _scaffoldKey,
+      backgroundColor: isDark
+          ? const Color(0xFF0F172A)
+          : const Color(0xFFF1F5F9),
       drawer: !isDesktop
-          ? Drawer(elevation: 0, child: _buildSidebar(context, isDrawer: true))
+          ? Drawer(
+              elevation: 0,
+              child: BusinessSidebarMenu(
+                activeItem: 'assign_candidate',
+                onSectionChanged: _onSectionChanged,
+              ),
+            )
           : null,
       appBar: !isDesktop
           ? AppBar(
               backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
               elevation: 0,
               iconTheme: IconThemeData(
-                  color: isDark ? Colors.white : const Color(0xFF1E293B)),
+                color: isDark ? Colors.white : const Color(0xFF1E293B),
+              ),
               title: Text(
                 "Assign Interviewer",
                 style: TextStyle(
@@ -260,7 +314,14 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (isDesktop) _buildSidebar(context, isDrawer: false),
+          if (isDesktop)
+            SizedBox(
+              width: 250,
+              child: BusinessSidebarMenu(
+                activeItem: 'assign_candidate',
+                onSectionChanged: _onSectionChanged,
+              ),
+            ),
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsets.all(isDesktop ? 32 : 16),
@@ -299,6 +360,38 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
     );
   }
 
+  void _onSectionChanged(String newItem) {
+    if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+      _scaffoldKey.currentState?.closeDrawer();
+    }
+
+    if (newItem == 'post_job') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => PostJobPage()),
+      );
+    } else if (newItem == 'view_posted_jobs') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const PostedJobsPage()),
+      );
+    } else if (newItem == 'applied_candidates') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const AppliedListPage(isBusinessMode: true),
+        ),
+      );
+    } else if (newItem == 'add_business' ||
+        newItem == 'create_store_category' ||
+        newItem == 'create_store') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const NewBusinessRegisterPage()),
+      );
+    }
+  }
+
   Widget _buildContent(bool isDark, bool isDesktop) {
     if (_isLoading) {
       return const Center(
@@ -323,8 +416,10 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
 
   Widget _buildBusinessSection(bool isDark, bool isDesktop) {
     int crossAxisCount = 1;
-    if (isDesktop) crossAxisCount = 3;
-    else if (MediaQuery.of(context).size.width > 600) crossAxisCount = 2;
+    if (isDesktop)
+      crossAxisCount = 3;
+    else if (MediaQuery.of(context).size.width > 600)
+      crossAxisCount = 2;
 
     return Container(
       width: double.infinity,
@@ -355,7 +450,9 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
                 child: Text(
                   "No businesses found.",
                   style: TextStyle(
-                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    color: isDark
+                        ? const Color(0xFF94A3B8)
+                        : const Color(0xFF64748B),
                   ),
                 ),
               ),
@@ -383,10 +480,12 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
   }
 
   Widget _buildBusinessCard(BusinessUser biz, bool isDark, bool isSelected) {
-    final borderColor = isSelected 
-        ? const Color(0xFF3B82F6) 
+    final borderColor = isSelected
+        ? const Color(0xFF3B82F6)
         : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0));
-    final mutedColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final mutedColor = isDark
+        ? const Color(0xFF94A3B8)
+        : const Color(0xFF64748B);
     final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
 
     return InkWell(
@@ -404,8 +503,10 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: isSelected 
-              ? (isDark ? const Color(0xFF1E3A8A).withOpacity(0.3) : const Color(0xFFEFF6FF))
+          color: isSelected
+              ? (isDark
+                    ? const Color(0xFF1E3A8A).withOpacity(0.3)
+                    : const Color(0xFFEFF6FF))
               : (isDark ? const Color(0xFF0F172A) : Colors.white),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: borderColor, width: isSelected ? 2 : 1),
@@ -422,23 +523,29 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
                   decoration: BoxDecoration(
                     color: const Color(0xFFE2E8F0),
                     borderRadius: BorderRadius.circular(6),
-                    image: biz.companyLogoFileName != null &&
+                    image:
+                        biz.companyLogoFileName != null &&
                             biz.companyLogoFileName!.isNotEmpty
                         ? DecorationImage(
-                            image: NetworkImage(biz.companyLogoFileName!
-                                    .startsWith('http')
-                                ? biz.companyLogoFileName!
-                                : 'https://user.jobes24x7.com/${biz.companyLogoFileName}'),
+                            image: NetworkImage(
+                              biz.companyLogoFileName!.startsWith('http')
+                                  ? biz.companyLogoFileName!
+                                  : 'https://user.jobes24x7.com/${biz.companyLogoFileName}',
+                            ),
                             fit: BoxFit.cover,
                           )
                         : null,
                   ),
-                  child: biz.companyLogoFileName != null &&
+                  child:
+                      biz.companyLogoFileName != null &&
                           biz.companyLogoFileName!.isNotEmpty
                       ? null
                       : const Center(
-                          child: Icon(Icons.business,
-                              color: Color(0xFF94A3B8), size: 18),
+                          child: Icon(
+                            Icons.business,
+                            color: Color(0xFF94A3B8),
+                            size: 18,
+                          ),
                         ),
                 ),
                 const SizedBox(width: 12),
@@ -476,11 +583,15 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
             _buildInfoRow(Icons.phone_outlined, biz.phone, mutedColor),
             const SizedBox(height: 8),
             _buildInfoRow(
-                Icons.location_on_outlined,
-                [biz.doorNumber, biz.streetName, biz.area, biz.district]
-                    .where((e) => e.isNotEmpty)
-                    .join(', '),
-                mutedColor),
+              Icons.location_on_outlined,
+              [
+                biz.doorNumber,
+                biz.streetName,
+                biz.area,
+                biz.district,
+              ].where((e) => e.isNotEmpty).join(', '),
+              mutedColor,
+            ),
             const Spacer(),
             const Divider(height: 1),
             const SizedBox(height: 12),
@@ -493,14 +604,18 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
                 Expanded(
                   child: Builder(
                     builder: (context) {
-                      final bizJobs = _allJobsCache.where((j) => 
-                        j['business_id']?.toString() == biz.id || 
-                        j['business_cre_id']?.toString() == biz.id
-                      ).toList();
-                      
+                      final bizJobs = _allJobsCache
+                          .where(
+                            (j) =>
+                                j['business_id']?.toString() == biz.id ||
+                                j['business_cre_id']?.toString() == biz.id,
+                          )
+                          .toList();
+
                       final jobCount = bizJobs.length;
-                      final latestJobTitle = jobCount > 0 
-                          ? (bizJobs.first['job_title']?.toString() ?? 'Job Title') 
+                      final latestJobTitle = jobCount > 0
+                          ? (bizJobs.first['job_title']?.toString() ??
+                                'Job Title')
                           : "No jobs posted";
 
                       return Column(
@@ -523,7 +638,7 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
                           ),
                         ],
                       );
-                    }
+                    },
                   ),
                 ),
               ],
@@ -554,8 +669,10 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
 
   Widget _buildJobsSection(bool isDark, bool isDesktop) {
     int crossAxisCount = 1;
-    if (isDesktop) crossAxisCount = 2;
-    else if (MediaQuery.of(context).size.width > 600) crossAxisCount = 2;
+    if (isDesktop)
+      crossAxisCount = 2;
+    else if (MediaQuery.of(context).size.width > 600)
+      crossAxisCount = 2;
 
     return Container(
       width: double.infinity,
@@ -580,11 +697,16 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
           ),
           const SizedBox(height: 24),
           if (_isLoadingJobs)
-             const Center(child: CircularProgressIndicator(color: Color(0xFF3B82F6)))
+            const Center(
+              child: CircularProgressIndicator(color: Color(0xFF3B82F6)),
+            )
           else if (_postedJobs.isEmpty)
-             Text("No jobs found for this business.", style: TextStyle(color: isDark ? Colors.white54 : Colors.black54))
+            Text(
+              "No jobs found for this business.",
+              style: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
+            )
           else
-             GridView.builder(
+            GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -596,19 +718,34 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
               itemCount: _postedJobs.length,
               itemBuilder: (context, index) {
                 final job = _postedJobs[index];
-                final isSelected = _selectedJob?['job_posted_id'] == job['job_posted_id'];
-                
+                final isSelected =
+                    _selectedJob?['job_posted_id'] == job['job_posted_id'];
+
                 final jobPostedId = job['job_posted_id']?.toString() ?? '';
                 final jobTitle = job['job_title']?.toString() ?? '';
-                final candidatesCount = _employees.where((e) => 
-                  e.jobPostedId == jobPostedId || e.jobName == jobTitle
-                ).length;
+                final candidatesCount = _employees
+                    .where(
+                      (e) =>
+                          e.jobPostedId == jobPostedId || e.jobName == jobTitle,
+                    )
+                    .length;
 
-                final openings = job['openings']?.toString() ?? job['vacancies']?.toString() ?? '1';
-                
-                final selectedFlow = job['selected_flow'] is Map ? job['selected_flow'] : {};
-                final jobType = selectedFlow['employmentType']?.toString() ?? job['job_type']?.toString() ?? 'FULL-TIME';
-                final description = job['job_description']?.toString() ?? selectedFlow['sector']?.toString() ?? 'No description available';
+                final openings =
+                    job['openings']?.toString() ??
+                    job['vacancies']?.toString() ??
+                    '1';
+
+                final selectedFlow = job['selected_flow'] is Map
+                    ? job['selected_flow']
+                    : {};
+                final jobType =
+                    selectedFlow['employmentType']?.toString() ??
+                    job['job_type']?.toString() ??
+                    'FULL-TIME';
+                final description =
+                    job['job_description']?.toString() ??
+                    selectedFlow['sector']?.toString() ??
+                    'No description available';
 
                 return InkWell(
                   onTap: () {
@@ -620,15 +757,19 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: isSelected 
-                          ? (isDark ? const Color(0xFF1E3A8A).withOpacity(0.2) : const Color(0xFFEFF6FF).withOpacity(0.5))
+                      color: isSelected
+                          ? (isDark
+                                ? const Color(0xFF1E3A8A).withOpacity(0.2)
+                                : const Color(0xFFEFF6FF).withOpacity(0.5))
                           : (isDark ? const Color(0xFF0F172A) : Colors.white),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isSelected 
-                            ? const Color(0xFF3B82F6) 
-                            : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)), 
-                        width: isSelected ? 2 : 1
+                        color: isSelected
+                            ? const Color(0xFF3B82F6)
+                            : (isDark
+                                  ? const Color(0xFF334155)
+                                  : const Color(0xFFE2E8F0)),
+                        width: isSelected ? 2 : 1,
                       ),
                     ),
                     child: Column(
@@ -640,21 +781,34 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                color: isDark
+                                    ? const Color(0xFF1E293B)
+                                    : const Color(0xFFF1F5F9),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Icon(
-                                Icons.business_center, 
-                                size: 16, 
-                                color: isDark ? Colors.white70 : const Color(0xFF64748B)
+                                Icons.business_center,
+                                size: 16,
+                                color: isDark
+                                    ? Colors.white70
+                                    : const Color(0xFF64748B),
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF1E3A8A) : const Color(0xFFEFF6FF),
+                                color: isDark
+                                    ? const Color(0xFF1E3A8A)
+                                    : const Color(0xFFEFF6FF),
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: const Color(0xFF3B82F6).withOpacity(0.3)),
+                                border: Border.all(
+                                  color: const Color(
+                                    0xFF3B82F6,
+                                  ).withOpacity(0.3),
+                                ),
                               ),
                               child: Text(
                                 jobType.toUpperCase(),
@@ -674,7 +828,9 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w800,
-                            color: isDark ? Colors.white : const Color(0xFF1E293B),
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1E293B),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -683,8 +839,10 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
                         Text(
                           description,
                           style: TextStyle(
-                            fontSize: 12, 
-                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)
+                            fontSize: 12,
+                            color: isDark
+                                ? const Color(0xFF94A3B8)
+                                : const Color(0xFF64748B),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -695,28 +853,44 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
                           children: [
                             Row(
                               children: [
-                                Icon(Icons.people_outline, size: 14, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                                Icon(
+                                  Icons.people_outline,
+                                  size: 14,
+                                  color: isDark
+                                      ? const Color(0xFF94A3B8)
+                                      : const Color(0xFF64748B),
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   "$candidatesCount Candidates",
                                   style: TextStyle(
-                                    fontSize: 11, 
+                                    fontSize: 11,
                                     fontWeight: FontWeight.w500,
-                                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)
+                                    color: isDark
+                                        ? const Color(0xFF94A3B8)
+                                        : const Color(0xFF64748B),
                                   ),
                                 ),
                               ],
                             ),
                             Row(
                               children: [
-                                Icon(Icons.person_add_alt_1_outlined, size: 14, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                                Icon(
+                                  Icons.person_add_alt_1_outlined,
+                                  size: 14,
+                                  color: isDark
+                                      ? const Color(0xFF94A3B8)
+                                      : const Color(0xFF64748B),
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   "Openings: $openings",
                                   style: TextStyle(
-                                    fontSize: 11, 
+                                    fontSize: 11,
                                     fontWeight: FontWeight.w500,
-                                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)
+                                    color: isDark
+                                        ? const Color(0xFF94A3B8)
+                                        : const Color(0xFF64748B),
                                   ),
                                 ),
                               ],
@@ -766,19 +940,29 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF3B82F6),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 24),
           if (_isLoadingEmployees)
-             const Center(child: CircularProgressIndicator(color: Color(0xFF3B82F6)))
+            const Center(
+              child: CircularProgressIndicator(color: Color(0xFF3B82F6)),
+            )
           else if (_employees.isEmpty)
-             Text("No employees found.", style: TextStyle(color: isDark ? Colors.white54 : Colors.black54))
+            Text(
+              "No employees found.",
+              style: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
+            )
           else
-             _buildEmployeeTable(isDark),
+            _buildEmployeeTable(isDark),
         ],
       ),
     );
@@ -793,7 +977,9 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
         child: Center(
           child: Text(
             "No candidates have applied for this job.",
-            style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+            style: TextStyle(
+              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+            ),
           ),
         ),
       );
@@ -803,7 +989,8 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
       scrollDirection: Axis.horizontal,
       child: DataTable(
         headingRowColor: MaterialStateProperty.all(
-            isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC)),
+          isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+        ),
         columns: const [
           DataColumn(label: Text('SELECT')),
           DataColumn(label: Text('NAME')),
@@ -841,38 +1028,86 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
                   },
                 ),
               ),
-              DataCell(Text(emp.userName, style: TextStyle(color: isDark ? Colors.white : Colors.black))),
+              DataCell(
+                Text(
+                  emp.userName,
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black),
+                ),
+              ),
               DataCell(
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
+                    border: Border.all(
+                      color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+                    ),
                   ),
                   child: Text(
-                    emp.status == 'interviewer' ? 'Interviewer' : 'Interviewer', // Matching screenshot where it shows Interviewer pill
-                    style: TextStyle(fontSize: 10, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontWeight: FontWeight.bold),
+                    emp.status == 'interviewer'
+                        ? 'Interviewer'
+                        : 'Interviewer', // Matching screenshot where it shows Interviewer pill
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: isDark
+                          ? const Color(0xFF94A3B8)
+                          : const Color(0xFF64748B),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
-              DataCell(Text(emp.jobName.isNotEmpty ? emp.jobName : '-', style: TextStyle(color: isDark ? Colors.white70 : Colors.black87))),
-              DataCell(Text('Recruitment', style: TextStyle(color: isDark ? Colors.white70 : Colors.black87))), // Hardcoded in screenshot as Recruitment
-              DataCell(Text(emp.email, style: TextStyle(color: isDark ? Colors.white70 : Colors.black87))),
               DataCell(
-                emp.companyName.isNotEmpty 
-                  ? Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF10B981), // Green assigned pill
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        'Assigned: ${emp.companyName}',
-                        style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
-                      ),
-                    )
-                  : const Text('-', style: TextStyle(color: Colors.grey)),
+                Text(
+                  emp.jobName.isNotEmpty ? emp.jobName : '-',
+                  style: TextStyle(
+                    color: isDark ? Colors.white70 : Colors.black87,
+                  ),
+                ),
+              ),
+              DataCell(
+                Text(
+                  'Recruitment',
+                  style: TextStyle(
+                    color: isDark ? Colors.white70 : Colors.black87,
+                  ),
+                ),
+              ), // Hardcoded in screenshot as Recruitment
+              DataCell(
+                Text(
+                  emp.email,
+                  style: TextStyle(
+                    color: isDark ? Colors.white70 : Colors.black87,
+                  ),
+                ),
+              ),
+              DataCell(
+                emp.companyName.isNotEmpty
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981), // Green assigned pill
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          'Assigned: ${emp.companyName}',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      )
+                    : const Text('-', style: TextStyle(color: Colors.grey)),
               ),
             ],
           );
@@ -941,8 +1176,11 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
           const SizedBox(height: 12),
           // Business Expandable Menu
           ListTile(
-            leading: const Icon(Icons.business_center_outlined,
-                color: Colors.white60, size: 20),
+            leading: const Icon(
+              Icons.business_center_outlined,
+              color: Colors.white60,
+              size: 20,
+            ),
             title: const Text(
               "Business",
               style: TextStyle(color: Colors.white60, fontSize: 14),
@@ -950,8 +1188,11 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
             trailing: AnimatedRotation(
               turns: _isBusinessExpanded ? 0.5 : 0,
               duration: const Duration(milliseconds: 250),
-              child: const Icon(Icons.keyboard_arrow_down_rounded,
-                  color: Colors.white38, size: 20),
+              child: const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: Colors.white38,
+                size: 20,
+              ),
             ),
             dense: true,
             onTap: () =>
@@ -974,7 +1215,9 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => BusinessCreatedPage(showSelection: false)),
+                        builder: (context) =>
+                            BusinessCreatedPage(showSelection: false),
+                      ),
                     );
                   },
                 ),
@@ -985,7 +1228,8 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const UserOverviewPage()),
+                        builder: (context) => const UserOverviewPage(),
+                      ),
                     );
                   },
                 ),
@@ -997,7 +1241,9 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => BusinessCreatedPage(showSelection: true)),
+                        builder: (context) =>
+                            BusinessCreatedPage(showSelection: true),
+                      ),
                     );
                   },
                 ),
@@ -1065,7 +1311,8 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const PostedJobsPage()),
+                        builder: (context) => const PostedJobsPage(),
+                      ),
                     );
                   },
                 ),
@@ -1076,7 +1323,9 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const AppliedListPage(isBusinessMode: true)),
+                        builder: (context) =>
+                            const AppliedListPage(isBusinessMode: true),
+                      ),
                     );
                   },
                 ),
@@ -1106,65 +1355,71 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
   Widget _sidebarItem(IconData icon, String title, {VoidCallback? onTap}) =>
       ListTile(
         leading: Icon(icon, color: Colors.white60, size: 20),
-        title: Text(title,
-            style: const TextStyle(color: Colors.white60, fontSize: 14)),
-        onTap: onTap,
-        dense: true,
-      );
-
-  Widget _sidebarSubItem(String title,
-          {Color? textColor, VoidCallback? onTap}) =>
-      ListTile(
-        contentPadding: const EdgeInsets.only(left: 54),
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              "-",
-              style: TextStyle(
-                  color: Colors.white30,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              title,
-              style: TextStyle(
-                color: textColor ?? Colors.white60,
-                fontSize: 13,
-                fontWeight: FontWeight.normal,
-              ),
-            ),
-          ],
+        title: Text(
+          title,
+          style: const TextStyle(color: Colors.white60, fontSize: 14),
         ),
         onTap: onTap,
         dense: true,
       );
+
+  Widget _sidebarSubItem(
+    String title, {
+    Color? textColor,
+    VoidCallback? onTap,
+  }) => ListTile(
+    contentPadding: const EdgeInsets.only(left: 54),
+    title: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text(
+          "-",
+          style: TextStyle(
+            color: Colors.white30,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: TextStyle(
+            color: textColor ?? Colors.white60,
+            fontSize: 13,
+            fontWeight: FontWeight.normal,
+          ),
+        ),
+      ],
+    ),
+    onTap: onTap,
+    dense: true,
+  );
 
   Widget _activeSubItem(String title, {VoidCallback? onTap}) => ListTile(
-        contentPadding: const EdgeInsets.only(left: 54),
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              "-",
-              style: TextStyle(
-                  color: Color(0xFFE11D48),
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              title,
-              style: const TextStyle(
-                color: Color(0xFFE11D48),
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
+    contentPadding: const EdgeInsets.only(left: 54),
+    title: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text(
+          "-",
+          style: TextStyle(
+            color: Color(0xFFE11D48),
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        onTap: onTap,
-        dense: true,
-      );
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xFFE11D48),
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    ),
+    onTap: onTap,
+    dense: true,
+  );
 }

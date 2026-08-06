@@ -558,11 +558,7 @@ class UserService extends ChangeNotifier {
     }
 
     // Try the user_register endpoint to check if user has registered
-<<<<<<< HEAD
-    final url = 'https://managelogin.jobes24x7.com/api/api/user_register/$userMainId';
-=======
     final url = 'https://managelogin.jobes24x7.com/api/user_register/$userMainId';
->>>>>>> 46759b2 (update)
     try {
       final token = await AuthService().getToken();
       final response = await http.get(
@@ -580,31 +576,21 @@ class UserService extends ChangeNotifier {
         if (inner is Map && inner['code'] == 200 && inner['data'] != null) {
           final innerData = inner['data'];
           if ((innerData is List && innerData.isEmpty) || (innerData is Map && innerData.isEmpty)) {
-<<<<<<< HEAD
             debugPrint('[UserRegister] ❌ Empty nested data found');
             return false;
           }
-          debugPrint('[UserRegister] ✅ Registered user found!');
-=======
-            return false;
-          }
           await prefs.setBool('is_registered_$userMainId', true);
->>>>>>> 46759b2 (update)
+          debugPrint('[UserRegister] ✅ Registered user found!');
           return true;
         }
         if (decoded['success'] == true && decoded['data'] != null) {
           final data = decoded['data'];
           if ((data is List && data.isEmpty) || (data is Map && data.isEmpty)) {
-<<<<<<< HEAD
             debugPrint('[UserRegister] ❌ Empty flat data found');
             return false;
           }
-          debugPrint('[UserRegister] ✅ Registered user found (flat)!');
-=======
-            return false;
-          }
           await prefs.setBool('is_registered_$userMainId', true);
->>>>>>> 46759b2 (update)
+          debugPrint('[UserRegister] ✅ Registered user found (flat)!');
           return true;
         }
       }
