@@ -377,3 +377,5 @@ class UpperCaseTextFormatter extends TextInputFormatter {
     );
   }
 }
+
+

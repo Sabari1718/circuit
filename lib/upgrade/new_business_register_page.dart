@@ -16,6 +16,9 @@ import 'applied_list_page.dart';
 import 'assign_candidate_page.dart';
 
 import 'business_user_model.dart';
+import 'create_business_user_page.dart';
+import 'create_partner_business_page.dart';
+import 'create_supplier_business_page.dart';
 
 class NewBusinessRegisterPage extends StatefulWidget {
   final BusinessUser? existingBusiness;
@@ -404,9 +407,32 @@ class _NewBusinessRegisterPageState extends State<NewBusinessRegisterPage> {
             constraints: const BoxConstraints(maxWidth: 1000),
             child: AddBusinessWelcomeWidget(
               onRegistrationTypeSelected: (String type) {
-                setState(() {
-                  _activeItem = 'business_overview';
-                });
+                if (type == 'Propagator') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CreateBusinessUserPage(),
+                    ),
+                  );
+                } else if (type == 'Partner') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CreatePartnerBusinessPage(),
+                    ),
+                  );
+                } else if (type == 'Create Supplier') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CreateSupplierBusinessPage(),
+                    ),
+                  );
+                } else {
+                  setState(() {
+                    _activeItem = 'business_overview';
+                  });
+                }
               },
             ),
           ),

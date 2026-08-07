@@ -50,9 +50,7 @@ class _AssignCandidatePageState extends State<AssignCandidatePage> {
       final token = prefs.getString('auth_token') ?? '';
 
       final res = await http.get(
-        Uri.parse(
-          'https://user.jobes24x7.com/api/assigned-interviewers',
-        ),
+        Uri.parse('https://user.jobes24x7.com/api/assigned-interviewers'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',

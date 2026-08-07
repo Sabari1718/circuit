@@ -39,7 +39,7 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
   Uint8List? _sigBytes;
   String? _logoFileName;
   Uint8List? _logoBytes;
-  String? _turnoverRange;
+  String? _turnoverRange = 'Select Turnover Range';
   String? _selectedTier;
 
   final _gstCtrl = TextEditingController();
@@ -64,6 +64,8 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
   final _pincodeCtrl = TextEditingController();
   final _stateCtrl = TextEditingController();
   final _countryCtrl = TextEditingController(text: 'India');
+  final _udyamCtrl = TextEditingController();
+  final _cinCtrl = TextEditingController();
 
   final Set<String> _selectedTypes = {};
   final Set<String> _selectedServiceSectors = {};
@@ -124,7 +126,8 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
       final res = await ApiService().fetchCategories();
       if (res['success'] == true && res['data'] != null) {
         final List<dynamic> apiData = res['data'];
-        Map<String, Map<String, Map<String, Map<String, List<String>>>>> newData = {};
+        Map<String, Map<String, Map<String, Map<String, List<String>>>>>
+        newData = {};
 
         for (var item in apiData) {
           String title = item['sector_title_name']?.toString().trim() ?? '';
@@ -132,27 +135,39 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
 
           String sector = item['sector_name']?.toString().trim() ?? '';
           String subSector = item['sub_sector_name']?.toString().trim() ?? '';
-          
+
           newData.putIfAbsent(title, () => {});
           newData[title]!.putIfAbsent(sector, () => {});
           newData[title]![sector]!.putIfAbsent(subSector, () => {});
 
-          String categoryType = item['category_type']?.toString().toLowerCase() ?? '';
+          String categoryType =
+              item['category_type']?.toString().toLowerCase() ?? '';
           String categoryName = item['category_name']?.toString().trim() ?? '';
 
           if (categoryType == 'primary') {
-            newData[title]![sector]![subSector]!.putIfAbsent(categoryName, () => []);
+            newData[title]![sector]![subSector]!.putIfAbsent(
+              categoryName,
+              () => [],
+            );
           } else if (categoryType == 'secondary') {
-            String parentName = item['parent_category_name']?.toString().trim() ?? '';
+            String parentName =
+                item['parent_category_name']?.toString().trim() ?? '';
             if (parentName != '-' && parentName.isNotEmpty) {
-              newData[title]![sector]![subSector]!.putIfAbsent(parentName, () => []);
-              if (!newData[title]![sector]![subSector]![parentName]!.contains(categoryName)) {
-                newData[title]![sector]![subSector]![parentName]!.add(categoryName);
+              newData[title]![sector]![subSector]!.putIfAbsent(
+                parentName,
+                () => [],
+              );
+              if (!newData[title]![sector]![subSector]![parentName]!.contains(
+                categoryName,
+              )) {
+                newData[title]![sector]![subSector]![parentName]!.add(
+                  categoryName,
+                );
               }
             }
           }
         }
-        
+
         setState(() {
           _categoriesData = newData;
           _isCategoriesLoading = false;
@@ -171,7 +186,7 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
     bool isValid = false;
     if (_currentStep == 0) {
       if (_formKey1.currentState!.validate()) {
-        if (_turnoverRange == null) {
+        if (_turnoverRange == null || _turnoverRange == 'Select Turnover Range') {
           _showError('Select Turnover Range');
           return;
         }
@@ -262,7 +277,9 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
       // 🚨 TEMP FIX: Override ghost user ID to prevent foreign key server error
       if (userMainId == '8059210846') {
         userMainId = '6102066450'; // The correct ID from the web
-        debugPrint('🚨 [TEMP FIX] Overriding invalid user_main_id 8059210846 with 6102066450');
+        debugPrint(
+          '🚨 [TEMP FIX] Overriding invalid user_main_id 8059210846 with 6102066450',
+        );
       }
 
       // Prepare Categories JSON
@@ -683,92 +700,248 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
     }
   }
 
+  Widget _buildCardSection(String title, IconData icon, bool isDark, List<Widget> children) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: Colors.blueAccent, size: 20),
+              const SizedBox(width: 12),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInputWithVerify(String label, TextEditingController ctrl, bool isDark, {String? hintText, TextInputType keyboardType = TextInputType.text}) {
+    final isPhone = label.toLowerCase().contains('phone') || label.toLowerCase().contains('mobile');
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: 13,
+            color: isDark ? Colors.white70 : const Color(0xFF334155),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: ctrl,
+                keyboardType: isPhone ? TextInputType.number : keyboardType,
+                inputFormatters: isPhone ? [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)] : null,
+                validator: (val) {
+                  if (label.contains('*') && (val == null || val.trim().isEmpty)) {
+                    return 'This field is required';
+                  }
+                  return null;
+                },
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black),
+                decoration: InputDecoration(
+                  hintText: hintText,
+                  hintStyle: TextStyle(color: isDark ? Colors.white38 : Colors.grey[400], fontSize: 13, fontWeight: FontWeight.normal),
+                  filled: true,
+                  fillColor: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F5F9).withOpacity(0.5),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.grey[300]!)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.grey[200]!)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6366F1), // Indigo color
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                elevation: 0,
+              ),
+              child: const Text('Verify', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+  Widget _buildResponsiveRow(Widget child1, Widget child2) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 600) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              child1,
+              const SizedBox(height: 16),
+              child2,
+            ],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: child1),
+            const SizedBox(width: 16),
+            Expanded(child: child2),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildStep1(bool isDark) => Form(
     key: _formKey1,
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildHeading('Basic Details', 'Organisation information', isDark),
-        _buildFormCard([
-          _buildInputField('Business Name *', _nameCtrl, isDark),
-          const SizedBox(height: 16),
-          _buildInputField('Business Email *', _emailCtrl, isDark),
-          const SizedBox(height: 16),
-          _buildInputField(
-            'Business Phone *',
-            _phoneCtrl,
-            isDark,
-            keyboardType: TextInputType.phone,
+        _buildCardSection('Basic Business Details', Icons.business, isDark, [
+          _buildResponsiveRow(
+            _buildInputField('Business Name *', _nameCtrl, isDark, showPadding: false, hintText: 'Enter business name'),
+            _buildInputWithVerify('Business Email *', _emailCtrl, isDark, hintText: 'business@example.com'),
           ),
           const SizedBox(height: 16),
-          _buildInputField('Website', _websiteCtrl, isDark),
-          const SizedBox(height: 16),
-          _buildLogoUploadField(
-            'Company Logo (Optional)',
-            _logoFileName,
-            _logoBytes,
-            () => _pickFile('logo'),
-            isDark,
+          _buildResponsiveRow(
+            _buildInputWithVerify('Business Phone *', _phoneCtrl, isDark, hintText: '10-digit mobile number', keyboardType: TextInputType.phone),
+            _buildInputField('Website', _websiteCtrl, isDark, showPadding: false, hintText: 'https://www.example.com'),
           ),
           const SizedBox(height: 16),
-          _buildTurnoverDropdown(isDark),
-          const Divider(height: 48),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Text(
-              'PAN Details',
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                fontSize: 16,
-                color: isDark ? Colors.white : Colors.black,
-              ),
-            ),
+          _buildResponsiveRow(
+            _buildInputField('Udyam Registration Number *', _udyamCtrl, isDark, showPadding: false, hintText: 'Enter Udyam Registration Number (e.g., UDYAM-TN-12-0001234)'),
+            _buildInputField('Corporate Identification Number (CIN)', _cinCtrl, isDark, showPadding: false, hintText: 'Enter CIN (e.g., U12345TN2024PTC123456)'),
           ),
           const SizedBox(height: 16),
-          _buildInputField(
-            'Business PAN Number *',
-            _panCtrl,
-            isDark,
-            hintText: '10-character alphanumeric PAN number',
+          _buildResponsiveRow(
+            _buildLogoUploadField('Company Logo (Optional)', _logoFileName, _logoBytes, () => _pickFile('logo'), isDark, showPadding: false),
+            _buildTurnoverDropdown(isDark, showPadding: false),
           ),
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: _buildFileUpload(
-              'Business PAN Card Photo *',
-              _panFileName,
-              _panBytes,
-              () => _pickFile('pan'),
-              isDark,
-              uploadText: 'Click to upload PAN card',
-              subText: 'PDF, JPG or PNG (max. 5MB)',
-            ),
+        ]),
+        
+        _buildCardSection('Company Tier *', Icons.stars, isDark, [
+           if (_turnoverRange == null || _turnoverRange == 'Select Turnover Range')
+             Container(
+               padding: const EdgeInsets.all(16),
+               decoration: BoxDecoration(color: isDark ? Colors.white10 : Colors.grey[100], borderRadius: BorderRadius.circular(8)),
+               child: Row(children: [
+                 Icon(Icons.info, color: Colors.grey[600], size: 20),
+                 const SizedBox(width: 8),
+                 Expanded(child: Text("Please select a Turnover / Income range first to see available tiers.", style: TextStyle(color: Colors.grey[600]))),
+               ]),
+             )
+           else ...[
+             Row(
+               children: [
+                 if (_turnoverRange == '20 Lakhs to 50 Lakhs') ...[
+                   Expanded(
+                     child: _buildTierCard(
+                       'Startup',
+                       'Small business / new company',
+                       Icons.rocket_launch,
+                       Colors.red,
+                       _selectedTier == 'Startup',
+                       isDark,
+                       _turnoverRange == '20 Lakhs to 50 Lakhs',
+                     ),
+                   ),
+                   const SizedBox(width: 8),
+                 ],
+                 if (_turnoverRange == '20 Lakhs to 50 Lakhs' ||
+                     _turnoverRange == '50 Lakhs to 2 Crores') ...[
+                   Expanded(
+                     child: _buildTierCard(
+                       'Standard',
+                       'Growing business',
+                       Icons.domain,
+                       Colors.blue,
+                       _selectedTier == 'Standard',
+                       isDark,
+                       _turnoverRange == '50 Lakhs to 2 Crores',
+                     ),
+                   ),
+                   const SizedBox(width: 8),
+                 ],
+                 Expanded(
+                   child: _buildTierCard(
+                     'Corporate',
+                     'Large organization',
+                     Icons.apartment,
+                     Colors.green,
+                     _selectedTier == 'Corporate',
+                     isDark,
+                     _turnoverRange == 'Above 2 Crores',
+                   ),
+                 ),
+                 if (_turnoverRange == '50 Lakhs to 2 Crores') ...[
+                   const SizedBox(width: 8),
+                   const Expanded(child: SizedBox()),
+                 ],
+                 if (_turnoverRange == 'Above 2 Crores') ...[
+                   const SizedBox(width: 8),
+                   const Expanded(child: SizedBox()),
+                   const SizedBox(width: 8),
+                   const Expanded(child: SizedBox()),
+                 ],
+               ],
+             ),
+             const SizedBox(height: 12),
+             Container(
+               padding: const EdgeInsets.all(12),
+               decoration: BoxDecoration(
+                 color: Colors.lightBlueAccent.withOpacity(0.1),
+                 borderRadius: BorderRadius.circular(8),
+               ),
+               child: Row(
+                 children: [
+                   const Icon(Icons.info, color: Colors.blue, size: 16),
+                   const SizedBox(width: 8),
+                   Expanded(
+                     child: Text(
+                       'Based on your turnover range, we recommended this tier. You can still choose another option.',
+                       style: TextStyle(
+                         fontSize: 11,
+                         color: isDark ? Colors.white70 : Colors.black87,
+                       ),
+                     ),
+                   ),
+                 ],
+               ),
+             ),
+           ]
+        ]),
+
+        _buildCardSection('PAN Details', Icons.credit_card, isDark, [
+          _buildResponsiveRow(
+            _buildInputField('Business PAN Number *', _panCtrl, isDark, showPadding: false, hintText: '10-character alphanumeric PAN number'),
+            _buildFileUpload('Business PAN Card Photo *', _panFileName, _panBytes, () => _pickFile('pan'), isDark, uploadText: 'Click to upload PAN card', subText: 'PDF, JPG or PNG (max. 5MB)', showPadding: false),
           ),
-          const SizedBox(height: 24),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Text(
-              'Authorized Signature',
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                fontSize: 16,
-                color: isDark ? Colors.white : Colors.black,
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: _buildFileUpload(
-              'Upload Signature Photo *',
-              _sigFileName,
-              _sigBytes,
-              () => _pickFile('sig'),
-              isDark,
-              uploadText: 'Click to upload signature',
-              subText: 'JPG or PNG (max. 5MB)',
-            ),
-          ),
+        ]),
+
+        _buildCardSection('Authorized Signature', Icons.draw, isDark, [
+           _buildFileUpload('Upload Signature Photo *', _sigFileName, _sigBytes, () => _pickFile('sig'), isDark, uploadText: 'Click to upload signature', subText: 'JPG or PNG (max. 5MB)', showPadding: false),
         ]),
       ],
     ),
@@ -779,15 +952,24 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildHeading('GST Details', 'Verify registration', isDark),
-        _buildFormCard([
-          _buildInputField('GST Number *', _gstCtrl, isDark),
+        _buildCardSection('GST Details', Icons.description, isDark, [
+          _buildInputField(
+            'GST Number *',
+            _gstCtrl,
+            isDark,
+            showPadding: false,
+            hintText: '15-character alphanumeric GST number',
+          ),
+          const SizedBox(height: 16),
           _buildFileUpload(
             'GST Certificate *',
             _gstFileName,
             _gstBytes,
             () => _pickFile('gst'),
             isDark,
+            uploadText: 'Click to upload GST certificate',
+            subText: 'PDF, JPG or PNG (max. 5MB)',
+            showPadding: false,
           ),
         ]),
       ],
@@ -900,102 +1082,77 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
           ),
         ),
         _buildFormCard([
-          Row(
-            children: [
-              Expanded(
-                child: _buildInputField(
-                  'Door Number *',
-                  _doorCtrl,
-                  isDark,
-                  hintText: 'Door Number',
-                  showPadding: false,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildInputField(
-                  'Street Name *',
-                  _streetCtrl,
-                  isDark,
-                  hintText: 'Street Name',
-                  showPadding: false,
-                ),
-              ),
-            ],
+          _buildResponsiveRow(
+            _buildInputField(
+              'Door Number *',
+              _doorCtrl,
+              isDark,
+              hintText: 'Door Number',
+              showPadding: false,
+            ),
+            _buildInputField(
+              'Street Name *',
+              _streetCtrl,
+              isDark,
+              hintText: 'Street Name',
+              showPadding: false,
+            ),
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildInputField(
-                  'Building Name',
-                  _buildingCtrl,
-                  isDark,
-                  hintText: 'Building Name',
-                  showPadding: false,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildInputField(
-                  'Landmark',
-                  _landmarkCtrl,
-                  isDark,
-                  hintText: 'Landmark',
-                  showPadding: false,
-                ),
-              ),
-            ],
+          _buildResponsiveRow(
+            _buildInputField(
+              'Building Name',
+              _buildingCtrl,
+              isDark,
+              hintText: 'Building Name',
+              showPadding: false,
+            ),
+            _buildInputField(
+              'Landmark',
+              _landmarkCtrl,
+              isDark,
+              hintText: 'Landmark',
+              showPadding: false,
+            ),
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildInputField(
-                  'Area *',
-                  _areaCtrl,
-                  isDark,
-                  hintText: 'Area',
-                  showPadding: false,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildInputField(
-                  'District *',
-                  _districtCtrl,
-                  isDark,
-                  hintText: 'District',
-                  showPadding: false,
-                ),
-              ),
-            ],
+          _buildResponsiveRow(
+            _buildInputField(
+              'Area *',
+              _areaCtrl,
+              isDark,
+              hintText: 'Area',
+              showPadding: false,
+            ),
+            _buildInputField(
+              'District *',
+              _districtCtrl,
+              isDark,
+              hintText: 'District',
+              showPadding: false,
+            ),
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildInputField(
-                  'Pincode *',
-                  _pincodeCtrl,
-                  isDark,
-                  hintText: 'Pincode',
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
-                  showPadding: false,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildInputField(
-                  'State *',
-                  _stateCtrl,
-                  isDark,
-                  hintText: 'State',
-                  showPadding: false,
-                ),
-              ),
-            ],
+          _buildResponsiveRow(
+            _buildInputField(
+              'Pincode *',
+              _pincodeCtrl,
+              isDark,
+              hintText: 'Pincode',
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(6),
+              ],
+              showPadding: false,
+            ),
+            _buildInputField(
+              'State *',
+              _stateCtrl,
+              isDark,
+              hintText: 'State',
+              showPadding: false,
+            ),
           ),
           const SizedBox(height: 16),
           _buildInputField(
@@ -1295,6 +1452,89 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
       ],
     );
   }
+   Widget _buildCategoryDropdownCard({
+    required int index,
+    required Color color,
+    required String title,
+    required int selectedCount,
+    required IconData prefixIcon,
+    required String hint,
+    required bool isDark,
+    required List<String> items,
+    required String? value,
+    required ValueChanged<String> onChanged,
+    bool enabled = true,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withOpacity(0.02) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.grey[200]!),
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 10,
+                  spreadRadius: 1,
+                ),
+              ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            child: Center(
+              child: Text(
+                index.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$selectedCount Selected',
+                  style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                ),
+                const SizedBox(height: 12),
+                SearchableDropdown(
+                  label: '',
+                  value: value,
+                  items: items,
+                  isDark: isDark,
+                  hint: hint,
+                  enabled: enabled,
+                  onChanged: onChanged,
+                  prefixIcon: prefixIcon,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildStep6(Color color, bool isDark) {
     if (_isCategoriesLoading) {
@@ -1307,33 +1547,46 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
     }
 
     final sectorTitles = _categoriesData.keys.toList();
-    final sectors = _selectedSectorTitle != null
-        ? _categoriesData[_selectedSectorTitle]!.keys.toList()
-        : <String>[];
-    final subSectors = (_selectedSectorTitle != null && _selectedSector != null)
-        ? _categoriesData[_selectedSectorTitle]![_selectedSector]!.keys.toList()
-        : <String>[];
+    final sectors =
+        _selectedSectorTitle != null
+            ? _categoriesData[_selectedSectorTitle]!.keys.toList()
+            : <String>[];
+    final subSectors =
+        (_selectedSectorTitle != null && _selectedSector != null)
+            ? _categoriesData[_selectedSectorTitle]![_selectedSector]!
+                .keys
+                .toList()
+            : <String>[];
 
     final primaryCategories =
         (_selectedSectorTitle != null &&
-            _selectedSector != null &&
-            _selectedSubSector != null)
-        ? _categoriesData[_selectedSectorTitle]![_selectedSector]![_selectedSubSector]!
-              .keys
-              .toList()
-        : <String>[];
+                _selectedSector != null &&
+                _selectedSubSector != null)
+            ? _categoriesData[_selectedSectorTitle]![_selectedSector]![_selectedSubSector]!
+                .keys
+                .toList()
+            : <String>[];
 
-    final List<Map<String, String>> subCategories = [];
+    final List<String> subCategoriesList = [];
     if (_selectedSectorTitle != null &&
         _selectedSector != null &&
         _selectedSubSector != null) {
       for (final pc in _selectedPrimaryCategories) {
-        final subs = _categoriesData[_selectedSectorTitle]![_selectedSector]![_selectedSubSector]![pc] ?? <String>[];
-        for (final sub in subs) {
-          subCategories.add({'subCat': sub, 'primaryCat': pc});
-        }
+        final subs =
+            _categoriesData[_selectedSectorTitle]![_selectedSector]![_selectedSubSector]![pc] ??
+            <String>[];
+        subCategoriesList.addAll(subs);
       }
     }
+
+    String? selectedPrimary =
+        _selectedPrimaryCategories.isNotEmpty
+            ? _selectedPrimaryCategories.first
+            : null;
+    String? selectedSub =
+        _selectedSubCategories.isNotEmpty
+            ? _selectedSubCategories.first
+            : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1345,8 +1598,19 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.layers, color: Colors.blue, size: 22),
-                  const SizedBox(width: 10),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.local_offer,
+                      color: Colors.blue,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
                   Text(
                     'Business Categories',
                     style: TextStyle(
@@ -1359,10 +1623,10 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Select the sector and categories that best describe your business activity.',
+                'Select the categories that best match your business.',
                 style: TextStyle(
-                  fontSize: 11,
-                  color: isDark ? Colors.white60 : Colors.black54,
+                  fontSize: 12,
+                  color: isDark ? Colors.white60 : Colors.grey[600],
                 ),
               ),
             ],
@@ -1372,18 +1636,22 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: SearchableDropdown(
-                label: 'Sector Title *',
-                value: _selectedSectorTitle,
-                items: sectorTitles,
+              child: _buildCategoryDropdownCard(
+                index: 1,
+                color: Colors.deepPurpleAccent,
+                title: 'Sector Title',
+                selectedCount: _selectedSectorTitle != null ? 1 : 0,
+                prefixIcon: Icons.folder,
+                hint: 'Select Sector Title...',
                 isDark: isDark,
-                hint: 'Search & Select Sector Title',
+                items: sectorTitles,
+                value: _selectedSectorTitle,
                 onChanged: (val) {
                   setState(() {
                     _selectedSectorTitle = val;
                     _selectedSector = null;
                     _selectedSubSector = null;
-                    _activePrimaryCategory = null;
+                    _selectedPrimaryCategories.clear();
                     _selectedSubCategories.clear();
                   });
                 },
@@ -1391,18 +1659,21 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: SearchableDropdown(
-                label: 'Sector *',
-                value: _selectedSector,
-                items: sectors,
+              child: _buildCategoryDropdownCard(
+                index: 4,
+                color: Colors.green,
+                title: 'Primary Categories',
+                selectedCount: _selectedPrimaryCategories.length,
+                prefixIcon: Icons.local_offer,
+                hint: 'Select Primary Categories...',
                 isDark: isDark,
-                hint: 'Search & Select Sector',
-                enabled: _selectedSectorTitle != null,
+                items: primaryCategories,
+                value: selectedPrimary,
+                enabled: primaryCategories.isNotEmpty,
                 onChanged: (val) {
                   setState(() {
-                    _selectedSector = val;
-                    _selectedSubSector = null;
-                    _activePrimaryCategory = null;
+                    _selectedPrimaryCategories.clear();
+                    _selectedPrimaryCategories.add(val);
                     _selectedSubCategories.clear();
                   });
                 },
@@ -1415,483 +1686,93 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: SearchableDropdown(
-                label: 'Sub Sector *',
-                value: _selectedSubSector,
-                items: subSectors,
+              child: _buildCategoryDropdownCard(
+                index: 2,
+                color: Colors.blue,
+                title: 'Sector',
+                selectedCount: _selectedSector != null ? 1 : 0,
+                prefixIcon: Icons.business_center,
+                hint: 'Select Sector...',
                 isDark: isDark,
-                hint: 'Search & Select Sub Sector',
-                enabled: _selectedSector != null,
+                items: sectors,
+                value: _selectedSector,
+                enabled: _selectedSectorTitle != null,
                 onChanged: (val) {
                   setState(() {
-                    _selectedSubSector = val;
-                    final primaryCats =
-                        _categoriesData[_selectedSectorTitle]![_selectedSector]![_selectedSubSector]!
-                            .keys
-                            .toList();
-                    _activePrimaryCategory = primaryCats.isNotEmpty
-                        ? primaryCats.first
-                        : null;
+                    _selectedSector = val;
+                    _selectedSubSector = null;
+                    _selectedPrimaryCategories.clear();
                     _selectedSubCategories.clear();
                   });
                 },
               ),
             ),
             const SizedBox(width: 16),
-            const Expanded(child: SizedBox()), // Empty space for layout balance
+            Expanded(
+              child: _buildCategoryDropdownCard(
+                index: 5,
+                color: Colors.orange,
+                title: 'Sub Categories',
+                selectedCount: _selectedSubCategories.length,
+                prefixIcon: Icons.style,
+                hint: 'Select Sub Categories...',
+                isDark: isDark,
+                items: subCategoriesList.toSet().toList(),
+                value: selectedSub,
+                enabled: subCategoriesList.isNotEmpty,
+                onChanged: (val) {
+                  setState(() {
+                    _selectedSubCategories.clear();
+                    _selectedSubCategories.add(val);
+                  });
+                },
+              ),
+            ),
           ],
         ),
-        const SizedBox(height: 24),
-        if (_selectedSectorTitle != null &&
-            _selectedSector != null &&
-            _selectedSubSector != null) ...[
-          Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: Wrap(
-                  alignment: WrapAlignment.center,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 4,
-                  runSpacing: 4,
-                  children: [
-                    const Icon(Icons.sell, color: Colors.blue, size: 14),
-                    const Text(
-                      'Primary Categories',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 11,
-                        color: Colors.blue,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        '${primaryCategories.length} Available',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                flex: 3,
-                child: Wrap(
-                  alignment: WrapAlignment.center,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 4,
-                  runSpacing: 4,
-                  children: [
-                    const Icon(Icons.sell, color: Colors.green, size: 14),
-                    const Text(
-                      'Sub Categories',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 11,
-                        color: Colors.green,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.green,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        '${subCategories.length} Showing',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            height: 280,
-            decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.02) : Colors.white,
-              border: Border.all(
-                color: isDark ? Colors.white10 : Colors.grey[300]!,
-              ),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border(
-                        right: BorderSide(
-                          color: isDark ? Colors.white10 : Colors.grey[200]!,
-                        ),
-                      ),
-                      color: isDark
-                          ? Colors.white.withOpacity(0.01)
-                          : const Color(0xFFF8FAFC),
-                    ),
-                    child: ListView.builder(
-                      itemCount: primaryCategories.length,
-                      itemBuilder: (context, idx) {
-                        final cat = primaryCategories[idx];
-                        final isSelected = _selectedPrimaryCategories.contains(
-                          cat,
-                        );
-                        final isActive = cat == _activePrimaryCategory;
-                        return InkWell(
-                          onTap: () {
-                            setState(() {
-                              _activePrimaryCategory = cat;
-                              if (isSelected) {
-                                _selectedPrimaryCategories.remove(cat);
-                              } else {
-                                _selectedPrimaryCategories.add(cat);
-                              }
-                            });
-                          },
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? Colors.white.withOpacity(0.05)
-                                  : Colors.white,
-                              border: Border.all(
-                                color: isSelected
-                                    ? Colors.blue
-                                    : (isDark
-                                          ? Colors.white10
-                                          : Colors.grey[200]!),
-                              ),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 14,
-                                  height: 14,
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? Colors.red
-                                        : Colors.transparent,
-                                    border: Border.all(
-                                      color: isSelected
-                                          ? Colors.red
-                                          : Colors.grey,
-                                    ),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: isSelected
-                                      ? const Icon(
-                                          Icons.check,
-                                          size: 10,
-                                          color: Colors.white,
-                                        )
-                                      : null,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    cat,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: isSelected
-                                          ? FontWeight.w800
-                                          : FontWeight.w500,
-                                      color: isDark
-                                          ? Colors.white70
-                                          : Colors.black87,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 3,
-                  child: ListView.builder(
-                    itemCount: subCategories.length,
-                    itemBuilder: (context, idx) {
-                      final subData = subCategories[idx];
-                      final subCat = subData['subCat']!;
-                      final primaryCat = subData['primaryCat']!;
-                      final isChecked = _selectedSubCategories.contains(subCat);
-                      return InkWell(
-                        onTap: () {
-                          setState(() {
-                            if (isChecked) {
-                              _selectedSubCategories.remove(subCat);
-                            } else {
-                              _selectedSubCategories.add(subCat);
-                            }
-                          });
-                        },
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? Colors.white.withOpacity(0.05)
-                                : Colors.white,
-                            border: Border.all(
-                              color: isChecked
-                                  ? Colors.green
-                                  : (isDark
-                                        ? Colors.white10
-                                        : Colors.grey[200]!),
-                            ),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 14,
-                                height: 14,
-                                decoration: BoxDecoration(
-                                  color: isChecked
-                                      ? Colors.green
-                                      : Colors.transparent,
-                                  border: Border.all(
-                                    color: isChecked
-                                        ? Colors.green
-                                        : Colors.grey,
-                                  ),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: isChecked
-                                    ? const Icon(
-                                        Icons.check,
-                                        size: 10,
-                                        color: Colors.white,
-                                      )
-                                    : null,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      subCat,
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: isChecked
-                                            ? FontWeight.w800
-                                            : FontWeight.w500,
-                                        color: isDark
-                                            ? Colors.white70
-                                            : Colors.black87,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      'under $primaryCat',
-                                      style: const TextStyle(
-                                        fontSize: 8,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          if (_selectedPrimaryCategories.isNotEmpty) ...[
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: isDark ? Colors.white10 : Colors.grey[200]!,
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.check_circle,
-                        color: Colors.blue,
-                        size: 14,
-                      ),
-                      const SizedBox(width: 4),
-                      const Text(
-                        'Primary:',
-                        style: TextStyle(
-                          color: Colors.blue,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                  ..._selectedPrimaryCategories.map((cat) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            cat,
-                            style: const TextStyle(
-                              color: Colors.blue,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          InkWell(
-                            onTap: () {
-                              setState(() {
-                                _selectedPrimaryCategories.remove(cat);
-                              });
-                            },
-                            child: const Icon(
-                              Icons.close,
-                              color: Colors.blue,
-                              size: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ],
+        const SizedBox(height: 16),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _buildCategoryDropdownCard(
+                index: 3,
+                color: Colors.teal,
+                title: 'Sub Sector',
+                selectedCount: _selectedSubSector != null ? 1 : 0,
+                prefixIcon: Icons.layers,
+                hint: 'Select Sub Sector...',
+                isDark: isDark,
+                items: subSectors,
+                value: _selectedSubSector,
+                enabled: _selectedSector != null,
+                onChanged: (val) {
+                  setState(() {
+                    _selectedSubSector = val;
+                    _selectedPrimaryCategories.clear();
+                    _selectedSubCategories.clear();
+                  });
+                },
               ),
             ),
-            const SizedBox(height: 16),
-          ],
-          if (_selectedSubCategories.isNotEmpty) ...[
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: isDark ? Colors.white10 : Colors.grey[200]!,
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.sell, color: Colors.green, size: 14),
-                      const SizedBox(width: 4),
-                      const Text(
-                        'Sub:',
-                        style: TextStyle(
-                          color: Colors.green,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                  ..._selectedSubCategories.map((subCat) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            subCat,
-                            style: const TextStyle(
-                              color: Colors.green,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          InkWell(
-                            onTap: () {
-                              setState(() {
-                                _selectedSubCategories.remove(subCat);
-                              });
-                            },
-                            child: const Icon(
-                              Icons.close,
-                              color: Colors.green,
-                              size: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ],
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildCategoryDropdownCard(
+                index: 6,
+                color: Colors.pinkAccent,
+                title: 'Brand',
+                selectedCount: 0,
+                prefixIcon: Icons.workspace_premium,
+                hint: 'Select Brands...',
+                isDark: isDark,
+                items: [],
+                value: null,
+                enabled: false,
+                onChanged: (val) {},
               ),
             ),
           ],
-        ],
+        ),
       ],
     );
   }
@@ -2002,12 +1883,16 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
                     LengthLimitingTextInputFormatter(10),
                   ]
                 : inputFormatters,
-            validator: validator ?? (label.contains('*') ? (val) {
-              if (val == null || val.trim().isEmpty) {
-                return 'This field is required';
-              }
-              return null;
-            } : null),
+            validator:
+                validator ??
+                (label.contains('*')
+                    ? (val) {
+                        if (val == null || val.trim().isEmpty) {
+                          return 'This field is required';
+                        }
+                        return null;
+                      }
+                    : null),
             readOnly: readOnly,
             textCapitalization: isPan
                 ? TextCapitalization.characters
@@ -2051,9 +1936,9 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
     );
   }
 
-  Widget _buildTurnoverDropdown(bool isDark) {
+  Widget _buildTurnoverDropdown(bool isDark, {bool showPadding = true}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(horizontal: showPadding ? 20 : 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2067,6 +1952,7 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
+            isExpanded: true,
             dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
             value: _turnoverRange,
             hint: Text(
@@ -2079,6 +1965,7 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
             ),
             items:
                 [
+                      'Select Turnover Range',
                       '20 Lakhs to 50 Lakhs',
                       '50 Lakhs to 2 Crores',
                       'Above 2 Crores',
@@ -2100,7 +1987,9 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
             onChanged: (v) {
               setState(() {
                 _turnoverRange = v;
-                if (v == '20 Lakhs to 50 Lakhs') {
+                if (v == 'Select Turnover Range') {
+                  _selectedTier = null;
+                } else if (v == '20 Lakhs to 50 Lakhs') {
                   _selectedTier = 'Startup';
                 } else if (v == '50 Lakhs to 2 Crores') {
                   _selectedTier = 'Standard';
@@ -2110,7 +1999,7 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
               });
             },
             validator: (value) =>
-                value == null ? 'Select Turnover Range' : null,
+                value == null || value == 'Select Turnover Range' ? 'Select Turnover Range' : null,
             decoration: InputDecoration(
               filled: true,
               fillColor: isDark
@@ -2134,95 +2023,9 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
               ),
             ),
           ),
-          if (_turnoverRange != null) ...[
-            const SizedBox(height: 24),
-            Text(
-              'Company Tier *',
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 13,
-                color: isDark ? Colors.white70 : const Color(0xFF334155),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                if (_turnoverRange == '20 Lakhs to 50 Lakhs') ...[
-                  Expanded(
-                    child: _buildTierCard(
-                      'Startup',
-                      'Small business / new company',
-                      Icons.rocket_launch,
-                      Colors.red,
-                      _selectedTier == 'Startup',
-                      isDark,
-                      _turnoverRange == '20 Lakhs to 50 Lakhs',
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-                if (_turnoverRange == '20 Lakhs to 50 Lakhs' ||
-                    _turnoverRange == '50 Lakhs to 2 Crores') ...[
-                  Expanded(
-                    child: _buildTierCard(
-                      'Standard',
-                      'Growing business',
-                      Icons.domain,
-                      Colors.blue,
-                      _selectedTier == 'Standard',
-                      isDark,
-                      _turnoverRange == '50 Lakhs to 2 Crores',
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-                Expanded(
-                  child: _buildTierCard(
-                    'Corporate',
-                    'Large organization',
-                    Icons.apartment,
-                    Colors.green,
-                    _selectedTier == 'Corporate',
-                    isDark,
-                    _turnoverRange == 'Above 2 Crores',
-                  ),
-                ),
-                if (_turnoverRange == '50 Lakhs to 2 Crores') ...[
-                  const SizedBox(width: 8),
-                  const Expanded(child: SizedBox()),
-                ],
-                if (_turnoverRange == 'Above 2 Crores') ...[
-                  const SizedBox(width: 8),
-                  const Expanded(child: SizedBox()),
-                  const SizedBox(width: 8),
-                  const Expanded(child: SizedBox()),
-                ],
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.lightBlueAccent.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.info, color: Colors.blue, size: 16),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Based on your turnover range, we recommended this tier. You can still choose another option.',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isDark ? Colors.white70 : Colors.black87,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          // The tier section has been moved to _buildStep1 directly.
+
+
         ],
       ),
     );
@@ -2234,9 +2037,10 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
     Uint8List? bytes,
     VoidCallback onTap,
     bool isDark,
+    {bool showPadding = true}
   ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(horizontal: showPadding ? 20 : 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2270,22 +2074,25 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
                     ),
                     child: Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isDark ? Colors.white10 : Colors.white,
-                            border: Border.all(color: Colors.grey[300]!),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            'Choose File',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : Colors.black87,
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.white10 : Colors.white,
+                              border: Border.all(color: Colors.grey[300]!),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'Choose File',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? Colors.white : Colors.black87,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ),
@@ -2376,6 +2183,8 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
     bool isDark,
     bool isRecommended,
   ) {
+    final activeIconColor = isSelected ? iconColor : Colors.grey;
+
     return GestureDetector(
       onTap: () => setState(() => _selectedTier = title),
       child: Stack(
@@ -2409,14 +2218,14 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: iconColor.withOpacity(0.1),
+                    color: activeIconColor.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(icon, size: 20, color: iconColor),
+                  child: Icon(icon, size: 20, color: activeIconColor),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  title,
+                  title.toUpperCase(),
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
@@ -2491,7 +2300,10 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
     bool isDark, {
     String uploadText = 'Upload Document',
     String? subText,
-  }) => Column(
+    bool showPadding = true,
+  }) => Padding(
+    padding: EdgeInsets.symmetric(horizontal: showPadding ? 20 : 0),
+    child: Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Text(
@@ -2524,12 +2336,15 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
                     children: [
                       const Icon(Icons.check_circle, color: Colors.green),
                       const SizedBox(width: 8),
-                      Text(
-                        name!,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.black,
+                      Flexible(
+                        child: Text(
+                          name!,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.black,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -2567,7 +2382,7 @@ class _CreateBusinessUserPageState extends State<CreateBusinessUserPage> {
         ),
       ),
     ],
-  );
+  ));
 
   Widget _buildSuccessPage(Color color, bool isDark) => Scaffold(
     backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
@@ -2702,6 +2517,7 @@ class SearchableDropdown extends StatefulWidget {
   final bool isDark;
   final String hint;
   final bool enabled;
+  final IconData? prefixIcon;
 
   const SearchableDropdown({
     super.key,
@@ -2712,6 +2528,7 @@ class SearchableDropdown extends StatefulWidget {
     required this.isDark,
     this.hint = "Search...",
     this.enabled = true,
+    this.prefixIcon,
   });
 
   @override
@@ -2724,22 +2541,24 @@ class _SearchableDropdownState extends State<SearchableDropdown> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          widget.label,
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-            fontSize: 13,
-            color: widget.isDark ? Colors.white70 : const Color(0xFF334155),
+        if (widget.label.isNotEmpty) ...[
+          Text(
+            widget.label,
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+              color: widget.isDark ? Colors.white70 : const Color(0xFF334155),
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
+          const SizedBox(height: 8),
+        ],
         InkWell(
           onTap: widget.enabled
               ? () {
                   showDialog(
                     context: context,
                     builder: (context) => _DropdownSearchDialog(
-                      title: widget.label,
+                      title: widget.label.isEmpty ? 'Search' : widget.label,
                       items: widget.items,
                       initialValue: widget.value,
                       isDark: widget.isDark,
@@ -2760,18 +2579,20 @@ class _SearchableDropdownState extends State<SearchableDropdown> {
                 fillColor: widget.isDark
                     ? Colors.white.withOpacity(0.05)
                     : const Color(0xFFF1F5F9).withOpacity(0.5),
+                prefixIcon: widget.prefixIcon != null ? Icon(widget.prefixIcon, color: Colors.grey[600], size: 18) : null,
+                prefixIconConstraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 18,
+                  horizontal: 8,
+                  vertical: 14,
                 ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(
                     color: widget.isDark ? Colors.white10 : Colors.grey[300]!,
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(
                     color: widget.isDark ? Colors.white10 : Colors.grey[200]!,
                   ),

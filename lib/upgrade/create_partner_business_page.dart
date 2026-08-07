@@ -559,7 +559,7 @@ class _CreatePartnerBusinessPageState extends State<CreatePartnerBusinessPage> {
               icon: const Icon(Icons.add, size: 16, color: Colors.white),
               label: const Text('Add Partner', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFE11D48),
+                backgroundColor: const Color(0xFF2563EB), // Blue color from screenshot
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 elevation: 0,
@@ -578,7 +578,7 @@ class _CreatePartnerBusinessPageState extends State<CreatePartnerBusinessPage> {
           ),
           child: Column(
             children: [
-              Icon(Icons.group_add, size: 48, color: Colors.grey[400]),
+              Icon(Icons.person_add, size: 56, color: Colors.grey[600]),
               const SizedBox(height: 16),
               const Text('No partners added yet', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey)),
               const SizedBox(height: 8),
@@ -601,14 +601,7 @@ class _CreatePartnerBusinessPageState extends State<CreatePartnerBusinessPage> {
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Text('Partner ${index + 1}', style: const TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF3B82F6))),
           IconButton(
-            icon: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey[300]!),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: const Icon(Icons.close, color: Colors.grey, size: 16),
-            ),
+            icon: const Icon(Icons.close, color: Colors.red, size: 20),
             onPressed: () => _removePartner(index),
             constraints: const BoxConstraints(),
             padding: EdgeInsets.zero,
