@@ -8,6 +8,7 @@ import 'post_job_page.dart';
 import 'posted_jobs_page.dart';
 import 'applied_list_page.dart';
 import 'assign_candidate_page.dart';
+import 'select_registration_type_page.dart';
 
 class BusinessRegistrationOverviewPage extends StatefulWidget {
   final BusinessUser business;
@@ -42,7 +43,10 @@ class _BusinessRegistrationOverviewPageState extends State<BusinessRegistrationO
     } else if (newItem == 'assign_candidate') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => const AssignCandidatePage()));
       return;
-    } else if (newItem == 'add_business' || newItem == 'create_store_category' || newItem == 'create_store') {
+    } else if (newItem == 'add_business') {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SelectRegistrationTypePage()));
+      return;
+    } else if (newItem == 'create_store_category' || newItem == 'create_store') {
       // These are handled by NewBusinessRegisterPage which has its own routing logic
       // It's not ideal, but we'll navigate there and tell it to open the right tab if possible
       // For now just pop back or push NewBusinessRegisterPage

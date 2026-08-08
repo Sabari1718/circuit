@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -36,6 +36,8 @@ class _CreatePartnerBusinessPageState extends State<CreatePartnerBusinessPage> {
   final _emailCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _websiteCtrl = TextEditingController();
+  final _udyamCtrl = TextEditingController();
+  final _cinCtrl = TextEditingController();
   final _panCtrl = TextEditingController();
   String? _panFileName; Uint8List? _panBytes;
   String? _sigFileName; Uint8List? _sigBytes;
@@ -247,10 +249,10 @@ class _CreatePartnerBusinessPageState extends State<CreatePartnerBusinessPage> {
                          prefs.getString('phone') ??
                          prefs.getString('mobile') ?? '';
 
-      // 🚨 TEMP FIX: Override ghost user ID to prevent foreign key server error
+      // ðŸš¨ TEMP FIX: Override ghost user ID to prevent foreign key server error
       if (userMainId == '8059210846') {
         userMainId = '6102066450'; // The correct ID from the web
-        debugPrint('🚨 [TEMP FIX] Overriding invalid user_main_id 8059210846 with 6102066450');
+        debugPrint('ðŸš¨ [TEMP FIX] Overriding invalid user_main_id 8059210846 with 6102066450');
       }
 
       if (userMainId.isEmpty) {
@@ -649,150 +651,280 @@ class _CreatePartnerBusinessPageState extends State<CreatePartnerBusinessPage> {
   }
 
   // STEP 2: Basic Details
-  Widget _buildStep2(bool isDark) {
-    return Form(key: _step2Key, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(
-        children: [
-          const Icon(Icons.business_center, color: Color(0xFF3B82F6), size: 20),
-          const SizedBox(width: 8),
-          const Text('Basic Business Details', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
-        ],
-      ),
-      const SizedBox(height: 24),
-      Row(
-        children: [
-          Expanded(child: _buildInputField('Business Name *', _nameCtrl, isDark)),
-          const SizedBox(width: 16),
-          Expanded(child: _buildInputField('Business Email *', _emailCtrl, isDark, keyboardType: TextInputType.emailAddress)),
-        ],
-      ),
-      Row(
-        children: [
-          Expanded(child: _buildInputField('Business Phone *', _phoneCtrl, isDark, keyboardType: TextInputType.phone, inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)])),
-          const SizedBox(width: 16),
-          Expanded(child: _buildInputField('Website', _websiteCtrl, isDark)),
-        ],
-      ),
-      Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(child: _buildLogoUpload('Company Logo (Optional)', _logoFileName, _logoBytes, () => _pickFile('logo'), isDark)),
-          const SizedBox(width: 16),
-          Expanded(child: Column(
+  Widget _buildResponsiveRow(Widget child1, Widget child2) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 600) {
+          return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Turnover / Income *', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Colors.grey)),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                isExpanded: true,
-                value: _turnoverRange,
-                dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-                hint: const Text('Select Turnover Range', style: TextStyle(fontSize: 14)),
-                items: _turnoverOptions.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontWeight: FontWeight.w600)))).toList(),
-                onChanged: (v) {
-                  setState(() {
-                    _turnoverRange = v;
-                    if (v == '20 Lakhs to 50 Lakhs') _companyTier = 'STARTUP';
-                    else if (v == '50 Lakhs to 2 Crores') _companyTier = 'STANDARD';
-                    else if (v == 'Above 2 Crores') _companyTier = 'CORPORATE';
-                  });
-                },
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.grey[300]!)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.grey[300]!)),
+              child1,
+              const SizedBox(height: 16),
+              child2,
+            ],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: child1),
+            const SizedBox(width: 16),
+            Expanded(child: child2),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildCardSection(String title, IconData icon, bool isDark, List<Widget> children) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: Colors.blueAccent, size: 20),
+              const SizedBox(width: 12),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
                 ),
-                validator: (v) => v == null ? 'Required' : null,
               ),
             ],
-          )),
+          ),
+          const SizedBox(height: 24),
+          ...children,
         ],
       ),
-      const SizedBox(height: 20),
-      const Text('Company Tier *', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Colors.grey)),
-      const SizedBox(height: 12),
-      if (_turnoverRange == null)
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(8)),
-          child: const Row(
-            children: [
-              Icon(Icons.info_outline, color: Colors.grey, size: 16),
-              SizedBox(width: 8),
-              Expanded(child: Text('Please select a Turnover / Income range first to see available tiers.', style: TextStyle(fontSize: 12, color: Colors.grey))),
-            ],
+    );
+  }
+
+  Widget _buildInputWithVerify(String label, TextEditingController ctrl, bool isDark, {String? hintText, TextInputType keyboardType = TextInputType.text}) {
+    final isPhone = label.toLowerCase().contains('phone') || label.toLowerCase().contains('mobile');
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: 13,
+            color: isDark ? Colors.white70 : const Color(0xFF334155),
           ),
-        )
-      else ...[
+        ),
+        const SizedBox(height: 8),
         Row(
           children: [
-            if (_turnoverRange == '20 Lakhs to 50 Lakhs') ...[
-              Expanded(child: _buildTierBox('STARTUP', 'Small business / new company', Icons.rocket_launch, _companyTier == 'STARTUP', _turnoverRange == '20 Lakhs to 50 Lakhs', isDark)),
-              const SizedBox(width: 16),
-            ],
-            if (_turnoverRange == '20 Lakhs to 50 Lakhs' || _turnoverRange == '50 Lakhs to 2 Crores') ...[
-              Expanded(child: _buildTierBox('STANDARD', 'Growing business', Icons.business, _companyTier == 'STANDARD', _turnoverRange == '50 Lakhs to 2 Crores', isDark)),
-              const SizedBox(width: 16),
-            ],
-            Expanded(child: _buildTierBox('CORPORATE', 'Large organization', Icons.location_city, _companyTier == 'CORPORATE', _turnoverRange == 'Above 2 Crores', isDark)),
+            Expanded(
+              child: TextFormField(
+                controller: ctrl,
+                keyboardType: isPhone ? TextInputType.number : keyboardType,
+                inputFormatters: isPhone ? [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)] : null,
+                validator: (val) {
+                  if (label.contains('*') && (val == null || val.trim().isEmpty)) {
+                    return 'This field is required';
+                  }
+                  return null;
+                },
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black),
+                decoration: InputDecoration(
+                  hintText: hintText,
+                  hintStyle: TextStyle(color: isDark ? Colors.white38 : Colors.grey[400], fontSize: 13, fontWeight: FontWeight.normal),
+                  filled: true,
+                  fillColor: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F5F9).withOpacity(0.5),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.grey[300]!)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.grey[200]!)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6366F1), // Indigo color
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                elevation: 0,
+              ),
+              child: const Text('Verify', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            ),
           ],
         ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: Colors.blue.withOpacity(0.05), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.blue.withOpacity(0.2))),
-          child: const Row(
-            children: [
-              Icon(Icons.info_outline, color: Colors.blue, size: 16),
-              SizedBox(width: 8),
-              Expanded(child: Text('Based on your turnover range, we recommended this tier. You can still choose another option.', style: TextStyle(fontSize: 12, color: Colors.blue))),
-            ],
-          ),
-        ),
       ],
-      
-      const Padding(padding: EdgeInsets.symmetric(vertical: 24), child: Divider()),
-      
-      Row(
-        children: [
-          const Icon(Icons.credit_card, color: Color(0xFF3B82F6), size: 20),
-          const SizedBox(width: 8),
-          const Text('PAN Details', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
-        ],
-      ),
-      const SizedBox(height: 24),
-      Row(
+    );
+  }
+
+  Widget _buildStep2(bool isDark) {
+    return Form(
+      key: _step2Key,
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildInputField('Business PAN Number *', _panCtrl, isDark),
-              Transform.translate(
-                offset: const Offset(0, -16),
-                child: const Text('10-character alphanumeric PAN number', style: TextStyle(fontSize: 10, color: Colors.grey)),
+          _buildCardSection('Basic Business Details', Icons.business_center, isDark, [
+            _buildResponsiveRow(
+              _buildInputField('Business Name *', _nameCtrl, isDark, showPadding: false, hintText: 'Enter business name'),
+              _buildInputWithVerify('Business Email *', _emailCtrl, isDark, hintText: 'business@example.com'),
+            ),
+            const SizedBox(height: 16),
+            _buildResponsiveRow(
+              _buildInputWithVerify('Business Phone *', _phoneCtrl, isDark, hintText: '10-digit mobile number', keyboardType: TextInputType.phone),
+              _buildInputField('Website', _websiteCtrl, isDark, showPadding: false, hintText: 'https://www.example.com'),
+            ),
+            const SizedBox(height: 16),
+            _buildResponsiveRow(
+              _buildInputField('Udyam Registration Number *', _udyamCtrl, isDark, showPadding: false, hintText: 'Enter Udyam Registration Number (e.g., UDYAM-TN-12-0001234)'),
+              _buildInputField('Corporate Identification Number (CIN)', _cinCtrl, isDark, showPadding: false, hintText: 'Enter CIN (e.g., U12345TN2024PTC123456)'),
+            ),
+            const SizedBox(height: 16),
+            _buildResponsiveRow(
+              _buildLogoUpload('Company Logo (Optional)', _logoFileName, _logoBytes, () => _pickFile('logo'), isDark),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Turnover / Income *', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Colors.grey)),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    isExpanded: true,
+                    value: _turnoverRange,
+                    dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                    hint: const Text('Select Turnover Range', style: TextStyle(fontSize: 14)),
+                    items: _turnoverOptions.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontWeight: FontWeight.w600)))).toList(),
+                    onChanged: (v) {
+                      setState(() {
+                        _turnoverRange = v;
+                        if (v == '20 Lakhs to 50 Lakhs') _companyTier = 'STARTUP';
+                        else if (v == '50 Lakhs to 2 Crores') _companyTier = 'STANDARD';
+                        else if (v == 'Above 2 Crores') _companyTier = 'CORPORATE';
+                      });
+                    },
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.grey[300]!)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.grey[200]!)),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          )),
-          const SizedBox(width: 16),
-          Expanded(child: _buildDragDropUpload('Business PAN Card Photo *', _panFileName, _panBytes, () => _pickFile('pan'), isDark, 'Click to upload PAN card')),
-        ],
-      ),
-      
-      const Padding(padding: EdgeInsets.symmetric(vertical: 24), child: Divider()),
+            ),
+          ]),
 
-      Row(
-        children: [
-          const Icon(Icons.draw, color: Color(0xFF3B82F6), size: 20),
-          const SizedBox(width: 8),
-          const Text('Authorized Signature', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+          _buildCardSection('Company Tier *', Icons.stars, isDark, [
+             if (_turnoverRange == null || _turnoverRange == 'Select Turnover Range')
+               Container(
+                 padding: const EdgeInsets.all(16),
+                 decoration: BoxDecoration(color: isDark ? Colors.white10 : Colors.grey[100], borderRadius: BorderRadius.circular(8)),
+                 child: Row(children: [
+                   Icon(Icons.info, color: Colors.grey[600], size: 20),
+                   const SizedBox(width: 8),
+                   Expanded(child: Text("Please select a Turnover / Income range first to see available tiers.", style: TextStyle(color: Colors.grey[600]))),
+                 ]),
+               )
+             else ...[
+               Row(
+                 children: [
+                   if (_turnoverRange == '20 Lakhs to 50 Lakhs') ...[
+                     Expanded(
+                       child: _buildTierBox(
+                         'STARTUP',
+                         'Small business / new company',
+                         Icons.rocket_launch,
+                         _companyTier == 'STARTUP',
+                         _turnoverRange == '20 Lakhs to 50 Lakhs',
+                         isDark,
+                       ),
+                     ),
+                     const SizedBox(width: 8),
+                   ],
+                   if (_turnoverRange == '20 Lakhs to 50 Lakhs' ||
+                       _turnoverRange == '50 Lakhs to 2 Crores') ...[
+                     Expanded(
+                       child: _buildTierBox(
+                         'STANDARD',
+                         'Growing business',
+                         Icons.domain,
+                         _companyTier == 'STANDARD',
+                         _turnoverRange == '50 Lakhs to 2 Crores',
+                         isDark,
+                       ),
+                     ),
+                     const SizedBox(width: 8),
+                   ],
+                   Expanded(
+                     child: _buildTierBox(
+                       'CORPORATE',
+                       'Large organization',
+                       Icons.apartment,
+                       _companyTier == 'CORPORATE',
+                       _turnoverRange == 'Above 2 Crores',
+                       isDark,
+                     ),
+                   ),
+                   if (_turnoverRange == '50 Lakhs to 2 Crores') ...[
+                     const SizedBox(width: 8),
+                     const Expanded(child: SizedBox()),
+                   ],
+                   if (_turnoverRange == 'Above 2 Crores') ...[
+                     const SizedBox(width: 8),
+                     const Expanded(child: SizedBox()),
+                     const SizedBox(width: 8),
+                     const Expanded(child: SizedBox()),
+                   ],
+                 ],
+               ),
+               const SizedBox(height: 12),
+               Container(
+                 padding: const EdgeInsets.all(12),
+                 decoration: BoxDecoration(
+                   color: Colors.lightBlueAccent.withOpacity(0.1),
+                   borderRadius: BorderRadius.circular(8),
+                 ),
+                 child: Row(
+                   children: [
+                     const Icon(Icons.info, color: Colors.blue, size: 16),
+                     const SizedBox(width: 8),
+                     Expanded(
+                       child: Text(
+                         'Based on your turnover range, we recommended this tier. You can still choose another option.',
+                         style: TextStyle(
+                           fontSize: 11,
+                           color: isDark ? Colors.white70 : Colors.black87,
+                         ),
+                       ),
+                     ),
+                   ],
+                 ),
+               ),
+             ]
+          ]),
+
+          _buildCardSection('PAN Details', Icons.credit_card, isDark, [
+            _buildResponsiveRow(
+              _buildInputField('Business PAN Number *', _panCtrl, isDark, showPadding: false, hintText: '10-character alphanumeric PAN number'),
+              _buildDragDropUpload('Business PAN Card Photo *', _panFileName, _panBytes, () => _pickFile('pan'), isDark, 'Click to upload PAN card', isFullWidth: true),
+            ),
+          ]),
+
+          _buildCardSection('Authorized Signature', Icons.draw_outlined, isDark, [
+             _buildDragDropUpload('Upload Signature Photo *', _sigFileName, _sigBytes, () => _pickFile('sig'), isDark, 'Click to upload signature', isFullWidth: true),
+          ]),
         ],
       ),
-      const SizedBox(height: 24),
-      _buildDragDropUpload('Upload Signature Photo *', _sigFileName, _sigBytes, () => _pickFile('sig'), isDark, 'Click to upload signature', isFullWidth: true),
-    ]));
+    );
   }
 
   Widget _buildTierBox(String title, String subtitle, IconData icon, bool isSelected, bool isRecommended, bool isDark) {
@@ -1242,6 +1374,90 @@ class _CreatePartnerBusinessPageState extends State<CreatePartnerBusinessPage> {
     );
   }
 
+  Widget _buildCategoryDropdownCard({
+    required int index,
+    required Color color,
+    required String title,
+    required int selectedCount,
+    required IconData prefixIcon,
+    required String hint,
+    required bool isDark,
+    required List<String> items,
+    required String? value,
+    required ValueChanged<String> onChanged,
+    bool enabled = true,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withOpacity(0.02) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.grey[200]!),
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 10,
+                  spreadRadius: 1,
+                ),
+              ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            child: Center(
+              child: Text(
+                index.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                    color: isDark ? Colors.white70 : const Color(0xFF334155),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "$selectedCount Selected",
+                  style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                ),
+                const SizedBox(height: 12),
+                SearchableDropdown(
+                  label: '',
+                  value: value,
+                  items: items,
+                  isDark: isDark,
+                  hint: hint,
+                  enabled: enabled,
+                  onChanged: onChanged,
+                  prefixIcon: prefixIcon,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // STEP 7: Business Categories
   Widget _buildStep7(Color color, bool isDark) {
     final sectorTitles = _categoriesData.keys.toList();
@@ -1254,9 +1470,11 @@ class _CreatePartnerBusinessPageState extends State<CreatePartnerBusinessPage> {
         ? _categoriesData[_selectedSectorTitle]![_selectedSector]![_selectedSubSector]!.keys.toList()
         : <String>[];
 
-    final subCategories = (_selectedSectorTitle != null && _selectedSector != null && _selectedSubSector != null && _activePrimaryCategory != null)
+    final subCategoriesList = (_selectedSectorTitle != null && _selectedSector != null && _selectedSubSector != null && _activePrimaryCategory != null)
         ? (_categoriesData[_selectedSectorTitle]![_selectedSector]![_selectedSubSector]![_activePrimaryCategory] ?? <String>[])
         : <String>[];
+
+    String? selectedSub = _selectedSubCategories.isNotEmpty ? _selectedSubCategories.first : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1274,317 +1492,153 @@ class _CreatePartnerBusinessPageState extends State<CreatePartnerBusinessPage> {
         if (_isLoadingCategories)
           const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()))
         else ...[
-          Row(
-            children: [
-              Expanded(
-                child: SearchableDropdown(
-                  label: 'Sector Title *',
-                  value: _selectedSectorTitle,
-                  items: sectorTitles,
-                  isDark: isDark,
-                  onChanged: (val) {
-                    setState(() {
-                      _selectedSectorTitle = val;
-                      _selectedSector = null;
-                      _selectedSubSector = null;
-                      _activePrimaryCategory = null;
-                      _selectedSubCategories.clear();
-                    });
-                  },
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: SearchableDropdown(
-                  label: 'Sector *',
-                  value: _selectedSector,
-                  items: sectors,
-                  isDark: isDark,
-                  onChanged: (val) {
-                    setState(() {
-                      _selectedSector = val;
-                      _selectedSubSector = null;
-                      _activePrimaryCategory = null;
-                      _selectedSubCategories.clear();
-                    });
-                  },
-                ),
-              ),
-            ],
+          _buildResponsiveRow(
+            _buildCategoryDropdownCard(
+              index: 1,
+              color: Colors.deepPurpleAccent,
+              title: 'Sector Title *',
+              selectedCount: _selectedSectorTitle != null ? 1 : 0,
+              prefixIcon: Icons.folder,
+              hint: 'Select Sector Title...',
+              isDark: isDark,
+              items: sectorTitles,
+              value: _selectedSectorTitle,
+              onChanged: (val) {
+                setState(() {
+                  _selectedSectorTitle = val;
+                  _selectedSector = null;
+                  _selectedSubSector = null;
+                  _activePrimaryCategory = null;
+                  _selectedSubCategories.clear();
+                });
+              },
+            ),
+            _buildCategoryDropdownCard(
+              index: 4,
+              color: Colors.green,
+              title: 'Primary Categories',
+              selectedCount: _activePrimaryCategory != null ? 1 : 0,
+              prefixIcon: Icons.local_offer,
+              hint: 'Select Primary Categories...',
+              isDark: isDark,
+              items: primaryCategories,
+              value: _activePrimaryCategory,
+              enabled: primaryCategories.isNotEmpty,
+              onChanged: (val) {
+                setState(() {
+                  _activePrimaryCategory = val;
+                  _selectedSubCategories.clear();
+                });
+              },
+            ),
           ),
           const SizedBox(height: 16),
-          SearchableDropdown(
-            label: 'Sub Sector *',
-            value: _selectedSubSector,
-            items: subSectors,
-            isDark: isDark,
-            onChanged: (val) {
-              setState(() {
-                _selectedSubSector = val;
-                _activePrimaryCategory = null;
-                _selectedSubCategories.clear();
-              });
-            },
-          ),
-          const SizedBox(height: 24),
-          if (_selectedSectorTitle != null && _selectedSector != null && _selectedSubSector != null) ...[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    children: [
-                      Wrap(
-                        alignment: WrapAlignment.center,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        spacing: 4,
-                        runSpacing: 4,
-                        children: [
-                          const Icon(Icons.label_important, color: Colors.blue, size: 16),
-                          const Text('Primary Categories', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue)),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(4)),
-                            child: Text('${primaryCategories.length} Available', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                          )
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        height: 300,
-                        decoration: BoxDecoration(
-                          color: isDark ? Colors.white.withOpacity(0.02) : Colors.white,
-                          border: Border.all(color: Colors.blue.withOpacity(0.3)),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: ListView.builder(
-                          itemCount: primaryCategories.length,
-                          itemBuilder: (context, idx) {
-                            final cat = primaryCategories[idx];
-                            final isActive = cat == _activePrimaryCategory;
-                            return InkWell(
-                              onTap: () {
-                                setState(() {
-                                  _activePrimaryCategory = cat;
-                                });
-                              },
-                              child: Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                decoration: BoxDecoration(
-                                  color: isActive ? Colors.blue.withOpacity(0.05) : Colors.transparent,
-                                  border: Border.all(color: isActive ? Colors.blue : Colors.grey[200]!),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(isActive ? Icons.check_circle : Icons.radio_button_unchecked, color: isActive ? Colors.red : Colors.grey[400], size: 20),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        cat,
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                                          color: isActive ? Colors.blue : (isDark ? Colors.white : Colors.black87),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    children: [
-                      Wrap(
-                        alignment: WrapAlignment.center,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        spacing: 4,
-                        runSpacing: 4,
-                        children: [
-                          const Icon(Icons.sell, color: Colors.green, size: 16),
-                          const Text('Sub Categories', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green)),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(4)),
-                            child: Text('${subCategories.length} Showing', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                          )
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        height: 300,
-                        decoration: BoxDecoration(
-                          color: isDark ? Colors.white.withOpacity(0.02) : Colors.white,
-                          border: Border.all(color: Colors.green.withOpacity(0.3)),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: _activePrimaryCategory == null
-                            ? Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: const [
-                                  Icon(Icons.arrow_back, color: Colors.grey, size: 32),
-                                  SizedBox(height: 8),
-                                  Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 16),
-                                    child: Text('Select a primary category to see its sub-categories', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                  ),
-                                ],
-                              )
-                            : ListView.builder(
-                          itemCount: subCategories.length,
-                          itemBuilder: (context, idx) {
-                            final subCat = subCategories[idx];
-                            final isChecked = _selectedSubCategories.contains(subCat);
-                            return InkWell(
-                              onTap: () {
-                                setState(() {
-                                  if (isChecked) {
-                                    _selectedSubCategories.remove(subCat);
-                                  } else {
-                                    _selectedSubCategories.add(subCat);
-                                  }
-                                });
-                              },
-                              child: Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: isChecked ? Colors.green.withOpacity(0.05) : Colors.transparent,
-                                  border: Border.all(color: isChecked ? Colors.green : Colors.grey[200]!),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 24, height: 24,
-                                      decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.purple.withOpacity(0.1)),
-                                      child: const Center(child: Text('P', style: TextStyle(color: Colors.purple, fontSize: 10, fontWeight: FontWeight.bold))),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            subCat,
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: isChecked ? FontWeight.w700 : FontWeight.w600,
-                                              color: isDark ? Colors.white : Colors.black87,
-                                            ),
-                                          ),
-                                          Text(
-                                            'under ${_activePrimaryCategory ?? ''}',
-                                            style: TextStyle(fontSize: 10, color: Colors.grey[500]),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    if (isChecked) const Icon(Icons.check_circle, color: Colors.green, size: 20),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+          _buildResponsiveRow(
+            _buildCategoryDropdownCard(
+              index: 2,
+              color: Colors.blue,
+              title: 'Sector *',
+              selectedCount: _selectedSector != null ? 1 : 0,
+              prefixIcon: Icons.business_center,
+              hint: 'Select Sector...',
+              isDark: isDark,
+              items: sectors,
+              value: _selectedSector,
+              enabled: _selectedSectorTitle != null,
+              onChanged: (val) {
+                setState(() {
+                  _selectedSector = val;
+                  _selectedSubSector = null;
+                  _activePrimaryCategory = null;
+                  _selectedSubCategories.clear();
+                });
+              },
             ),
-            const SizedBox(height: 16),
-            if (_selectedSubCategories.isNotEmpty || _activePrimaryCategory != null) ...[
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  if (_activePrimaryCategory != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.blue.withOpacity(0.3))),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.check_circle, color: Colors.blue, size: 14),
-                          const SizedBox(width: 4),
-                          const Text('Primary: ', style: TextStyle(fontSize: 11, color: Colors.blue, fontWeight: FontWeight.bold)),
-                          Text(_activePrimaryCategory!, style: const TextStyle(fontSize: 11, color: Colors.blue)),
-                          const SizedBox(width: 4),
-                          InkWell(
-                            onTap: () => setState(() => _activePrimaryCategory = null),
-                            child: const Icon(Icons.close, color: Colors.blue, size: 14),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ..._selectedSubCategories.map((subCat) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.green.withOpacity(0.3))),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.check_circle, color: Colors.green, size: 14),
-                          const SizedBox(width: 4),
-                          const Text('Sub: ', style: TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold)),
-                          Text(subCat, style: const TextStyle(fontSize: 11, color: Colors.green)),
-                          const SizedBox(width: 4),
-                          InkWell(
-                            onTap: () => setState(() => _selectedSubCategories.remove(subCat)),
-                            child: const Icon(Icons.close, color: Colors.green, size: 14),
-                          ),
-                        ],
-                      ),
-                    );
-                  }),
-                ],
-              ),
-            ],
-          ],
+            _buildCategoryDropdownCard(
+              index: 5,
+              color: Colors.orange,
+              title: 'Sub Categories',
+              selectedCount: _selectedSubCategories.length,
+              prefixIcon: Icons.style,
+              hint: 'Select Sub Categories...',
+              isDark: isDark,
+              items: subCategoriesList.toSet().toList(),
+              value: selectedSub,
+              enabled: subCategoriesList.isNotEmpty,
+              onChanged: (val) {
+                setState(() {
+                  _selectedSubCategories.clear();
+                  _selectedSubCategories.add(val);
+                });
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildResponsiveRow(
+            _buildCategoryDropdownCard(
+              index: 3,
+              color: Colors.teal,
+              title: 'Sub Sector *',
+              selectedCount: _selectedSubSector != null ? 1 : 0,
+              prefixIcon: Icons.layers,
+              hint: 'Select Sub Sector...',
+              isDark: isDark,
+              items: subSectors,
+              value: _selectedSubSector,
+              enabled: _selectedSector != null,
+              onChanged: (val) {
+                setState(() {
+                  _selectedSubSector = val;
+                  _activePrimaryCategory = null;
+                  _selectedSubCategories.clear();
+                });
+              },
+            ),
+            _buildCategoryDropdownCard(
+              index: 6,
+              color: Colors.pinkAccent,
+              title: 'Brand',
+              selectedCount: 0,
+              prefixIcon: Icons.workspace_premium,
+              hint: 'Select Brands...',
+              isDark: isDark,
+              items: new List<String>.empty(growable: true),
+              value: null,
+              enabled: false,
+              onChanged: (val) {},
+            ),
+          ),
         ],
       ],
     );
   }
-
   // HELPERS
-  Widget _buildInputField(String label, TextEditingController ctrl, bool isDark, {TextInputType keyboardType = TextInputType.text, bool readOnly = false, List<TextInputFormatter>? inputFormatters, String? hintText}) {
+  Widget _buildInputField(String label, TextEditingController ctrl, bool isDark, {TextInputType keyboardType = TextInputType.text, bool readOnly = false, List<TextInputFormatter>? inputFormatters, String? hintText, bool showPadding = true}) {
     final isPan = label.toLowerCase().contains('pan') || ctrl == _panCtrl;
     final isPhone = label.toLowerCase().contains('phone') || label.toLowerCase().contains('mobile') || ctrl == _phoneCtrl;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: ctrl, keyboardType: isPhone ? TextInputType.number : keyboardType, readOnly: readOnly,
-          textCapitalization: isPan ? TextCapitalization.characters : TextCapitalization.none,
-          inputFormatters: isPan
-              ? [UpperCaseTextFormatter(), LengthLimitingTextInputFormatter(10)]
-              : isPhone
-                  ? [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)]
-                  : inputFormatters,
-          validator: (v) {
-            if ((v == null || v.isEmpty) && label.contains('*')) return 'Required';
-            if (v != null && v.isNotEmpty && label.toLowerCase().contains('email')) {
-              final emailRegex = RegExp(r'^[\w.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$');
-              if (!emailRegex.hasMatch(v.trim())) return 'Enter a valid email address';
-            }
-            return null;
-          },
-          decoration: InputDecoration(hintText: hintText, hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.grey[400], fontSize: 13), filled: true, fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.white, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.grey[300]!))),
-        ),
-      ]),
-    );
+    Widget content = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(label, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+      const SizedBox(height: 8),
+      TextFormField(
+        controller: ctrl, keyboardType: isPhone ? TextInputType.number : keyboardType, readOnly: readOnly,
+        textCapitalization: isPan ? TextCapitalization.characters : TextCapitalization.none,
+        inputFormatters: isPan
+            ? [UpperCaseTextFormatter(), LengthLimitingTextInputFormatter(10)]
+            : isPhone
+                ? [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)]
+                : inputFormatters,
+        validator: (v) {
+          if ((v == null || v.isEmpty) && label.contains('*')) return 'Required';
+          if (v != null && v.isNotEmpty && label.toLowerCase().contains('email')) {
+            final emailRegex = RegExp(r'^[\w.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$');
+            if (!emailRegex.hasMatch(v.trim())) return 'Enter a valid email address';
+          }
+          return null;
+        },
+        decoration: InputDecoration(hintText: hintText, hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.grey[400], fontSize: 13), filled: true, fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.white, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.grey[300]!))),
+      ),
+    ]);
+    return showPadding ? Padding(padding: const EdgeInsets.only(bottom: 20), child: content) : content;
   }
 
   Widget _buildFileUpload(String label, String? name, Uint8List? bytes, VoidCallback onTap, bool isDark) {
@@ -1694,6 +1748,8 @@ class SearchableDropdown extends StatefulWidget {
   final ValueChanged<String> onChanged;
   final bool isDark;
   final String hint;
+  final bool enabled;
+  final IconData? prefixIcon;
 
   const SearchableDropdown({
     super.key,
@@ -1703,6 +1759,8 @@ class SearchableDropdown extends StatefulWidget {
     required this.onChanged,
     required this.isDark,
     this.hint = "Search...",
+    this.enabled = true,
+    this.prefixIcon,
   });
 
   @override
@@ -1715,49 +1773,87 @@ class _SearchableDropdownState extends State<SearchableDropdown> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(widget.label, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: widget.isDark ? Colors.white70 : const Color(0xFF334155))),
-        const SizedBox(height: 8),
-        InkWell(
-          onTap: () {
-            showDialog(
-              context: context,
-              builder: (context) => _DropdownSearchDialog(
-                title: widget.label,
-                items: widget.items,
-                initialValue: widget.value,
-                isDark: widget.isDark,
-                hint: widget.hint,
-              ),
-            ).then((val) {
-              if (val != null) {
-                widget.onChanged(val);
-              }
-            });
-          },
-          child: InputDecorator(
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: widget.isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F5F9).withOpacity(0.5),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: widget.isDark ? Colors.white10 : Colors.grey[300]!)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: widget.isDark ? Colors.white10 : Colors.grey[200]!)),
+        if (widget.label.isNotEmpty) ...[
+          Text(
+            widget.label,
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+              color: widget.isDark ? Colors.white70 : const Color(0xFF334155),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    widget.value ?? "Select Option",
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: widget.value != null ? (widget.isDark ? Colors.white : Colors.black) : (widget.isDark ? Colors.white38 : Colors.grey[500]),
+          ),
+          const SizedBox(height: 8),
+        ],
+        InkWell(
+          onTap: widget.enabled
+              ? () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => _DropdownSearchDialog(
+                      title: widget.label.isEmpty ? 'Search' : widget.label,
+                      items: widget.items,
+                      initialValue: widget.value,
+                      isDark: widget.isDark,
+                      hint: widget.hint,
                     ),
-                    overflow: TextOverflow.ellipsis,
+                  ).then((val) {
+                    if (val != null) {
+                      widget.onChanged(val);
+                    }
+                  });
+                }
+              : null,
+          child: Opacity(
+            opacity: widget.enabled ? 1.0 : 0.5,
+            child: InputDecorator(
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: widget.isDark
+                    ? Colors.white.withOpacity(0.05)
+                    : const Color(0xFFF1F5F9).withOpacity(0.5),
+                prefixIcon: widget.prefixIcon != null ? Icon(widget.prefixIcon, color: Colors.grey[600], size: 18) : null,
+                prefixIconConstraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 14,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: widget.isDark ? Colors.white10 : Colors.grey[300]!,
                   ),
                 ),
-                Icon(Icons.arrow_drop_down, color: widget.isDark ? Colors.white70 : Colors.black54),
-              ],
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: widget.isDark ? Colors.white10 : Colors.grey[200]!,
+                  ),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.value ?? widget.hint,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: widget.value != null
+                            ? (widget.isDark ? Colors.white : Colors.black)
+                            : (widget.isDark
+                                  ? Colors.white38
+                                  : Colors.grey[500]),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_drop_down,
+                    color: widget.isDark ? Colors.white70 : Colors.black54,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -1785,8 +1881,7 @@ class _DropdownSearchDialog extends StatefulWidget {
   State<_DropdownSearchDialog> createState() => _DropdownSearchDialogState();
 }
 
-class _DropdownSearchDialogState extends State<_DropdownSearchDialog> {
-  final TextEditingController _searchController = TextEditingController();
+class _DropdownSearchDialogState extends State<_DropdownSearchDialog> {  final TextEditingController _searchController = TextEditingController();
   List<String> _filteredItems = [];
 
   @override
@@ -1866,3 +1961,5 @@ class UpperCaseTextFormatter extends TextInputFormatter {
     );
   }
 }
+
+

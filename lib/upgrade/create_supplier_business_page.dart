@@ -35,6 +35,8 @@ class _CreateSupplierBusinessPageState extends State<CreateSupplierBusinessPage>
   final _phoneCtrl = TextEditingController();
   final _websiteCtrl = TextEditingController();
   final _panCtrl = TextEditingController();
+  final _udyamCtrl = TextEditingController();
+  final _cinCtrl = TextEditingController();
   String? _panFileName; Uint8List? _panBytes;
   String? _logoFileName; Uint8List? _logoBytes;
   String? _sigFileName; Uint8List? _sigBytes;
@@ -236,10 +238,10 @@ class _CreateSupplierBusinessPageState extends State<CreateSupplierBusinessPage>
                          prefs.getString('phone') ??
                          prefs.getString('mobile') ?? '';
 
-      // 🚨 TEMP FIX: Override ghost user ID to prevent foreign key server error
+      // ðŸš¨ TEMP FIX: Override ghost user ID to prevent foreign key server error
       if (userMainId == '8059210846') {
         userMainId = '6102066450'; // The correct ID from the web
-        debugPrint('🚨 [TEMP FIX] Overriding invalid user_main_id 8059210846 with 6102066450');
+        debugPrint('ðŸš¨ [TEMP FIX] Overriding invalid user_main_id 8059210846 with 6102066450');
       }
 
       debugPrint('[Business] user_main_id from prefs: $userMainId');
@@ -373,7 +375,7 @@ class _CreateSupplierBusinessPageState extends State<CreateSupplierBusinessPage>
         final businessId = innerData?['business_id']?.toString() ??
                            List.generate(10, (_) => Random().nextInt(10).toString()).join();
 
-        debugPrint('[Business] ✅ Business created! business_id=$businessId');
+        debugPrint('[Business] âœ… Business created! business_id=$businessId');
 
         final business = BusinessUser(
           id: businessId,
@@ -420,7 +422,7 @@ class _CreateSupplierBusinessPageState extends State<CreateSupplierBusinessPage>
         final errMsg = outerData?['message']?.toString() ??
                        result['message']?.toString() ??
                        'Registration failed. Server returned: $result';
-        debugPrint('[Business] ❌ API failed: $errMsg');
+        debugPrint('[Business] âŒ API failed: $errMsg');
         _showError(errMsg);
         setState(() => _isLoading = false);
       }
@@ -624,21 +626,25 @@ class _CreateSupplierBusinessPageState extends State<CreateSupplierBusinessPage>
         ],
       ),
       const SizedBox(height: 24),
-      Row(children: [
-        Expanded(child: _buildInputField('Business Name *', _nameCtrl, isDark)),
-        const SizedBox(width: 16),
-        Expanded(child: _buildInputField('Business Email *', _emailCtrl, isDark, keyboardType: TextInputType.emailAddress)),
-      ]),
-      Row(children: [
-        Expanded(child: _buildInputField('Business Phone *', _phoneCtrl, isDark, keyboardType: TextInputType.phone, inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)])),
-        const SizedBox(width: 16),
-        Expanded(child: _buildInputField('Website', _websiteCtrl, isDark)),
-      ]),
-      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Expanded(child: _buildLogoUpload('Company Logo (Optional)', _logoFileName, _logoBytes, () => _pickFile('logo'), isDark)),
-        const SizedBox(width: 16),
-        Expanded(child: _buildTurnoverDropdown(isDark)),
-      ]),
+      _buildResponsiveRow(
+        _buildInputField('Business Name *', _nameCtrl, isDark, hintText: 'Enter business name'),
+        _buildInputWithVerify('Business Email *', _emailCtrl, isDark, hintText: 'business@example.com'),
+      ),
+      const SizedBox(height: 16),
+      _buildResponsiveRow(
+        _buildInputWithVerify('Business Phone *', _phoneCtrl, isDark, keyboardType: TextInputType.phone, hintText: '10-digit mobile number'),
+        _buildInputField('Website', _websiteCtrl, isDark, hintText: 'https://www.example.com'),
+      ),
+      const SizedBox(height: 16),
+      _buildResponsiveRow(
+        _buildInputField('Udyam Registration Number *', _udyamCtrl, isDark, hintText: 'Enter Udyam Registration Number (e.g., UDYAM-TN-12-0001234)'),
+        _buildInputField('Corporate Identification Number (CIN)', _cinCtrl, isDark, hintText: 'Enter CIN (e.g., U12345TN2024PTC123456)'),
+      ),
+      const SizedBox(height: 16),
+      _buildResponsiveRow(
+        _buildLogoUpload('Company Logo (Optional)', _logoFileName, _logoBytes, () => _pickFile('logo'), isDark),
+        _buildTurnoverDropdown(isDark),
+      ),
       const SizedBox(height: 8),
       if (_turnoverRange != 'Select Turnover Range') ...[
         const Text('Company Tier *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
@@ -1095,345 +1101,244 @@ class _CreateSupplierBusinessPageState extends State<CreateSupplierBusinessPage>
   }
 
   // STEP 6: Categories dropdowns and left/right panels
-  Widget _buildStep6(Color color, bool isDark) {
-    if (_isLoadingCategories) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(48.0),
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
+  Widget _buildCategoryDropdownCard({
+    required int index,
+    required Color color,
+    required String title,
+    required int selectedCount,
+    required IconData prefixIcon,
+    required String hint,
+    required bool isDark,
+    required List<String> items,
+    required String? value,
+    required ValueChanged<String> onChanged,
+    bool enabled = true,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withOpacity(0.02) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.grey[200]!),
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 10,
+                  spreadRadius: 1,
+                ),
+              ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            child: Center(
+              child: Text(
+                index.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                    color: isDark ? Colors.white70 : const Color(0xFF334155),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "$selectedCount Selected",
+                  style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                ),
+                const SizedBox(height: 12),
+                SearchableDropdown(
+                  label: '',
+                  value: value,
+                  items: items,
+                  isDark: isDark,
+                  hint: hint,
+                  enabled: enabled,
+                  onChanged: onChanged,
+                  prefixIcon: prefixIcon,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
+  Widget _buildStep6(Color color, bool isDark) {
     final sectorTitles = _categoriesData.keys.toList();
-    final sectors = (_selectedSectorTitle != null && _categoriesData.containsKey(_selectedSectorTitle)) 
-        ? _categoriesData[_selectedSectorTitle]!.keys.toList() 
-        : <String>[];
-    final subSectors = (_selectedSectorTitle != null && _selectedSector != null && _categoriesData.containsKey(_selectedSectorTitle) && _categoriesData[_selectedSectorTitle]!.containsKey(_selectedSector))
+    final sectors = _selectedSectorTitle != null ? _categoriesData[_selectedSectorTitle]!.keys.toList() : <String>[];
+    final subSectors = (_selectedSectorTitle != null && _selectedSector != null)
         ? _categoriesData[_selectedSectorTitle]![_selectedSector]!.keys.toList()
         : <String>[];
 
-    final primaryCategories = (_selectedSectorTitle != null && _selectedSector != null && _selectedSubSector != null && _categoriesData.containsKey(_selectedSectorTitle) && _categoriesData[_selectedSectorTitle]!.containsKey(_selectedSector) && _categoriesData[_selectedSectorTitle]![_selectedSector]!.containsKey(_selectedSubSector))
+    final primaryCategories = (_selectedSectorTitle != null && _selectedSector != null && _selectedSubSector != null)
         ? _categoriesData[_selectedSectorTitle]![_selectedSector]![_selectedSubSector]!.keys.toList()
         : <String>[];
 
-    final subCategories = (_selectedSectorTitle != null && _selectedSector != null && _selectedSubSector != null && _activePrimaryCategory != null && _categoriesData.containsKey(_selectedSectorTitle) && _categoriesData[_selectedSectorTitle]!.containsKey(_selectedSector) && _categoriesData[_selectedSectorTitle]![_selectedSector]!.containsKey(_selectedSubSector))
+    final subCategoriesList = (_selectedSectorTitle != null && _selectedSector != null && _selectedSubSector != null && _activePrimaryCategory != null)
         ? (_categoriesData[_selectedSectorTitle]![_selectedSector]![_selectedSubSector]![_activePrimaryCategory] ?? <String>[])
         : <String>[];
+
+    String? selectedSub = _selectedSubCategories.isNotEmpty ? _selectedSubCategories.first : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            const Icon(Icons.business_center, color: Colors.blue),
+            Icon(Icons.business_center, color: color, size: 24),
             const SizedBox(width: 8),
-            const Text('Business Categories', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue)),
+            const Text('Business Categories', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           ],
         ),
-        const SizedBox(height: 8),
-        const Text('Select the sector and categories that best describe your business activity.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+        const SizedBox(height: 4),
+        Text('Select the sector and categories that best describe your business activity.', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
         const SizedBox(height: 24),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: SearchableDropdown(
-                label: 'Sector Title *',
-                value: _selectedSectorTitle,
-                items: sectorTitles,
-                isDark: isDark,
-                onChanged: (val) {
-                  setState(() {
-                    _selectedSectorTitle = val;
-                    _selectedSector = null;
-                    _selectedSubSector = null;
-                    _activePrimaryCategory = null;
-                    _selectedSubCategories.clear();
-                  });
-                },
-              ),
+        if (_isLoadingCategories)
+          const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()))
+        else ...[
+          _buildResponsiveRow(
+            _buildCategoryDropdownCard(
+              index: 1,
+              color: Colors.deepPurpleAccent,
+              title: 'Sector Title *',
+              selectedCount: _selectedSectorTitle != null ? 1 : 0,
+              prefixIcon: Icons.folder,
+              hint: 'Select Sector Title...',
+              isDark: isDark,
+              items: sectorTitles,
+              value: _selectedSectorTitle,
+              onChanged: (val) {
+                setState(() {
+                  _selectedSectorTitle = val;
+                  _selectedSector = null;
+                  _selectedSubSector = null;
+                  _activePrimaryCategory = null;
+                  _selectedSubCategories.clear();
+                });
+              },
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: SearchableDropdown(
-                label: 'Sector *',
-                value: _selectedSector,
-                items: sectors,
-                isDark: isDark,
-                onChanged: (val) {
-                  setState(() {
-                    _selectedSector = val;
-                    _selectedSubSector = null;
-                    _activePrimaryCategory = null;
-                    _selectedSubCategories.clear();
-                  });
-                },
-              ),
+            _buildCategoryDropdownCard(
+              index: 4,
+              color: Colors.green,
+              title: 'Primary Categories',
+              selectedCount: _activePrimaryCategory != null ? 1 : 0,
+              prefixIcon: Icons.local_offer,
+              hint: 'Select Primary Categories...',
+              isDark: isDark,
+              items: primaryCategories,
+              value: _activePrimaryCategory,
+              enabled: primaryCategories.isNotEmpty,
+              onChanged: (val) {
+                setState(() {
+                  _activePrimaryCategory = val;
+                  _selectedSubCategories.clear();
+                });
+              },
             ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: SearchableDropdown(
-                label: 'Sub Sector *',
-                value: _selectedSubSector,
-                items: subSectors,
-                isDark: isDark,
-                onChanged: (val) {
-                  setState(() {
-                    _selectedSubSector = val;
-                    if (_selectedSectorTitle != null && _selectedSector != null && _selectedSubSector != null && _categoriesData.containsKey(_selectedSectorTitle) && _categoriesData[_selectedSectorTitle]!.containsKey(_selectedSector) && _categoriesData[_selectedSectorTitle]![_selectedSector]!.containsKey(_selectedSubSector)) {
-                      _activePrimaryCategory = null;
-                    }
-                    _selectedSubCategories.clear();
-                  });
-                },
-              ),
-            ),
-            const SizedBox(width: 16),
-            const Expanded(child: SizedBox()),
-          ],
-        ),
-        const SizedBox(height: 24),
-        if (_selectedSectorTitle != null && _selectedSector != null && _selectedSubSector != null) ...[
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  children: [
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.local_offer, size: 14, color: Colors.blue),
-                          const SizedBox(width: 4),
-                          const Text('Primary Categories', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue)),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: const Color(0xFFE11D48), borderRadius: BorderRadius.circular(4)),
-                            child: Text('${primaryCategories.length} Available', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                          )
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      height: 280,
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.white.withOpacity(0.02) : const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: isDark ? Colors.white10 : Colors.grey[200]!)
-                      ),
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(8),
-                        itemCount: primaryCategories.length,
-                        itemBuilder: (context, idx) {
-                          final cat = primaryCategories[idx];
-                          final isActive = cat == _activePrimaryCategory;
-                          return InkWell(
-                            onTap: () => setState(() {
-                              if (_activePrimaryCategory == cat) {
-                                _activePrimaryCategory = null;
-                              } else {
-                                _activePrimaryCategory = cat;
-                              }
-                            }),
-                            child: Container(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                              decoration: BoxDecoration(
-                                color: isDark ? Colors.black26 : Colors.white,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: isActive ? Colors.blue : (isDark ? Colors.white10 : Colors.grey[200]!), width: isActive ? 1.5 : 1)
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(isActive ? Icons.check_circle : Icons.circle_outlined, color: isActive ? Colors.blue : Colors.grey, size: 18),
-                                  const SizedBox(width: 8),
-                                  Expanded(child: Text(cat, style: TextStyle(fontSize: 13, fontWeight: isActive ? FontWeight.bold : FontWeight.w500, color: isActive ? Colors.blue : (isDark ? Colors.white : Colors.black87)))),
-                                ],
-                              ),
-                            ),
-                          );
-                        }
-                      )
-                    )
-                  ]
-                )
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  children: [
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.local_offer, size: 14, color: Colors.green),
-                          const SizedBox(width: 4),
-                          const Text('Sub Categories', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green)),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(4)),
-                            child: Text('${subCategories.length} Showing', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                          )
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      height: 280,
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.white.withOpacity(0.02) : const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: isDark ? Colors.white10 : Colors.grey[200]!)
-                      ),
-                      child: _activePrimaryCategory == null 
-                          ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(Icons.arrow_back, color: Colors.grey),
-                                  const SizedBox(height: 8),
-                                  const Text('Select a primary category to see its sub-categories', style: TextStyle(color: Colors.grey, fontSize: 11)),
-                                ],
-                              )
-                            )
-                          : ListView.builder(
-                              padding: const EdgeInsets.all(8),
-                              itemCount: subCategories.length,
-                              itemBuilder: (context, idx) {
-                                final subCat = subCategories[idx];
-                                final isChecked = _selectedSubCategories.contains(subCat);
-                                return InkWell(
-                                  onTap: () {
-                                    setState(() {
-                                      if (isChecked) {
-                                        _selectedSubCategories.remove(subCat);
-                                      } else {
-                                        _selectedSubCategories.add(subCat);
-                                      }
-                                    });
-                                  },
-                                  child: Container(
-                                    margin: const EdgeInsets.only(bottom: 8),
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      color: isDark ? Colors.black26 : Colors.white,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: isChecked ? Colors.green : (isDark ? Colors.white10 : Colors.grey[200]!), width: isChecked ? 1.5 : 1)
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(isChecked ? Icons.check_circle : Icons.circle_outlined, color: isChecked ? Colors.green : Colors.grey, size: 18),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(subCat, style: TextStyle(fontSize: 13, fontWeight: isChecked ? FontWeight.bold : FontWeight.w500, color: isChecked ? Colors.green : (isDark ? Colors.white : Colors.black87))),
-                                              Text('under $_activePrimaryCategory', style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                                            ],
-                                          )
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              }
-                            )
-                    )
-                  ]
-                )
-              ),
-            ]
           ),
           const SizedBox(height: 16),
-          if (_activePrimaryCategory != null || _selectedSubCategories.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: isDark ? Colors.white.withOpacity(0.02) : Colors.white,
-                border: Border.all(color: isDark ? Colors.white10 : Colors.grey[200]!),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (_activePrimaryCategory != null)
-                    Row(
-                      children: [
-                        const Icon(Icons.check_circle, color: Colors.blue, size: 14),
-                        const SizedBox(width: 8),
-                        const Text('Primary:', style: TextStyle(fontSize: 12, color: Colors.blue, fontWeight: FontWeight.bold)),
-                        const SizedBox(width: 8),
-                        Chip(
-                          visualDensity: VisualDensity.compact,
-                          backgroundColor: isDark ? Colors.blue.withOpacity(0.1) : Colors.blue.shade50,
-                          label: Text(_activePrimaryCategory!, style: const TextStyle(color: Colors.blue, fontSize: 11)),
-                          deleteIconColor: Colors.blue,
-                          onDeleted: () {
-                            setState(() {
-                              _activePrimaryCategory = null;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                  if (_selectedSubCategories.isNotEmpty) ...[
-                    if (_activePrimaryCategory != null) const SizedBox(height: 8),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Padding(
-                          padding: EdgeInsets.only(top: 8.0),
-                          child: Icon(Icons.check_circle, color: Colors.green, size: 14),
-                        ),
-                        const SizedBox(width: 8),
-                        const Padding(
-                          padding: EdgeInsets.only(top: 8.0),
-                          child: Text('Sub:', style: TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.bold)),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: _selectedSubCategories.map((subCat) {
-                              return Chip(
-                                visualDensity: VisualDensity.compact,
-                                backgroundColor: isDark ? Colors.green.withOpacity(0.1) : Colors.green.shade50,
-                                label: Text(subCat, style: const TextStyle(color: Colors.green, fontSize: 11)),
-                                deleteIconColor: Colors.green,
-                                onDeleted: () {
-                                  setState(() {
-                                    _selectedSubCategories.remove(subCat);
-                                  });
-                                },
-                              );
-                            }).toList(),
-                          ),
-                        )
-                      ],
-                    )
-                  ]
-                ],
-              )
+          _buildResponsiveRow(
+            _buildCategoryDropdownCard(
+              index: 2,
+              color: Colors.blue,
+              title: 'Sector *',
+              selectedCount: _selectedSector != null ? 1 : 0,
+              prefixIcon: Icons.business_center,
+              hint: 'Select Sector...',
+              isDark: isDark,
+              items: sectors,
+              value: _selectedSector,
+              enabled: _selectedSectorTitle != null,
+              onChanged: (val) {
+                setState(() {
+                  _selectedSector = val;
+                  _selectedSubSector = null;
+                  _activePrimaryCategory = null;
+                  _selectedSubCategories.clear();
+                });
+              },
             ),
-
+            _buildCategoryDropdownCard(
+              index: 5,
+              color: Colors.orange,
+              title: 'Sub Categories',
+              selectedCount: _selectedSubCategories.length,
+              prefixIcon: Icons.style,
+              hint: 'Select Sub Categories...',
+              isDark: isDark,
+              items: subCategoriesList.toSet().toList(),
+              value: selectedSub,
+              enabled: subCategoriesList.isNotEmpty,
+              onChanged: (val) {
+                setState(() {
+                  _selectedSubCategories.clear();
+                  _selectedSubCategories.add(val);
+                });
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildResponsiveRow(
+            _buildCategoryDropdownCard(
+              index: 3,
+              color: Colors.teal,
+              title: 'Sub Sector *',
+              selectedCount: _selectedSubSector != null ? 1 : 0,
+              prefixIcon: Icons.layers,
+              hint: 'Select Sub Sector...',
+              isDark: isDark,
+              items: subSectors,
+              value: _selectedSubSector,
+              enabled: _selectedSector != null,
+              onChanged: (val) {
+                setState(() {
+                  _selectedSubSector = val;
+                  _activePrimaryCategory = null;
+                  _selectedSubCategories.clear();
+                });
+              },
+            ),
+            _buildCategoryDropdownCard(
+              index: 6,
+              color: Colors.pinkAccent,
+              title: 'Brand',
+              selectedCount: 0,
+              prefixIcon: Icons.workspace_premium,
+              hint: 'Select Brands...',
+              isDark: isDark,
+              items: new List<String>.empty(growable: true),
+              value: null,
+              enabled: false,
+              onChanged: (val) {},
+            ),
+          ),
+        ],
       ],
-  ]
     );
   }
+  
 
 
 
@@ -1481,6 +1386,111 @@ class _CreateSupplierBusinessPageState extends State<CreateSupplierBusinessPage>
     );
   }
 
+  Widget _buildResponsiveRow(Widget child1, Widget child2) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 600) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              child1,
+              const SizedBox(height: 16),
+              child2,
+            ],
+          );
+        } else {
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: child1),
+              const SizedBox(width: 16),
+              Expanded(child: child2),
+            ],
+          );
+        }
+      },
+    );
+  }
+
+  Widget _buildInputWithVerify(String label, TextEditingController ctrl, bool isDark, {String? hintText, TextInputType keyboardType = TextInputType.text}) {
+    final isPhone = label.toLowerCase().contains('phone') || label.toLowerCase().contains('mobile');
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: 13,
+            color: isDark ? Colors.white70 : const Color(0xFF334155),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: ctrl,
+                keyboardType: isPhone ? TextInputType.number : keyboardType,
+                inputFormatters: isPhone ? [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)] : null,
+                validator: (val) {
+                  if (label.contains('*') && (val == null || val.trim().isEmpty)) {
+                    return 'This field is required';
+                  }
+                  return null;
+                },
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black),
+                decoration: InputDecoration(
+                  hintText: hintText,
+                  hintStyle: TextStyle(color: isDark ? Colors.white38 : Colors.grey[400], fontSize: 13, fontWeight: FontWeight.normal),
+                  filled: true,
+                  fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  border: OutlineInputBorder(
+                    borderRadius: const BorderRadius.only(topLeft: Radius.circular(8), bottomLeft: Radius.circular(8)),
+                    borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.grey[300]!),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: const BorderRadius.only(topLeft: Radius.circular(8), bottomLeft: Radius.circular(8)),
+                    borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.grey[300]!),
+                  ),
+                ),
+              ),
+            ),
+            Container(
+              height: 52,
+              decoration: BoxDecoration(
+                color: const Color(0xFF6366F1), // verification button color
+                borderRadius: const BorderRadius.only(topRight: Radius.circular(8), bottomRight: Radius.circular(8)),
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    // Verify action
+                  },
+                  borderRadius: const BorderRadius.only(topRight: Radius.circular(8), bottomRight: Radius.circular(8)),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 24),
+                    child: Center(
+                      child: Text(
+                        'Verify',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
   Widget _buildInputField(String label, TextEditingController ctrl, bool isDark, {TextInputType keyboardType = TextInputType.text, bool readOnly = false, List<TextInputFormatter>? inputFormatters, String? helperText, String? hintText}) {
     final isPan = label.toLowerCase().contains('pan') || ctrl == _panCtrl;
     final isPhone = label.toLowerCase().contains('phone') || label.toLowerCase().contains('mobile') || ctrl == _phoneCtrl;
@@ -1687,7 +1697,7 @@ class _CreateSupplierBusinessPageState extends State<CreateSupplierBusinessPage>
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 color: Colors.white70,
-                child: const Text('© OpenStreetMap contributors', style: TextStyle(fontSize: 8, color: Colors.black)),
+                child: const Text('Â© OpenStreetMap contributors', style: TextStyle(fontSize: 8, color: Colors.black)),
               ),
             ),
           ],
@@ -1703,6 +1713,7 @@ class _UpperCaseTextFormatter extends TextInputFormatter {
 }
 
 // Custom Searchable Dropdown widget
+// Custom Searchable Dropdown widget
 class SearchableDropdown extends StatefulWidget {
   final String label;
   final String? value;
@@ -1710,6 +1721,8 @@ class SearchableDropdown extends StatefulWidget {
   final ValueChanged<String> onChanged;
   final bool isDark;
   final String hint;
+  final bool enabled;
+  final IconData? prefixIcon;
 
   const SearchableDropdown({
     super.key,
@@ -1719,6 +1732,8 @@ class SearchableDropdown extends StatefulWidget {
     required this.onChanged,
     required this.isDark,
     this.hint = "Search...",
+    this.enabled = true,
+    this.prefixIcon,
   });
 
   @override
@@ -1731,49 +1746,87 @@ class _SearchableDropdownState extends State<SearchableDropdown> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(widget.label, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: widget.isDark ? Colors.white70 : const Color(0xFF334155))),
-        const SizedBox(height: 8),
-        InkWell(
-          onTap: () {
-            showDialog(
-              context: context,
-              builder: (context) => _DropdownSearchDialog(
-                title: widget.label,
-                items: widget.items,
-                initialValue: widget.value,
-                isDark: widget.isDark,
-                hint: widget.hint,
-              ),
-            ).then((val) {
-              if (val != null) {
-                widget.onChanged(val);
-              }
-            });
-          },
-          child: InputDecorator(
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: widget.isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F5F9).withOpacity(0.5),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: widget.isDark ? Colors.white10 : Colors.grey[300]!)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: widget.isDark ? Colors.white10 : Colors.grey[200]!)),
+        if (widget.label.isNotEmpty) ...[
+          Text(
+            widget.label,
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+              color: widget.isDark ? Colors.white70 : const Color(0xFF334155),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    widget.value ?? "Select Option",
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: widget.value != null ? (widget.isDark ? Colors.white : Colors.black) : (widget.isDark ? Colors.white38 : Colors.grey[500]),
+          ),
+          const SizedBox(height: 8),
+        ],
+        InkWell(
+          onTap: widget.enabled
+              ? () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => _DropdownSearchDialog(
+                      title: widget.label.isEmpty ? 'Search' : widget.label,
+                      items: widget.items,
+                      initialValue: widget.value,
+                      isDark: widget.isDark,
+                      hint: widget.hint,
                     ),
-                    overflow: TextOverflow.ellipsis,
+                  ).then((val) {
+                    if (val != null) {
+                      widget.onChanged(val);
+                    }
+                  });
+                }
+              : null,
+          child: Opacity(
+            opacity: widget.enabled ? 1.0 : 0.5,
+            child: InputDecorator(
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: widget.isDark
+                    ? Colors.white.withOpacity(0.05)
+                    : const Color(0xFFF1F5F9).withOpacity(0.5),
+                prefixIcon: widget.prefixIcon != null ? Icon(widget.prefixIcon, color: Colors.grey[600], size: 18) : null,
+                prefixIconConstraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 14,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: widget.isDark ? Colors.white10 : Colors.grey[300]!,
                   ),
                 ),
-                Icon(Icons.arrow_drop_down, color: widget.isDark ? Colors.white70 : Colors.black54),
-              ],
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: widget.isDark ? Colors.white10 : Colors.grey[200]!,
+                  ),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.value ?? widget.hint,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: widget.value != null
+                            ? (widget.isDark ? Colors.white : Colors.black)
+                            : (widget.isDark
+                                  ? Colors.white38
+                                  : Colors.grey[500]),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_drop_down,
+                    color: widget.isDark ? Colors.white70 : Colors.black54,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -1801,8 +1854,7 @@ class _DropdownSearchDialog extends StatefulWidget {
   State<_DropdownSearchDialog> createState() => _DropdownSearchDialogState();
 }
 
-class _DropdownSearchDialogState extends State<_DropdownSearchDialog> {
-  final TextEditingController _searchController = TextEditingController();
+class _DropdownSearchDialogState extends State<_DropdownSearchDialog> {  final TextEditingController _searchController = TextEditingController();
   List<String> _filteredItems = [];
 
   @override
@@ -1882,3 +1934,5 @@ class UpperCaseTextFormatter extends TextInputFormatter {
     );
   }
 }
+
+
