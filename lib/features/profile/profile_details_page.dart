@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:circuit/features/auth/password_page.dart';
-import 'package:circuit/core/services/user_service.dart';
+import 'package:sva_business_user/features/auth/password_page.dart';
+import 'package:sva_business_user/core/services/user_service.dart';
 
 class ProfileDetailsPage extends StatefulWidget {
   const ProfileDetailsPage({super.key});
@@ -206,3 +206,4 @@ class _ProfileDetailsPageState extends State<ProfileDetailsPage> {
     return Container(width: 20, height: 2, color: active ? color.withOpacity(0.3) : Colors.black12);
   }
 }
+

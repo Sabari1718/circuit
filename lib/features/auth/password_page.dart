@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:circuit/features/home/home_page.dart';
-import 'package:circuit/core/services/user_service.dart';
+import 'package:sva_business_user/features/home/home_page.dart';
+import 'package:sva_business_user/core/services/user_service.dart';
 
 class PasswordPage extends StatefulWidget {
   const PasswordPage({super.key});

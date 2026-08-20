@@ -1,9 +1,9 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:circuit/core/services/user_service.dart';
-import 'package:circuit/widgets/common_dashboard_app_bar.dart';
-import 'package:circuit/bio_overview_page.dart';
+import 'package:sva_business_user/core/services/user_service.dart';
+import 'package:sva_business_user/widgets/common_dashboard_app_bar.dart';
+import 'package:sva_business_user/bio_overview_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -272,3 +272,4 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 }
+

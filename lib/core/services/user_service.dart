@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import '../../features/auth/legacy_login_page.dart';
 import 'login_page.dart';
-import 'package:circuit/auth_service.dart';
+import 'package:sva_business_user/auth_service.dart';
 
 class UserService extends ChangeNotifier {
   static final UserService _instance = UserService._internal();
@@ -325,3 +325,4 @@ class UserService extends ChangeNotifier {
     }
   }
 }
+

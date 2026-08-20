@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:circuit/core/services/user_service.dart';
-import 'package:circuit/features/upgrade/business_upgrade_page.dart';
+import 'package:sva_business_user/core/services/user_service.dart';
+import 'package:sva_business_user/features/upgrade/business_upgrade_page.dart';
 
 class BusinessWelcomePage extends StatelessWidget {
   const BusinessWelcomePage({super.key});
@@ -157,3 +157,4 @@ class BusinessWelcomePage extends StatelessWidget {
     );
   }
 }
+

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:circuit/features/auth/otp_page.dart';
-import 'package:circuit/core/services/user_service.dart';
-import 'package:circuit/core/services/otp_service.dart';
+import 'package:sva_business_user/features/auth/otp_page.dart';
+import 'package:sva_business_user/core/services/user_service.dart';
+import 'package:sva_business_user/core/services/otp_service.dart';
 
 class AppColors {
   static const Color primary = Color(0xFF6366F1);

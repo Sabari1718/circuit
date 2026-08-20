@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:circuit/features/profile/profile_details_page.dart';
-import 'package:circuit/core/services/email_service.dart';
-import 'package:circuit/features/auth/login_page.dart';
+import 'package:sva_business_user/features/profile/profile_details_page.dart';
+import 'package:sva_business_user/core/services/email_service.dart';
+import 'package:sva_business_user/features/auth/login_page.dart';
 
 class EmailOtpPage extends StatefulWidget {
   final String email;

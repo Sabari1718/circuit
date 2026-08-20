@@ -11,8 +11,8 @@ import 'features/upgrade/verified_upgrade_intro_page.dart';
 import 'upgrade/user_overview_page.dart';
 import 'features/upgrade/verified_user_profile_page.dart';
 import 'user_service.dart';
-import 'package:circuit/core/services/api_service.dart';
-import 'package:circuit/upgrade/business_user_model.dart';
+import 'package:sva_business_user/core/services/api_service.dart';
+import 'package:sva_business_user/upgrade/business_user_model.dart';
 import 'widgets/common_dashboard_app_bar.dart';
 import 'widgets/account_type_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -976,3 +976,4 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+

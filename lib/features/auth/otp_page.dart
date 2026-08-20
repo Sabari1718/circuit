@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:circuit/features/profile/profile_details_page.dart';
-import 'package:circuit/features/auth/login_page.dart';
-import 'package:circuit/core/services/otp_service.dart';
-import 'package:circuit/features/auth/email_page.dart';
-import 'package:circuit/core/services/user_service.dart';
-import 'package:circuit/features/home/home_page.dart';
+import 'package:sva_business_user/features/profile/profile_details_page.dart';
+import 'package:sva_business_user/features/auth/login_page.dart';
+import 'package:sva_business_user/core/services/otp_service.dart';
+import 'package:sva_business_user/features/auth/email_page.dart';
+import 'package:sva_business_user/core/services/user_service.dart';
+import 'package:sva_business_user/features/home/home_page.dart';
 
 enum VerificationMode { sms, whatsapp, email }
 

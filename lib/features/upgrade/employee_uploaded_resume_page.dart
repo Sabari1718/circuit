@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:circuit/widgets/common_dashboard_app_bar.dart';
+import 'package:sva_business_user/widgets/common_dashboard_app_bar.dart';
 
 class EmployeeUploadedResumePage extends StatefulWidget {
   const EmployeeUploadedResumePage({super.key});
@@ -124,3 +124,4 @@ class _EmployeeUploadedResumePageState extends State<EmployeeUploadedResumePage>
     );
   }
 }
+

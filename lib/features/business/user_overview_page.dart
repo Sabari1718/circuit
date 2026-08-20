@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:circuit/features/upgrade/business_user_store.dart';
-import 'package:circuit/features/upgrade/business_created_page.dart';
-import 'package:circuit/features/business/business_registration_overview_page.dart';
-import 'package:circuit/core/services/user_service.dart';
+import 'package:sva_business_user/features/upgrade/business_user_store.dart';
+import 'package:sva_business_user/features/upgrade/business_created_page.dart';
+import 'package:sva_business_user/features/business/business_registration_overview_page.dart';
+import 'package:sva_business_user/core/services/user_service.dart';
 
 import '../../upgrade/business_created_page.dart';
 
@@ -1257,3 +1257,4 @@ class _UpperCaseTextFormatter extends TextInputFormatter {
     );
   }
 }
+

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:circuit/features/business/create_business_user_page.dart';
-import 'package:circuit/features/upgrade/create_partner_business_page.dart';
-import 'package:circuit/features/upgrade/create_supplier_business_page.dart';
+import 'package:sva_business_user/features/business/create_business_user_page.dart';
+import 'package:sva_business_user/features/upgrade/create_partner_business_page.dart';
+import 'package:sva_business_user/features/upgrade/create_supplier_business_page.dart';
 
 class SelectRegistrationTypePage extends StatefulWidget {
   const SelectRegistrationTypePage({super.key});
@@ -219,3 +219,4 @@ class _SelectRegistrationTypePageState extends State<SelectRegistrationTypePage>
     );
   }
 }
+

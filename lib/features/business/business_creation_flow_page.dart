@@ -3,8 +3,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:circuit/features/upgrade/business_user_model.dart';
-import 'package:circuit/features/upgrade/business_user_store.dart';
+import 'package:sva_business_user/features/upgrade/business_user_model.dart';
+import 'package:sva_business_user/features/upgrade/business_user_store.dart';
 
 class BusinessCreationFlowPage extends StatefulWidget {
   const BusinessCreationFlowPage({super.key});
@@ -167,3 +167,4 @@ class _SupplierFlow extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: const Text("Supplier Flow")), body: const Center(child: Text("Supplier Flow Integrated")));
 }
+

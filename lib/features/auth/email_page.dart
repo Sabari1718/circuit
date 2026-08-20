@@ -1,8 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:circuit/features/auth/email_otp_page.dart';
-import 'package:circuit/core/services/email_service.dart';
+import 'package:sva_business_user/features/auth/email_otp_page.dart';
+import 'package:sva_business_user/core/services/email_service.dart';
 
 class EmailPage extends StatefulWidget {
   const EmailPage({super.key});

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:circuit/upgrade/business_user_model.dart';
-import 'package:circuit/core/services/user_service.dart';
+import 'package:sva_business_user/upgrade/business_user_model.dart';
+import 'package:sva_business_user/core/services/user_service.dart';
 import 'new_business_register_page.dart';
 import '../widgets/common_dashboard_app_bar.dart';
 import '../widgets/business_sidebar_menu.dart';
@@ -598,3 +598,4 @@ class _BusinessRegistrationOverviewPageState extends State<BusinessRegistrationO
     );
   }
 }
+
