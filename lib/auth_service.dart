@@ -394,6 +394,114 @@ class AuthService {
   }
 
   // ──────────────────────────────────────────────
+  // Reset Access Flow (OTP & Password/Captcha)
+  // ──────────────────────────────────────────────
+
+  Future<Map<String, dynamic>> requestResetOtp(String identifier, {bool isCaptchaOnly = false}) async {
+    final String url = isCaptchaOnly 
+        ? 'https://managelogin.jobes24x7.com/api/forgot-captcha/request-otp'
+        : 'https://managelogin.jobes24x7.com/api/forgot-password/request-otp';
+    final bool isEmail = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w+$').hasMatch(identifier);
+    final Map<String, dynamic> body = isEmail ? {'email': identifier} : {'phone_number': identifier};
+
+    debugPrint('[AuthService] REQUEST RESET OTP → $url  body: $body');
+
+    final response = await http
+        .post(
+          Uri.parse(url),
+          headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+          body: jsonEncode(body),
+        )
+        .timeout(const Duration(seconds: 15));
+
+    debugPrint('[AuthService] Request OTP status : ${response.statusCode}');
+    debugPrint('[AuthService] Request OTP body   : ${response.body}');
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      throw AuthException(_extractErrorMessage(response.body, 'Failed to request OTP'));
+    }
+  }
+
+  Future<Map<String, dynamic>> verifyResetOtp(String identifier, String otp, {bool isCaptchaOnly = false}) async {
+    final String url = isCaptchaOnly
+        ? 'https://managelogin.jobes24x7.com/api/forgot-captcha/verify-otp'
+        : 'https://managelogin.jobes24x7.com/api/forgot-password/verify-otp';
+    final bool isEmail = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w+$').hasMatch(identifier);
+    final Map<String, dynamic> body = {
+      if (isEmail) 'email': identifier else 'phone_number': identifier,
+      'otp': otp,
+    };
+
+    debugPrint('[AuthService] VERIFY RESET OTP → $url  body: $body');
+
+    final response = await http
+        .post(
+          Uri.parse(url),
+          headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+          body: jsonEncode(body),
+        )
+        .timeout(const Duration(seconds: 15));
+
+    debugPrint('[AuthService] Verify OTP status : ${response.statusCode}');
+    debugPrint('[AuthService] Verify OTP body   : ${response.body}');
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final decoded = jsonDecode(response.body);
+      if (decoded['code'] != 200 && decoded['result']?.toString().toLowerCase() != 'success') {
+         throw AuthException(_extractErrorMessage(response.body, 'Invalid OTP'));
+      }
+      return decoded;
+    } else {
+      throw AuthException(_extractErrorMessage(response.body, 'Failed to verify OTP'));
+    }
+  }
+
+  Future<Map<String, dynamic>> resetAccess({
+    required String identifier,
+    required String otp,
+    String? newPassword,
+    int? captchaImageId,
+  }) async {
+    final String url = (newPassword == null || newPassword.isEmpty)
+        ? 'https://managelogin.jobes24x7.com/api/forgot-captcha/reset'
+        : 'https://managelogin.jobes24x7.com/api/forgot-password/reset';
+    final bool isEmail = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w+$').hasMatch(identifier);
+    final Map<String, dynamic> body = {
+      if (isEmail) 'email': identifier else 'phone_number': identifier,
+      'otp': otp,
+    };
+
+    if (newPassword != null && newPassword.isNotEmpty) {
+      body['password'] = newPassword;
+      body['new_password'] = newPassword;
+    }
+    if (captchaImageId != null) {
+      body['captcha_image_id'] = captchaImageId;
+    }
+
+    debugPrint('[AuthService] RESET ACCESS → $url  body: $body');
+
+    final response = await http
+        .post(
+          Uri.parse(url),
+          headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+          body: jsonEncode(body),
+        )
+        .timeout(const Duration(seconds: 15));
+
+    debugPrint('[AuthService] Reset status : ${response.statusCode}');
+    debugPrint('[AuthService] Reset body   : ${response.body}');
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      throw AuthException(_extractErrorMessage(response.body, 'Failed to reset access'));
+    }
+  }
+
+  // ──────────────────────────────────────────────
   // Logout
   // ──────────────────────────────────────────────
 

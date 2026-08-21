@@ -62,54 +62,39 @@ class _SecretImageVerificationPageState
 
     try {
       final userService = ref.read(userServiceProvider);
-      final savedImage = await userService.getUserSecretImage(widget.identifier);
 
-      if (!mounted) return;
-
-      // We saved the image ID as a string during setup
-      if (savedImage == _selectedCategory!.id.toString() || savedImage == _selectedCategory!.image) {
-        
-        // If password was passed, verify via API to get the token!
-        if (widget.password != null) {
-          try {
-            final response = await AuthService().login(
-              identifier: widget.identifier,
-              password: widget.password!,
-              captchaImageId: _selectedCategory!.id,
-            );
-            
-            final userData = response['data']?['data'];
-            if (userData != null) {
-              await userService.saveFromApiUser(userData);
-            }
-          } catch (apiError) {
-            if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(apiError.toString().replaceAll('AuthException: ', '')),
-                backgroundColor: Colors.redAccent,
-              ),
-            );
-            return;
+      // Verify via API to get the token!
+      if (widget.password != null) {
+        try {
+          final response = await AuthService().login(
+            identifier: widget.identifier,
+            password: widget.password!,
+            captchaImageId: _selectedCategory!.id,
+          );
+          
+          final userData = response['data']?['data'];
+          if (userData != null) {
+            await userService.saveFromApiUser(userData);
           }
+        } catch (apiError) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(apiError.toString().replaceAll('AuthException: ', '')),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+          return;
         }
-        
-        // Success
-        if (!mounted) return;
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const HomePage()),
-          (route) => false,
-        );
-      } else {
-        // Failed
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Incorrect secret image! Access denied.'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
       }
+      
+      // Success
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const HomePage()),
+        (route) => false,
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

@@ -43,9 +43,9 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
   Uint8List? _profileFileBytes;
   String? _profileFileName;
 
-  List<CaptchaCategory> _captchaCategories = [];
+  List<dynamic> _subImages = [];
   bool _isLoadingCaptcha = true;
-  CaptchaCategory? _selectedCaptchaCategory;
+  Map<String, dynamic>? _selectedSubImage;
   String? _profilePhotoUrl;
   String? _panPhotoUrl;
   
@@ -188,36 +188,29 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
 
   Future<void> _loadCaptchaCategories() async {
     try {
-      final categories = await CaptchaService().getCategories();
+      final loginData = await UserService().getManageLoginUser(_userMainId);
+      int categoryId = 3; // Fallback
+      if (loginData != null) {
+        if (loginData['data'] is Map && loginData['data']['captcha_image_id'] != null) {
+          categoryId = loginData['data']['captcha_image_id'] is int ? loginData['data']['captcha_image_id'] : int.tryParse(loginData['data']['captcha_image_id'].toString()) ?? 3;
+        } else if (loginData['data'] is List && (loginData['data'] as List).isNotEmpty && loginData['data'][0]['captcha_image_id'] != null) {
+          categoryId = loginData['data'][0]['captcha_image_id'] is int ? loginData['data'][0]['captcha_image_id'] : int.tryParse(loginData['data'][0]['captcha_image_id'].toString()) ?? 3;
+        } else if (loginData['captcha_image_id'] != null) {
+          categoryId = loginData['captcha_image_id'] is int ? loginData['captcha_image_id'] : int.tryParse(loginData['captcha_image_id'].toString()) ?? 3;
+        }
+      }
+
+      final subImages = await UserService().getCaptchaImages(categoryId);
       if (mounted) {
         setState(() {
-          _captchaCategories = categories;
+          _subImages = subImages ?? [];
           _isLoadingCaptcha = false;
         });
-      } else {
-        // Debug mode: Fetch it manually just to see the string response
-        try {
-          final token = await AuthService().getToken();
-          final url = 'https://managelogin.jobes24x7.com/api/user_register/main/$_userMainId';
-          final response = await http.get(Uri.parse(url), headers: {'Content-Type': 'application/json', if (token != null) 'Authorization': 'Bearer $token'});
-          if (mounted) {
-            setState(() {
-              _debugError = 'HTTP ${response.statusCode}: ${response.body}';
-            });
-          }
-        } catch (e) {
-          if (mounted) setState(() { _debugError = 'Exception: $e'; });
-        }
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _debugError = 'Exception: $e';
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
           _isLoadingCaptcha = false;
         });
       }
@@ -670,85 +663,6 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
                 );
               }
 
-              Widget buildDetails() {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-
-                    Row(
-                      children: [
-                         const Icon(Icons.badge, size: 18, color: Color(0xFF2563EB)),
-                         const SizedBox(width: 8),
-                         const Text("PERSONAL DETAILS", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF1E293B), letterSpacing: 0.5)),
-                      ]
-                    ),
-                    const SizedBox(height: 20),
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                         color: const Color(0xFFF8FAFC),
-                         borderRadius: BorderRadius.circular(16),
-                         border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(child: _buildDetailItem("PAN NUMBER", _panNumber.isNotEmpty ? _panNumber : "-")),
-                              Expanded(child: _buildDetailItem("GENDER", _gender.isNotEmpty ? _gender.toUpperCase() : "-")),
-                            ]
-                          ),
-                          if (_isVerified) ...[
-                            const SizedBox(height: 24),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(child: _buildDetailItem("GOV ID TYPE", _govIdType ?? "-")),
-                                Expanded(child: _buildDetailItem("ADDRESS TYPE", _addressType ?? "-")),
-                              ]
-                            ),
-                            const SizedBox(height: 24),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(child: _buildDetailItem("PINCODE", _pincode ?? "-")),
-                                Expanded(child: _buildDetailItem("ADDRESS PROOF", _addressProofType ?? "-")),
-                              ]
-                            ),
-                          ],
-                        ]
-                      )
-                    )
-                  ],
-                );
-              }
-
-              Widget buildPanDocument() {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                         const Icon(Icons.folder_shared, size: 18, color: Color(0xFF2563EB)),
-                         const SizedBox(width: 8),
-                         const Text("UPLOADED DOCUMENTS", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF1E293B), letterSpacing: 0.5)),
-                      ]
-                    ),
-                    const SizedBox(height: 20),
-                    Wrap(
-                      spacing: 16,
-                      runSpacing: 16,
-                      children: [
-                        _buildDocThumbnail("PAN Card", _panPhotoUrl, _uploadFileBytes),
-                        if (_isVerified) _buildDocThumbnail("Gov ID", _govIdPhotoUrl, _govIdPhotoBytes),
-                        if (_isVerified) _buildDocThumbnail("Address Proof", _addressProofUrl, _addressProofBytes),
-                      ],
-                    ),
-                  ],
-                );
-              }
-
               final rightContent = Padding(
                 padding: EdgeInsets.symmetric(horizontal: isSmall ? 16.0 : 32.0, vertical: 40.0),
                 child: isSmall 
@@ -763,23 +677,84 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
                           color: const Color(0xFFE2E8F0),
                         ),
                         const SizedBox(height: 32),
-                        buildDetails(),
+                        _buildDetailItem("PAN Number", _panNumber.isNotEmpty ? _panNumber : "-"),
+                        const SizedBox(height: 24),
+                        _buildDetailItem("Gender", _gender.isNotEmpty ? '${_gender[0].toUpperCase()}${_gender.substring(1).toLowerCase()}' : "-"),
+                        if (_isVerified) ...[
+                          const SizedBox(height: 24),
+                          _buildDetailItem("Gov ID Type", _govIdType ?? "-"),
+                          const SizedBox(height: 24),
+                          _buildDetailItem("Address Type", _addressType ?? "-"),
+                          const SizedBox(height: 24),
+                          _buildDetailItem("Pincode", _pincode ?? "-"),
+                          const SizedBox(height: 24),
+                          _buildDetailItem("Address Proof", _addressProofType ?? "-"),
+                        ],
                         const SizedBox(height: 32),
-                        buildPanDocument(),
+                        Container(
+                          width: double.infinity,
+                          height: 1,
+                          color: const Color(0xFFE2E8F0),
+                        ),
+                        const SizedBox(height: 32),
+                        _buildDocThumbnail("PAN Card Document", _panPhotoUrl, _uploadFileBytes),
+                        if (_isVerified) ...[
+                          const SizedBox(height: 16),
+                          _buildDocThumbnail("Gov ID Document", _govIdPhotoUrl, _govIdPhotoBytes),
+                          const SizedBox(height: 16),
+                          _buildDocThumbnail("Address Proof Document", _addressProofUrl, _addressProofBytes),
+                        ],
                       ],
                     )
                   : Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        buildProfilePhoto(),
+                        Expanded(
+                          flex: 1,
+                          child: buildProfilePhoto(),
+                        ),
                         Container(
                           width: 1,
-                          height: 140,
+                          height: 200,
                           color: const Color(0xFFE2E8F0),
-                          margin: const EdgeInsets.symmetric(horizontal: 32),
+                          margin: const EdgeInsets.symmetric(horizontal: 24),
                         ),
-                        Expanded(child: buildDetails()),
-                        buildPanDocument(),
+                        Expanded(
+                          flex: 2,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildDetailItem("PAN Number", _panNumber.isNotEmpty ? _panNumber : "-"),
+                              const SizedBox(height: 32),
+                              _buildDetailItem("Gender", _gender.isNotEmpty ? '${_gender[0].toUpperCase()}${_gender.substring(1).toLowerCase()}' : "-"),
+                              if (_isVerified) ...[
+                                const SizedBox(height: 32),
+                                _buildDetailItem("Gov ID Type", _govIdType ?? "-"),
+                                const SizedBox(height: 32),
+                                _buildDetailItem("Address Type", _addressType ?? "-"),
+                                const SizedBox(height: 32),
+                                _buildDetailItem("Pincode", _pincode ?? "-"),
+                              ]
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildDocThumbnail("PAN Card Document", _panPhotoUrl, _uploadFileBytes),
+                              if (_isVerified) ...[
+                                const SizedBox(height: 32),
+                                _buildDocThumbnail("Gov ID Document", _govIdPhotoUrl, _govIdPhotoBytes),
+                                const SizedBox(height: 32),
+                                _buildDocThumbnail("Address Proof Document", _addressProofUrl, _addressProofBytes),
+                                const SizedBox(height: 32),
+                                _buildDetailItem("Address Proof Type", _addressProofType ?? "-"),
+                              ]
+                            ],
+                          ),
+                        ),
                       ],
                     ),
               );
@@ -1021,6 +996,8 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+        const SizedBox(height: 12),
         GestureDetector(
           onTap: () {
             showDialog(
@@ -1058,15 +1035,11 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
             );
           },
           child: Container(
-            height: 90,
-            width: 130,
+            height: 120,
+            width: 120,
             decoration: BoxDecoration(
               color: const Color(0xFFF1F5F9),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0), width: 2),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 4))
-              ],
               image: url != null
                   ? DecorationImage(image: NetworkImage(url), fit: BoxFit.cover)
                   : (bytes != null ? DecorationImage(image: MemoryImage(bytes), fit: BoxFit.cover) : null),
@@ -1075,15 +1048,6 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
                 ? const Center(child: Icon(Icons.image_not_supported, color: Color(0xFFCBD5E1)))
                 : null,
           ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF1F5F9),
-            borderRadius: BorderRadius.circular(6)
-          ),
-          child: Text(title.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF64748B), letterSpacing: 0.5)),
         ),
       ]
     );
@@ -1094,13 +1058,12 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: const TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
-          color: Color(0xFF94A3B8),
-          letterSpacing: 0.5,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF64748B),
         )),
-        const SizedBox(height: 4),
-        Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+        const SizedBox(height: 8),
+        Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
       ],
     );
   }
@@ -1687,7 +1650,7 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
                 const SizedBox(height: 16),
                 if (_isLoadingCaptcha)
                   const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
-                else if (_captchaCategories.isEmpty)
+                else if (_subImages.isEmpty)
                   const Center(child: Text("No captcha images available."))
                 else
                   GridView.builder(
@@ -1698,19 +1661,19 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
                     ),
-                    itemCount: _captchaCategories.length,
+                    itemCount: _subImages.length,
                     itemBuilder: (context, index) {
-                      final category = _captchaCategories[index];
-                      final isSelected = _selectedCaptchaCategory?.id == category.id;
+                      final image = _subImages[index];
+                      final isSelected = _selectedSubImage != null && _selectedSubImage!['id'] == image['id'];
                       return GestureDetector(
-                        onTap: () => setState(() => _selectedCaptchaCategory = category),
+                        onTap: () => setState(() => _selectedSubImage = image),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: Stack(
                             fit: StackFit.expand,
                             children: [
                               Image.network(
-                                category.image,
+                                image['image_path'] ?? '',
                                 fit: BoxFit.cover,
                                 loadingBuilder: (context, child, progress) {
                                   if (progress == null) return child;
@@ -1772,7 +1735,7 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
                       );
                       return;
                     }
-                    if (_selectedCaptchaCategory == null) {
+                    if (_selectedSubImage == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text("Please select a captcha image"), backgroundColor: Colors.red),
                       );
@@ -1781,10 +1744,10 @@ class _UserOverviewPageState extends State<UserOverviewPage> {
                     
                     final payload = {
                       "user_main_id": _userMainId,
-                      "manage_captcha_id": _selectedCaptchaCategory!.id,
+                      "manage_captcha_id": _selectedSubImage!['id'],
                       "password": pwd,
                       "key": "Manage_login_pass",
-                      "image": _selectedCaptchaCategory!.image
+                      "image": _selectedSubImage!['image_path']
                     };
                     
                     final response = await UserService().createManageCaptcha(payload);

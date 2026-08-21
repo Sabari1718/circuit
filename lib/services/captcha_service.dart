@@ -36,9 +36,11 @@ class CaptchaService {
         final Map<String, dynamic> decoded = jsonDecode(response.body);
         if (decoded['success'] == true && decoded['data'] != null) {
           final List<dynamic> data = decoded['data'];
-          return data
+          final categories = data
               .map((json) => CaptchaCategory.fromJson(json))
               .toList();
+          categories.shuffle();
+          return categories;
         } else {
           throw Exception(decoded['message'] ?? 'Failed to load categories');
         }

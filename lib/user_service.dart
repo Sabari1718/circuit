@@ -551,53 +551,8 @@ class UserService extends ChangeNotifier {
 
   /// Check if user exists in user_register table (REGISTERED USER upgrade)
   Future<bool> checkUserRegisterStatus(String userMainId) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool('is_registered_$userMainId') == true) {
-      debugPrint('[UserRegister] ✅ Registered user found locally for $userMainId!');
-      return true;
-    }
-
-    // Try the user_register endpoint to check if user has registered
-    final url = 'https://managelogin.jobes24x7.com/api/user_register/$userMainId';
-    try {
-      final token = await AuthService().getToken();
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          if (token != null) 'Authorization': 'Bearer $token',
-        },
-      );
-      debugPrint('[UserRegister] GET $url → ${response.statusCode}');
-      debugPrint('[UserRegister] Body: ${response.body}');
-      if (response.statusCode == 200) {
-        final decoded = jsonDecode(response.body);
-        final inner = decoded['data'];
-        if (inner is Map && inner['code'] == 200 && inner['data'] != null) {
-          final innerData = inner['data'];
-          if ((innerData is List && innerData.isEmpty) || (innerData is Map && innerData.isEmpty)) {
-            debugPrint('[UserRegister] ❌ Empty nested data found');
-            return false;
-          }
-          await prefs.setBool('is_registered_$userMainId', true);
-          debugPrint('[UserRegister] ✅ Registered user found!');
-          return true;
-        }
-        if (decoded['success'] == true && decoded['data'] != null) {
-          final data = decoded['data'];
-          if ((data is List && data.isEmpty) || (data is Map && data.isEmpty)) {
-            debugPrint('[UserRegister] ❌ Empty flat data found');
-            return false;
-          }
-          await prefs.setBool('is_registered_$userMainId', true);
-          debugPrint('[UserRegister] ✅ Registered user found (flat)!');
-          return true;
-        }
-      }
-    } catch (e) {
-      debugPrint('[UserRegister] Error: $e');
-    }
-    return false;
+    final details = await getRegisterDetails(userMainId);
+    return details != null && details.isNotEmpty;
   }
 
   /// Get details of a registered user by user_main_id
@@ -672,15 +627,7 @@ class UserService extends ChangeNotifier {
       debugPrint('Body: ${response.body}');
       final decoded = jsonDecode(response.body);
       
-      // Save locally to bypass the broken GET endpoint
-      bool isSuccess = false;
-      if (decoded['code'] == 200) isSuccess = true;
-      if (decoded['data'] != null && decoded['data']['code'] == 200) isSuccess = true;
-      
-      if (isSuccess && payload.containsKey('user_main_id')) {
-         final prefs = await SharedPreferences.getInstance();
-         await prefs.setBool('is_registered_${payload['user_main_id']}', true);
-      }
+      // removed local cache save
       
       return decoded;
     } catch (e) {

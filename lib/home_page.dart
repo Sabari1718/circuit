@@ -212,7 +212,7 @@ class _HomePageState extends State<HomePage> {
           if (fetchUid == '8059210846') {
             fetchUid = '6102066450';
           }
-          
+
           final res = await ApiService().getBusinesses(fetchUid);
           List<dynamic> rawList = [];
 
@@ -247,7 +247,8 @@ class _HomePageState extends State<HomePage> {
                   rawList = [innerData];
                 }
               }
-            } else if (resReg['business'] != null && resReg['business'] is List) {
+            } else if (resReg['business'] != null &&
+                resReg['business'] is List) {
               rawList = resReg['business'];
             }
           }
@@ -866,7 +867,9 @@ class _HomePageState extends State<HomePage> {
       business = BusinessUser(
         id: "5319073341", // Default fallback ID based on user logs
         registrationType: "Propagator",
-        businessName: _currentUserName.isNotEmpty ? "$_currentUserName's Business" : "My Business",
+        businessName: _currentUserName.isNotEmpty
+            ? "$_currentUserName's Business"
+            : "My Business",
         email: "contact@business.com",
         phone: "5319073341",
         panNumber: "ABCDE1234F",
@@ -887,11 +890,12 @@ class _HomePageState extends State<HomePage> {
         status: "Active",
       );
     }
-    
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => BusinessRegistrationOverviewPage(business: business!),
+        builder: (context) =>
+            BusinessRegistrationOverviewPage(business: business!),
       ),
     );
   }
@@ -976,4 +980,3 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
-

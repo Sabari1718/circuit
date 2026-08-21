@@ -10,6 +10,7 @@ import 'user_service.dart';
 import 'set_pin_page.dart';
 import 'secret_image_verification_page.dart';
 import 'secret_image_setup_page.dart';
+import 'features/auth/reset_access_selection_page.dart';
 
 class PasswordPage extends ConsumerStatefulWidget {
   final String phoneNumber;
@@ -98,36 +99,14 @@ class _PasswordPageState extends ConsumerState<PasswordPage> {
             await ref.read(userServiceProvider).saveFromApiUser(userData);
           }
 
-          // Check if local secret image exists (handles fresh app install scenario)
-          final localData = await ref.read(userServiceProvider).getUserData();
-          final String localPhone = localData['phone'] ?? '';
-          final String localEmail = localData['email'] ?? '';
-          final String localUserMainId = localData['user_main_id'] ?? '';
-
-          final List<String> possibleIdentifiers = [
-            identifier, // Exact input user typed
-            if (localPhone.isNotEmpty) localPhone, // API formatted phone
-            if (localEmail.isNotEmpty) localEmail, // API formatted email
-            if (localUserMainId.isNotEmpty) localUserMainId, // Invariant ID
-          ];
-
-          String? savedImage;
-          String? correctIdentifier;
-
-          for (final id in possibleIdentifiers) {
-            savedImage = await ref
-                .read(userServiceProvider)
-                .getUserSecretImage(id);
-            if (savedImage != null) {
-              correctIdentifier = id;
-              break;
-            }
-          }
+          // Check API response to determine if captcha is required (already set up)
+          final innerData = response['data'] ?? {};
+          final bool isCaptchaRequired = innerData['captcha_required'] == true;
 
           if (!mounted) return;
 
-          if (savedImage == null) {
-            // Fresh install or cleared data -> route to setup
+          if (!isCaptchaRequired) {
+            // No captcha found -> route to setup
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(
@@ -137,12 +116,12 @@ class _PasswordPageState extends ConsumerState<PasswordPage> {
               (route) => false,
             );
           } else {
-            // Secret image exists -> route to verify
+            // Captcha is required -> route to verify
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(
                 builder: (context) => SecretImageVerificationPage(
-                  identifier: correctIdentifier ?? identifier,
+                  identifier: identifier,
                   password: password,
                 ),
               ),
@@ -616,7 +595,32 @@ class _PasswordPageState extends ConsumerState<PasswordPage> {
                                               },
                                             ),
                                           ],
-                                          const SizedBox(height: 40),
+                                          if (isExistingUser) ...[
+                                            const SizedBox(height: 16),
+                                            Align(
+                                              alignment: Alignment.centerRight,
+                                              child: TextButton(
+                                                onPressed: () {
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) => const ResetAccessSelectionPage(),
+                                                    ),
+                                                  );
+                                                },
+                                                child: const Text(
+                                                  'Reset Password/Captcha Image?',
+                                                  style: TextStyle(
+                                                    color: Colors.amberAccent,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 16),
+                                          ] else ...[
+                                            const SizedBox(height: 40),
+                                          ],
                                           _buildGradientButton(
                                             text: _isSubmitting
                                                 ? 'Please wait...'
