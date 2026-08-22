@@ -23,6 +23,11 @@ class BusinessUserStore extends ChangeNotifier {
     }
   }
 
+  void clear() {
+    _businesses.clear();
+    notifyListeners();
+  }
+
   BusinessUser? getBusinessById(String id) {
     try {
       return _businesses.firstWhere((b) => b.id == id);

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'addresses_and_proof_page.dart';
+import '../../user_service.dart';
 
 class IdentityVerificationPage extends StatefulWidget {
   final Map<String, dynamic>? initialData;
@@ -16,45 +17,37 @@ class IdentityVerificationPage extends StatefulWidget {
 
 class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
   String? selectedGender;
-  String? selectedIdType;
   
   String? profilePhotoName;
   String? panDocName;
-  String? idDocName;
   
   String? profilePhotoBase64;
   String? panDocBase64;
-  String? idDocBase64;
   
   late final TextEditingController _panController;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _panController = TextEditingController(text: widget.initialData?['pan_number']?.toString() ?? '');
     
-    // Set initial dropdown values if they match the lists
     final initialGender = widget.initialData?['gender']?.toString();
-    if (initialGender != null && ["Male", "Female", "Other"].contains(initialGender)) {
-      selectedGender = initialGender;
-    }
-    
-    final initialIdType = widget.initialData?['government_id_type']?.toString();
-    if (initialIdType != null && ["Aadhaar Card", "Passport", "Driving Licence", "Voter ID Card"].contains(initialIdType)) {
-      selectedIdType = initialIdType;
+    if (initialGender != null && initialGender.isNotEmpty) {
+      final formattedGender = initialGender[0].toUpperCase() + initialGender.substring(1).toLowerCase();
+      if (["Male", "Female", "Other"].contains(formattedGender)) {
+        selectedGender = formattedGender;
+      }
     }
 
-    final initialProfilePath = widget.initialData?['profile_photo_path']?.toString();
+    final initialProfilePath = widget.initialData?['profile_photo_path']?.toString() ?? widget.initialData?['profile_photo']?.toString();
     if (initialProfilePath != null && initialProfilePath.isNotEmpty) {
       profilePhotoName = initialProfilePath.split('/').last;
     }
-    final initialPanPath = widget.initialData?['pan_document_path']?.toString();
+    
+    final initialPanPath = widget.initialData?['pan_document_path']?.toString() ?? widget.initialData?['pan_front_photo']?.toString();
     if (initialPanPath != null && initialPanPath.isNotEmpty) {
       panDocName = initialPanPath.split('/').last;
-    }
-    final initialIdDocPath = widget.initialData?['government_id_document_path']?.toString();
-    if (initialIdDocPath != null && initialIdDocPath.isNotEmpty) {
-      idDocName = initialIdDocPath.split('/').last;
     }
   }
 
@@ -106,7 +99,7 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
-                  "Identity Verification",
+                  "Step 1: Registered User Account Details",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 24,
@@ -116,7 +109,7 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  "Verify your identity documents and address details to upgrade your credentials.",
+                  "Provide your basic identification and PAN card properties to register.",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
@@ -132,9 +125,9 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildStepIndicator("1", "Identity & Location", true),
+                      _buildStepIndicator("1", "Registered User", true),
                       Container(width: 40, height: 1, color: const Color(0xFFE2E8F0)),
-                      _buildStepIndicator("2", "Addresses & Proof", false),
+                      _buildStepIndicator("2", "Verified User", false),
                     ],
                   ),
                 ),
@@ -151,13 +144,9 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
                           const SizedBox(height: 24),
                           _buildTextField("PAN Number *", "Enter PAN Number", _panController, isUpperCase: true),
                           const SizedBox(height: 24),
-                          _buildDropdownField("Select ID Type *", "Select Government ID Type", ["Aadhaar Card", "Passport", "Driving Licence", "Voter ID Card"], selectedIdType, (v) => setState(() => selectedIdType = v)),
-                          const SizedBox(height: 24),
                           _buildFilePicker("Profile Photo *", profilePhotoName, () => _pickFile((name, base64) => setState(() { profilePhotoName = name; profilePhotoBase64 = base64; })), isImage: true),
                           const SizedBox(height: 24),
-                          _buildFilePicker("Upload PAN Document *", panDocName, () => _pickFile((name, base64) => setState(() { panDocName = name; panDocBase64 = base64; }))),
-                          const SizedBox(height: 24),
-                          _buildFilePicker("Upload ID Document *", idDocName, () => _pickFile((name, base64) => setState(() { idDocName = name; idDocBase64 = base64; }))),
+                          _buildFilePicker("PAN Card Photo (Front) *", panDocName, () => _pickFile((name, base64) => setState(() { panDocName = name; panDocBase64 = base64; }))),
                         ],
                       );
                     }
@@ -171,8 +160,6 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
                               _buildDropdownField("Gender *", "Select Gender", ["Male", "Female", "Other"], selectedGender, (v) => setState(() => selectedGender = v)),
                               const SizedBox(height: 24),
                               _buildTextField("PAN Number *", "Enter PAN Number", _panController, isUpperCase: true),
-                              const SizedBox(height: 24),
-                              _buildDropdownField("Select ID Type *", "Select Government ID Type", ["Aadhaar Card", "Passport", "Driving Licence", "Voter ID Card"], selectedIdType, (v) => setState(() => selectedIdType = v)),
                             ],
                           ),
                         ),
@@ -183,9 +170,7 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
                             children: [
                               _buildFilePicker("Profile Photo *", profilePhotoName, () => _pickFile((name, base64) => setState(() { profilePhotoName = name; profilePhotoBase64 = base64; })), isImage: true),
                               const SizedBox(height: 24),
-                              _buildFilePicker("Upload PAN Document *", panDocName, () => _pickFile((name, base64) => setState(() { panDocName = name; panDocBase64 = base64; }))),
-                              const SizedBox(height: 24),
-                              _buildFilePicker("Upload ID Document *", idDocName, () => _pickFile((name, base64) => setState(() { idDocName = name; idDocBase64 = base64; }))),
+                              _buildFilePicker("PAN Card Photo (Front) *", panDocName, () => _pickFile((name, base64) => setState(() { panDocName = name; panDocBase64 = base64; }))),
                             ],
                           ),
                         ),
@@ -228,21 +213,64 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
                           color: const Color(0xFF2563EB),
                         ),
                         child: ElevatedButton.icon(
-                          onPressed: () {
-                            bool hasProfile = profilePhotoBase64 != null || (widget.initialData?['profile_photo_path'] != null);
-                            bool hasPanDoc = panDocBase64 != null || (widget.initialData?['pan_document_path'] != null);
-                            bool hasIdDoc = idDocBase64 != null || (widget.initialData?['government_id_document_path'] != null);
+                          onPressed: _isLoading ? null : () async {
+                            bool hasProfile = profilePhotoBase64 != null || (widget.initialData?['profile_photo_path'] != null) || (widget.initialData?['profile_photo'] != null);
+                            bool hasPanDoc = panDocBase64 != null || (widget.initialData?['pan_document_path'] != null) || (widget.initialData?['pan_front_photo'] != null);
 
                             if (selectedGender == null || 
                                 _panController.text.isEmpty ||
                                 !hasProfile ||
-                                !hasPanDoc ||
-                                selectedIdType == null ||
-                                !hasIdDoc) {
+                                !hasPanDoc) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text('Please fill all required fields and upload images')),
                               );
                               return;
+                            }
+
+                            // If they haven't completed Registered User upgrade yet, submit it now
+                            if (widget.initialData == null) {
+                              setState(() => _isLoading = true);
+                              
+                              final userData = await UserService().getUserData();
+                              final String actualUserMainId = userData['user_main_id']?.toString() ?? "";
+                              
+                              if (actualUserMainId.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Error: User ID not found. Please log in again.')),
+                                );
+                                setState(() => _isLoading = false);
+                                return;
+                              }
+
+                              final payload = {
+                                "user_main_id": actualUserMainId,
+                                "pan_number": _panController.text,
+                                "gender": selectedGender!.toLowerCase(),
+                                "is_verified": 0,
+                                "pan_front_photo": panDocBase64 ?? "",
+                                "profile_photo": profilePhotoBase64 ?? "",
+                                "user_type": "register"
+                              };
+
+                              final response = await UserService().registerUserUpgrade(payload);
+                              
+                              if (!mounted) return;
+                              setState(() => _isLoading = false);
+
+                              if (response != null) {
+                                final inner = response['data'] as Map<String, dynamic>?;
+                                if (inner?['code'] != 200) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(inner?['message'] ?? 'Failed to register basic details.')),
+                                  );
+                                  return;
+                                }
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Failed to submit. Please try again later.')),
+                                );
+                                return;
+                              }
                             }
                             
                             Navigator.push(
@@ -250,25 +278,30 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
                               MaterialPageRoute(
                                 builder: (context) => AddressesAndProofPage(
                                   gender: selectedGender!,
-                                  idType: selectedIdType!,
                                   panNumber: _panController.text,
-                                  profilePhotoBase64: profilePhotoBase64 ?? '',
-                                  panDocBase64: panDocBase64 ?? '',
-                                  idDocBase64: idDocBase64 ?? '',
+                                  profilePhotoBase64: profilePhotoBase64 ?? widget.initialData?['profile_photo']?.toString() ?? widget.initialData?['profile_photo_path']?.toString() ?? '',
+                                  panDocBase64: panDocBase64 ?? widget.initialData?['pan_front_photo']?.toString() ?? widget.initialData?['pan_document_path']?.toString() ?? '',
                                   initialData: widget.initialData,
                                 ),
                               ),
                             );
                           },
-                          icon: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
-                          label: const Text(
-                            "Next",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
+                          icon: _isLoading 
+                              ? const SizedBox(width: 18) 
+                              : const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
+                          label: _isLoading
+                              ? const SizedBox(
+                                  height: 20, width: 20,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                )
+                              : const Text(
+                                  "Next",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.transparent,
                             shadowColor: Colors.transparent,

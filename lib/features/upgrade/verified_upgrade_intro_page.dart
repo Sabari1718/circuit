@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'identity_verification_page.dart';
+import '../../user_service.dart';
 
 class VerifiedUpgradeIntroPage extends StatelessWidget {
   const VerifiedUpgradeIntroPage({super.key});
@@ -86,13 +87,43 @@ class VerifiedUpgradeIntroPage extends StatelessWidget {
                           color: const Color(0xFF10B981),
                         ),
                         child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const IdentityVerificationPage(),
-                              ),
+                          onPressed: () async {
+                            showDialog(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (BuildContext context) {
+                                return const Center(
+                                  child: CircularProgressIndicator(),
+                                );
+                              },
                             );
+
+                            try {
+                              final userData = await UserService().getUserData();
+                              final String userMainId = userData['user_main_id']?.toString() ?? "";
+                              
+                              Map<String, dynamic>? registerData;
+                              if (userMainId.isNotEmpty) {
+                                registerData = await UserService().getRegisterDetails(userMainId);
+                              }
+
+                              if (context.mounted) {
+                                Navigator.pop(context); // Close loading dialog
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => IdentityVerificationPage(initialData: registerData),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                Navigator.pop(context); // Close loading dialog
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Error loading user data')),
+                                );
+                              }
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.transparent,

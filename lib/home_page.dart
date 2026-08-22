@@ -58,7 +58,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   String _currentUserName = "User";
   String _accountType = "GUEST";
   String _selectedBusinessScale = "Small Scale";
@@ -71,11 +71,27 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _currentUserName = widget.userName;
     _accountType = widget.accountType;
     _loadUserSession();
     _initializeActivities();
     _filteredActivities = List.from(_activities);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Refresh user session when app comes to foreground
+      _loadUserSession();
+    }
   }
 
   void _initializeActivities() {
@@ -193,10 +209,13 @@ class _HomePageState extends State<HomePage> {
         uid,
       );
       if (verificationDetails != null) {
-        final userType = verificationDetails['user_type']
-            ?.toString()
-            .toLowerCase();
-        if (userType == 'verified') {
+        // The backend might return an empty shell record for 'verification'.
+        // We only consider the user VERIFIED if they have submitted actual data.
+        bool hasGovId = verificationDetails['government_id_type'] != null;
+        bool hasAddresses = verificationDetails['addresses'] != null && 
+                           (verificationDetails['addresses'] as List).isNotEmpty;
+        
+        if (hasGovId || hasAddresses) {
           isVerified = true;
         }
       }
@@ -204,84 +223,89 @@ class _HomePageState extends State<HomePage> {
       // Check 2: user_register table (for REGISTERED users)
       isRegistered = await UserService().checkUserRegisterStatus(uid);
 
-      // Fetch Business details if not loaded
-      if (BusinessUserStore().businesses.isEmpty) {
-        try {
-          // Temporarily override ID if needed (same as business_created_page)
-          String fetchUid = uid;
-          if (fetchUid == '8059210846') {
-            fetchUid = '6102066450';
-          }
-
-          final res = await ApiService().getBusinesses(fetchUid);
-          List<dynamic> rawList = [];
-
-          if (res['data'] != null && res['data']['data'] is List) {
-            rawList = res['data']['data'];
-          } else if (res['data'] is List) {
-            rawList = res['data'];
-          } else if (res['data'] != null && res['data']['businesses'] is List) {
-            rawList = res['data']['businesses'];
-          } else if (res['businesses'] is List) {
-            rawList = res['businesses'];
-          } else if (res['business'] is List) {
-            rawList = res['business'];
-          } else if (res['business_list'] is List) {
-            rawList = res['business_list'];
-          }
-
-          if (rawList.isEmpty) {
-            final resReg = await ApiService().getBusinessRegUser(fetchUid);
-            if (resReg['data'] != null) {
-              final innerData = resReg['data'];
-              if (innerData is List) {
-                rawList = innerData;
-              } else if (innerData is Map) {
-                if (innerData['data'] != null) {
-                  if (innerData['data'] is List) {
-                    rawList = innerData['data'];
-                  } else if (innerData['data'] is Map) {
-                    rawList = [innerData['data']];
-                  }
-                } else {
-                  rawList = [innerData];
-                }
-              }
-            } else if (resReg['business'] != null &&
-                resReg['business'] is List) {
-              rawList = resReg['business'];
-            }
-          }
-
-          if (rawList.isNotEmpty) {
-            final business = BusinessUser.fromJson(rawList[0]);
-            BusinessUserStore().addBusiness(business);
-          }
-        } catch (e) {
-          debugPrint('Error fetching business: $e');
+      // Always fetch Business details to reflect DB changes (e.g. deletion)
+      try {
+        // Temporarily override ID if needed (same as business_created_page)
+        String fetchUid = uid;
+        if (fetchUid == '8059210846') {
+          fetchUid = '6102066450';
         }
+
+        final res = await ApiService().getBusinesses(fetchUid);
+        List<dynamic> rawList = [];
+
+        if (res['data'] != null && res['data']['data'] is List) {
+          rawList = res['data']['data'];
+        } else if (res['data'] is List) {
+          rawList = res['data'];
+        } else if (res['data'] != null && res['data']['businesses'] is List) {
+          rawList = res['data']['businesses'];
+        } else if (res['businesses'] is List) {
+          rawList = res['businesses'];
+        } else if (res['business'] is List) {
+          rawList = res['business'];
+        } else if (res['business_list'] is List) {
+          rawList = res['business_list'];
+        }
+
+        if (rawList.isEmpty) {
+          final resReg = await ApiService().getBusinessRegUser(fetchUid);
+          if (resReg['data'] != null) {
+            final innerData = resReg['data'];
+            if (innerData is List) {
+              rawList = innerData;
+            } else if (innerData is Map) {
+              if (innerData['data'] != null) {
+                if (innerData['data'] is List) {
+                  rawList = innerData['data'];
+                } else if (innerData['data'] is Map) {
+                  rawList = [innerData['data']];
+                }
+              } else {
+                rawList = [innerData];
+              }
+            }
+          } else if (resReg['business'] != null &&
+              resReg['business'] is List) {
+            rawList = resReg['business'];
+          }
+        }
+
+        BusinessUserStore().clear();
+        if (rawList.isNotEmpty) {
+          final business = BusinessUser.fromJson(rawList[0]);
+          BusinessUserStore().addBusiness(business);
+        }
+      } catch (e) {
+        debugPrint('Error fetching business: $e');
       }
     }
 
-    if (mounted) {
-      setState(() {
-        _currentUserName = (data['name'] ?? widget.userName).trim().isEmpty
-            ? widget.userName
-            : data['name']!;
-        _accountType = data['accountType'] ?? widget.accountType;
-        _isMainBusinessRegistered =
-            prefs.getBool('is_main_business_registered') ?? false;
-        _isRegisteredUpgraded = isRegistered;
-        _isVerified = isVerified;
+      if (mounted) {
+        setState(() {
+          // If the base registered user is deleted, everything else should also reset
+          if (!isRegistered) {
+            isVerified = false;
+            BusinessUserStore().clear();
+          }
 
-        // Initialize dropdown from store if business exists
-        if (BusinessUserStore().businesses.isNotEmpty &&
-            BusinessUserStore().businesses.first.businessTypes.isNotEmpty) {
-          _selectedBusinessScale =
-              BusinessUserStore().businesses.first.businessTypes.first;
-        }
-      });
-    }
+          _currentUserName = (data['name'] ?? widget.userName).trim().isEmpty
+              ? widget.userName
+              : data['name']!;
+          _accountType = data['accountType'] ?? widget.accountType;
+          _isMainBusinessRegistered =
+              prefs.getBool('is_main_business_registered') ?? false;
+          _isRegisteredUpgraded = isRegistered;
+          _isVerified = isVerified;
+
+          // Initialize dropdown from store if business exists
+          if (BusinessUserStore().businesses.isNotEmpty &&
+              BusinessUserStore().businesses.first.businessTypes.isNotEmpty) {
+            _selectedBusinessScale =
+                BusinessUserStore().businesses.first.businessTypes.first;
+          }
+        });
+      }
   }
 
   bool _checkCompletion(String moduleId) {
@@ -392,41 +416,123 @@ class _HomePageState extends State<HomePage> {
         },
         selectedSection: _selectedSection,
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Modern Search Bar
-            _buildSearchBar(),
-
-            // Section Header
-            _buildSectionHeader(),
-
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 400),
-                transitionBuilder: (child, animation) {
-                  return FadeTransition(
-                    opacity: animation,
-                    child: SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(0, 0.05),
-                        end: Offset.zero,
-                      ).animate(animation),
-                      child: child,
-                    ),
-                  );
-                },
-                child: _selectedSection == DashboardSection.activities
-                    ? (_filteredActivities.isEmpty
-                          ? _buildEmptyState()
-                          : _buildActivitiesGrid())
-                    : _buildPrivilegeGrid(),
-              ),
-            ),
-            const SizedBox(height: 24),
-          ],
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFF8FAFC), Color(0xFFEFF6FF)], // Subtle blue-ish premium background
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
         ),
+        child: RefreshIndicator(
+          onRefresh: _loadUserSession,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+            children: [
+              // Modern Search Bar
+              if (false) _buildSearchBar(),
+
+              // Section Header
+              // We hide this for now as requested
+              // if (false) _buildSectionHeader(),
+              
+              // We add a stunning premium header
+              Container(
+                margin: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF0F172A).withOpacity(0.25),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                  border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.2),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF3B82F6).withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 24),
+                    ),
+                    const SizedBox(width: 14),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "User Privileges 👏",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.5,
+                              color: Colors.white,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            "Logged in as Guest User.\nUpgrade to unlock features.",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF94A3B8),
+                              fontWeight: FontWeight.w500,
+                              height: 1.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 400),
+                  transitionBuilder: (child, animation) {
+                    return FadeTransition(
+                      opacity: animation,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, 0.05),
+                          end: Offset.zero,
+                        ).animate(animation),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: _buildPrivilegeGrid(), // Always show privileges grid for now
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      )
       ),
     );
   }
@@ -746,6 +852,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildPrivilegeGrid() {
+    bool isPremium = _checkCompletion("premium");
+    bool isBusiness = _checkCompletion("business");
+    bool isVerified = _checkCompletion("verified");
+
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -761,22 +871,11 @@ class _HomePageState extends State<HomePage> {
           icon: "👤",
           color: const Color(0xFF3B82F6),
           isCompleted: _checkCompletion("registered"),
-          primaryButtonText: _checkCompletion("registered")
-              ? "VIEW"
-              : "UPGRADE",
+          planName: "Standard",
+          accessLevel: "Basic",
+          primaryButtonText: _checkCompletion("registered") ? "View" : "Upgrade",
           onPrimaryTap: () => _handleNavigation("registered", "Registered"),
           onReadMoreTap: () => _showReadMore("Registered"),
-        ),
-        AccountTypeCard(
-          title: "Business",
-          subtitle: "User",
-          description: "Access to business analytics & team management",
-          icon: "💼",
-          color: const Color(0xFF8B5CF6),
-          isCompleted: _checkCompletion("business"),
-          primaryButtonText: _checkCompletion("business") ? "VIEW" : "UPGRADE",
-          onPrimaryTap: () => _handleNavigation("business", "Business"),
-          onReadMoreTap: () => _showReadMore("Business"),
         ),
         AccountTypeCard(
           title: "Verified",
@@ -785,11 +884,24 @@ class _HomePageState extends State<HomePage> {
           icon: "✅",
           color: const Color(0xFF10B981),
           isCompleted: _checkCompletion("verified"),
-          primaryButtonText: _checkCompletion("verified")
-              ? "VIEW"
-              : "Upgrade to VERIFIED",
+          planName: "Verified",
+          accessLevel: "Priority",
+          primaryButtonText: _checkCompletion("verified") ? "View" : "Upgrade",
           onPrimaryTap: () => _handleNavigation("verified", "Verified"),
           onReadMoreTap: () => _showReadMore("Verified"),
+        ),
+        AccountTypeCard(
+          title: "Business",
+          subtitle: "User",
+          description: "Access to business analytics & team management",
+          icon: "💼",
+          color: const Color(0xFF8B5CF6),
+          isCompleted: _checkCompletion("business"),
+          planName: "Business",
+          accessLevel: "Enterprise",
+          primaryButtonText: _checkCompletion("business") ? "View" : "Upgrade",
+          onPrimaryTap: () => _handleNavigation("business", "Business"),
+          onReadMoreTap: () => _showReadMore("Business"),
         ),
         AccountTypeCard(
           title: "Premium",
@@ -797,8 +909,10 @@ class _HomePageState extends State<HomePage> {
           description: "All features + exclusive benefits",
           icon: "⭐",
           color: const Color(0xFFF59E0B),
-          isCompleted: false,
-          primaryButtonText: "Upgrade to PREMIUM",
+          isCompleted: _checkCompletion("premium"),
+          planName: "Premium",
+          accessLevel: "Full",
+          primaryButtonText: _checkCompletion("premium") ? "View" : "Upgrade",
           onPrimaryTap: () => _handleNavigation("premium", "Premium"),
           onReadMoreTap: () => _showReadMore("Premium"),
         ),

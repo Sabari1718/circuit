@@ -526,6 +526,9 @@ class UserService extends ChangeNotifier {
           'Content-Type': 'application/json',
         },
       );
+      debugPrint('=== API REQUEST: GET $url ===');
+      debugPrint('=== API RESPONSE [${response.statusCode}] ===');
+      debugPrint('Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);

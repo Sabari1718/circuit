@@ -3,25 +3,22 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'dart:io';
+import 'package:http/http.dart' as http;
 import '../../user_service.dart';
 
 class AddressesAndProofPage extends StatefulWidget {
   final String gender;
-  final String idType;
   final String panNumber;
   final String profilePhotoBase64;
   final String panDocBase64;
-  final String idDocBase64;
   final Map<String, dynamic>? initialData;
 
   const AddressesAndProofPage({
     super.key,
     required this.gender,
-    required this.idType,
     required this.panNumber,
     required this.profilePhotoBase64,
     required this.panDocBase64,
-    required this.idDocBase64,
     this.initialData,
   });
 
@@ -63,7 +60,13 @@ class _AddressesAndProofPageState extends State<AddressesAndProofPage> {
   String? selectedDocumentType;
   String? addressProofFileName;
   String? addressProofBase64;
+  
+  String? selectedIdType;
+  String? idDocName;
+  String? idDocBase64;
+
   bool _isLoading = false;
+  bool _isFetchingPincode = false;
 
   @override
   void initState() {
@@ -105,6 +108,16 @@ class _AddressesAndProofPageState extends State<AddressesAndProofPage> {
           addressProofFileName = proofDoc.split('/').last;
         }
       }
+
+      final initialIdType = widget.initialData!['government_id_type']?.toString();
+      if (initialIdType != null && ["Aadhaar Card", "Passport", "Driving Licence", "Voter ID Card"].contains(initialIdType)) {
+        selectedIdType = initialIdType;
+      }
+      
+      final initialIdDocPath = widget.initialData!['government_id_document_path']?.toString();
+      if (initialIdDocPath != null && initialIdDocPath.isNotEmpty) {
+        idDocName = initialIdDocPath.split('/').last;
+      }
     }
   }
 
@@ -118,6 +131,89 @@ class _AddressesAndProofPageState extends State<AddressesAndProofPage> {
         addressProofFileName = result.files.single.name;
         addressProofBase64 = base64String;
       });
+    }
+  }
+
+  Future<void> _pickIdFile() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
+    if (result != null && result.files.single.path != null) {
+      final file = File(result.files.single.path!);
+      final bytes = await file.readAsBytes();
+      setState(() {
+        idDocName = result.files.single.name;
+        idDocBase64 = "data:image/png;base64,${base64Encode(bytes)}";
+      });
+    }
+  }
+
+  Future<void> _fetchPincodeDetails() async {
+    final pincode = _pincodeController.text.trim();
+    debugPrint("=== Fetching Pincode: $pincode ===");
+    if (pincode.length != 6) {
+      debugPrint("Invalid pincode length: ${pincode.length}");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid 6-digit Pincode')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isFetchingPincode = true;
+    });
+
+    try {
+      final url = 'https://managelogin.jobes24x7.com/api/outsideapis/pincode/details?pincode=$pincode';
+      debugPrint("API CALL: $url");
+      final response = await http.get(Uri.parse(url));
+      debugPrint("API STATUS: ${response.statusCode}");
+      debugPrint("API BODY: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final decodedBody = json.decode(response.body);
+        final responseData = decodedBody['data'];
+        
+        if (responseData != null && responseData['code'] == 200 && responseData['data'] != null && responseData['data'].isNotEmpty) {
+          final pData = responseData['data'][0];
+          setState(() {
+            _cityController.text = pData['city_name']?.toString() ?? '';
+            _districtController.text = pData['district_name']?.toString() ?? '';
+            _stateController.text = pData['state_name']?.toString() ?? '';
+            _countryController.text = pData['country_name']?.toString() ?? 'India';
+            
+            // Try to set area/taluk as well
+            if (_areaLocalityController.text.isEmpty) {
+              _areaLocalityController.text = pData['taluk_name']?.toString() ?? '';
+            }
+            if (_areaController.text.isEmpty) {
+              _areaController.text = pData['taluk_name']?.toString() ?? '';
+            }
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Pincode details fetched successfully', style: TextStyle(color: Colors.white)),
+              backgroundColor: Color(0xFF10B981),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not fetch details for this pincode')),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error fetching pincode details')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isFetchingPincode = false;
+        });
+      }
     }
   }
 
@@ -203,7 +299,7 @@ class _AddressesAndProofPageState extends State<AddressesAndProofPage> {
               children: [
                 const Center(
                   child: Text(
-                    "Identity Verification",
+                    "Step 2: Verified User Credentials & Address",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 24,
@@ -215,7 +311,7 @@ class _AddressesAndProofPageState extends State<AddressesAndProofPage> {
                 const SizedBox(height: 12),
                 const Center(
                   child: Text(
-                    "Verify your identity documents and address details to upgrade your credentials.",
+                    "Enter your address proofs and government-issued ID card scans.",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
@@ -232,13 +328,37 @@ class _AddressesAndProofPageState extends State<AddressesAndProofPage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildStepIndicator("1", "Identity & Location", true, isCompleted: true),
+                      _buildStepIndicator("1", "Registered User", true, isCompleted: true),
                       Container(width: 40, height: 1, color: const Color(0xFFE2E8F0)),
-                      _buildStepIndicator("2", "Addresses & Proof", true),
+                      _buildStepIndicator("2", "Verified User", true),
                     ],
                   ),
                 ),
                 const SizedBox(height: 48),
+
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    bool isMobile = constraints.maxWidth < 600;
+                    return Wrap(
+                      spacing: 24,
+                      runSpacing: 24,
+                      children: [
+                        SizedBox(
+                          width: isMobile ? double.infinity : (constraints.maxWidth - 24) / 2,
+                          child: _buildDropdownField("Select ID Type *", "Select Government ID Type", ["Aadhaar Card", "Passport", "Driving Licence", "Voter ID Card"], selectedIdType, (v) => setState(() => selectedIdType = v)),
+                        ),
+                        SizedBox(
+                          width: isMobile ? double.infinity : (constraints.maxWidth - 24) / 2,
+                          child: _buildFilePicker("Upload ID Document *", idDocName, _pickIdFile),
+                        ),
+                      ],
+                    );
+                  }
+                ),
+
+                const SizedBox(height: 32),
+                const Divider(color: Color(0xFFE2E8F0)),
+                const SizedBox(height: 32),
 
                 const Text(
                   "1. Add Your Address Details",
@@ -266,7 +386,7 @@ class _AddressesAndProofPageState extends State<AddressesAndProofPage> {
                         ),
                         SizedBox(
                           width: isMobile ? double.infinity : (constraints.maxWidth - 48) / 3,
-                          child: _buildTextFieldWithButton("Pincode *", "Enter Pincode", _pincodeController, "Fetch", () {}, isNumber: true),
+                          child: _buildTextFieldWithButton("Pincode *", "Enter Pincode", _pincodeController, _isFetchingPincode ? "..." : "Fetch", _isFetchingPincode ? () {} : _fetchPincodeDetails, isNumber: true),
                         ),
                         
                         ..._buildDynamicFields(isMobile, constraints.maxWidth),
@@ -338,7 +458,9 @@ class _AddressesAndProofPageState extends State<AddressesAndProofPage> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Row(
+                                    Wrap(
+                                      spacing: 8.0,
+                                      runSpacing: 4.0,
                                       children: [
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -348,7 +470,6 @@ class _AddressesAndProofPageState extends State<AddressesAndProofPage> {
                                           ),
                                           child: const Text("JHH", style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                                         ),
-                                        const SizedBox(width: 8),
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                           decoration: BoxDecoration(
@@ -588,10 +709,11 @@ class _AddressesAndProofPageState extends State<AddressesAndProofPage> {
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : () async {
                           bool hasAddressProof = addressProofBase64 != null || (widget.initialData?['address_proof'] != null && widget.initialData!['address_proof']['proof_document'] != null);
+                          bool hasIdDoc = idDocBase64 != null || (widget.initialData?['government_id_document_path'] != null);
                           
-                          if (!isAddressAdded || !isAddressSelected || selectedDocumentType == null || !hasAddressProof) {
+                          if (!isAddressAdded || !isAddressSelected || selectedDocumentType == null || !hasAddressProof || selectedIdType == null || !hasIdDoc) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Please complete all required fields and upload address proof')),
+                              const SnackBar(content: Text('Please complete all required fields and upload documents')),
                             );
                             return;
                           }
@@ -623,8 +745,8 @@ class _AddressesAndProofPageState extends State<AddressesAndProofPage> {
                                 "pincode": _pincodeController.text,
                               }
                             ],
-                            "government_id_document": widget.idDocBase64,
-                            "government_id_type": widget.idType,
+                            "government_id_document": idDocBase64 ?? "",
+                            "government_id_type": selectedIdType,
                             "pan_document": widget.panDocBase64,
                             "pan_number": widget.panNumber,
                             "profile_photo": widget.profilePhotoBase64,
@@ -985,6 +1107,111 @@ class _AddressesAndProofPageState extends State<AddressesAndProofPage> {
             ],
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildFilePicker(String label, String? fileName, VoidCallback onTap) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildLabel(label),
+        const SizedBox(height: 8),
+        Container(
+          height: 48,
+          decoration: BoxDecoration(
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            borderRadius: BorderRadius.circular(8),
+            color: Colors.white,
+          ),
+          child: Row(
+            children: [
+              InkWell(
+                onTap: onTap,
+                child: Container(
+                  height: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(8),
+                      bottomLeft: Radius.circular(8),
+                    ),
+                    border: Border(right: BorderSide(color: Color(0xFFE2E8F0))),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      "Choose File",
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF334155),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    fileName ?? "No file chosen",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: fileName != null ? const Color(0xFF0F172A) : const Color(0xFF94A3B8),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (fileName != null) ...[
+          const SizedBox(height: 8),
+          GestureDetector(
+            onTap: () => _showDocumentModal(context, fileName),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                borderRadius: BorderRadius.circular(8),
+                color: Colors.white,
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Icon(Icons.insert_drive_file, color: Colors.grey[600]),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.check, color: Color(0xFF10B981), size: 16),
+                            const SizedBox(width: 4),
+                            const Text("Uploaded", style: TextStyle(color: Color(0xFF10B981), fontSize: 12, fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(fileName, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        ],
       ],
     );
   }
