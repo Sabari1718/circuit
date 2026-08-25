@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'job_list_page.dart';
+import 'apply_job_page.dart';
 
 class JobCategory {
   final String title;
@@ -116,11 +117,11 @@ class JobCategoriesPage extends StatelessWidget {
                       onTap: () {
                         if (category.title == "Driving") {
                           debugPrint("Driving category selected");
-                          debugPrint("Navigating directly to Job List page");
+                          debugPrint("Navigating directly to Apply Job page");
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const JobListPage(),
+                              builder: (context) => const ApplyJobPage(),
                             ),
                           );
                         }

@@ -523,6 +523,32 @@ class ApiService {
     }
   }
 
+  // --- Fetch Employee Details ---
+  Future<Map<String, dynamic>> getEmployeeDetails(String userMainId) async {
+    final token = await getAuthToken();
+    final url = Uri.parse('$manageLoginBaseUrl/employee/main/$userMainId');
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          if (token != null) 'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        },
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final decoded = jsonDecode(response.body);
+        debugPrint('[ApiService] getEmployeeDetails: $decoded');
+        return decoded is Map<String, dynamic> ? decoded : {'data': decoded};
+      } else {
+        return {'status': 'error', 'message': 'Failed to fetch employee: ${response.statusCode}'};
+      }
+    } catch (e) {
+      debugPrint('[ApiService] getEmployeeDetails error: $e');
+      return {'status': 'error', 'message': e.toString()};
+    }
+  }
+
   Future<Map<String, dynamic>> getBusinesses(String userMainId) async {
     final token = await getAuthToken();
     final url = Uri.parse('$jobesBaseUrl/business-cre/main/$userMainId');

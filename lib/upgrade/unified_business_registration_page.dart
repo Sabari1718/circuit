@@ -1914,20 +1914,20 @@ class _UnifiedBusinessRegistrationPageState
 
           // Address Form Fields
           _buildResponsiveGrid(context, [
-            _buildDropdownField("Address Type", "-- Select Address Type --", [
+            _buildRegistrationDropdownField("Address Type", "-- Select Address Type --", [
               '-- Select Address Type --',
               'Factory',
               'Warehouse / Godown',
               'Office',
               'Other (Custom Address Type)',
             ]),
-            _buildTextField(
+            _buildRegistrationTextField(
               "Door Number",
               "Door Number",
               required: true,
               controller: _doorCtrl,
             ),
-            _buildTextField(
+            _buildRegistrationTextField(
               "Street Name",
               "Street Name",
               required: true,
@@ -1936,12 +1936,12 @@ class _UnifiedBusinessRegistrationPageState
           ]),
           const SizedBox(height: 16),
           _buildResponsiveGrid(context, [
-            _buildTextField(
+            _buildRegistrationTextField(
               "Building Name",
               "Building Name",
               controller: _buildingCtrl,
             ),
-            _buildTextField(
+            _buildRegistrationTextField(
               "Landmark (Optional)",
               "Landmark (Optional)",
               controller: _landmarkCtrl,
@@ -1968,14 +1968,14 @@ class _UnifiedBusinessRegistrationPageState
           const SizedBox(height: 24),
 
           _buildResponsiveGrid(context, [
-            _buildTextField(
+            _buildRegistrationTextField(
               "Area / Locality",
               "Enter Area / Locality",
               required: true,
               controller: _areaCtrl,
             ),
-            _buildTextField("City", "Enter City", controller: _cityCtrl),
-            _buildTextField(
+            _buildRegistrationTextField("City", "Enter City", controller: _cityCtrl),
+            _buildRegistrationTextField(
               "District",
               "District",
               required: true,
@@ -1985,13 +1985,13 @@ class _UnifiedBusinessRegistrationPageState
           const SizedBox(height: 16),
           _buildResponsiveGrid(context, [
             _buildPinCodeField(),
-            _buildTextField(
+            _buildRegistrationTextField(
               "State",
               "State",
               required: true,
               controller: _stateCtrl,
             ),
-            _buildTextField(
+            _buildRegistrationTextField(
               "Country",
               "India",
               required: true,
@@ -2055,7 +2055,7 @@ class _UnifiedBusinessRegistrationPageState
     );
   }
 
-  Widget _buildTextField(
+  Widget _buildRegistrationTextField(
     String label,
     String hint, {
     bool required = false,
@@ -2090,7 +2090,7 @@ class _UnifiedBusinessRegistrationPageState
     );
   }
 
-  Widget _buildDropdownField(String label, String hint, List<String> items) {
+  Widget _buildRegistrationDropdownField(String label, String hint, List<String> items) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

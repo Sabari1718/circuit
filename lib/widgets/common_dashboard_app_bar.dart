@@ -14,6 +14,7 @@ class CommonDashboardAppBar extends StatelessWidget
   final bool automaticallyImplyLeading;
   final DashboardSection? selectedSection;
   final Function(DashboardSection)? onSectionChanged;
+  final bool isUpgraded;
 
   const CommonDashboardAppBar({
     super.key,
@@ -21,10 +22,11 @@ class CommonDashboardAppBar extends StatelessWidget
     this.automaticallyImplyLeading = false,
     this.selectedSection,
     this.onSectionChanged,
+    this.isUpgraded = true,
   });
 
   @override
-  Size get preferredSize => Size.fromHeight(selectedSection != null ? 120 : 68);
+  Size get preferredSize => Size.fromHeight((selectedSection != null && isUpgraded) ? 120 : 68);
 
   String _getInitials(String name) {
     if (name.trim().isEmpty) return "U";
@@ -433,22 +435,26 @@ class CommonDashboardAppBar extends StatelessWidget
               ),
             ),
           ],
-          bottom: selectedSection != null
+          bottom: (selectedSection != null && isUpgraded)
               ? PreferredSize(
                   preferredSize: const Size.fromHeight(52),
                   child: Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
                         _buildTabButton(
                           context,
-                          title: "Activities",
-                          icon: Icons.bolt,
+                          title: "Career Portals",
+                          icon: Icons.work_outline_rounded,
                           isSelected:
-                              selectedSection == DashboardSection.activities,
+                              selectedSection == DashboardSection.career,
                           onTap: () => onSectionChanged?.call(
-                            DashboardSection.activities,
+                            DashboardSection.career,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -462,7 +468,19 @@ class CommonDashboardAppBar extends StatelessWidget
                             DashboardSection.privilege,
                           ),
                         ),
+                        const SizedBox(width: 12),
+                        _buildTabButton(
+                          context,
+                          title: "Features",
+                          icon: Icons.bolt,
+                          isSelected:
+                              selectedSection == DashboardSection.activities,
+                          onTap: () => onSectionChanged?.call(
+                            DashboardSection.activities,
+                          ),
+                        ),
                       ],
+                    ),
                     ),
                   ),
                 )
