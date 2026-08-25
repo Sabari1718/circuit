@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import '../auth_service.dart';
 import '../models/grid_card_model.dart';
 import '../services/auth_service.dart'; // ADD THIS
+import '../user_service.dart';
 
 class GridCardService {
   static final GridCardService _instance = GridCardService._internal();
@@ -10,9 +11,6 @@ class GridCardService {
   factory GridCardService() => _instance;
 
   GridCardService._internal();
-
-  static const String _endpoint =
-      'https://user.jobes24x7.com/api/grid-card/9508383027';
 
   GridCardModel? _cachedGrid;
 
@@ -24,8 +22,13 @@ class GridCardService {
     }
 
     try {
+      final userData = await UserService().getUserData();
+      final userMainId = userData['user_main_id'] ?? '';
+      
+      final String endpoint = 'https://user.jobes24x7.com/api/grid-card/$userMainId';
+
       print("===== GRID CARD API DEBUG =====");
-      print("GRID API URL: $_endpoint");
+      print("GRID API URL: $endpoint");
 
       // GET LATEST TOKEN
       final token = await AuthService().getValidToken();
@@ -37,7 +40,7 @@ class GridCardService {
       print("TOKEN => $token");
 
       final response = await http.get(
-        Uri.parse(_endpoint),
+        Uri.parse(endpoint),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
@@ -62,7 +65,11 @@ class GridCardService {
       }
 
       if (response.statusCode == 404) {
-        throw Exception('404 API Not Found');
+        // Return an empty GridCardModel instead of throwing an error so the UI doesn't break
+        return GridCardModel(
+          serialNumber: 'Not Generated',
+          gridData: {},
+        );
       }
 
       throw Exception('API Error: ${response.statusCode}');

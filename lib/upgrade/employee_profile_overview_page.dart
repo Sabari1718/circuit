@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import '../widgets/common_dashboard_app_bar.dart';
 import '../home_page.dart';
 import 'dart:typed_data';
@@ -15,18 +16,36 @@ class EmployeeProfileOverviewPage extends StatefulWidget {
 
 class _EmployeeProfileOverviewPageState extends State<EmployeeProfileOverviewPage> {
   String _userName = "User";
+  String _gender = "Not Provided";
+  String _panNumber = "Not Provided";
 
   @override
   void initState() {
     super.initState();
-    _loadUserName();
+    _loadData();
   }
 
-  Future<void> _loadUserName() async {
+  Future<void> _loadData() async {
     final data = await UserService().getUserData();
+    if (!mounted) return;
     setState(() {
       _userName = data['name'] ?? "User";
     });
+
+    final userMainId = data['user_main_id']?.toString() ?? '';
+    if (userMainId.isNotEmpty) {
+      final registerData = await UserService().getRegisterDetails(userMainId);
+      if (registerData != null && mounted) {
+        setState(() {
+          _gender = registerData['gender']?.toString() ?? "Not Provided";
+          if (_gender != "Not Provided" && _gender.isNotEmpty) {
+            _gender = '${_gender[0].toUpperCase()}${_gender.substring(1).toLowerCase()}';
+          }
+          _panNumber = registerData['pan_number']?.toString() ?? "Not Provided";
+          if (_panNumber.isEmpty) _panNumber = "Not Provided";
+        });
+      }
+    }
   }
 
   EmployeeUser? get employee {
@@ -299,11 +318,9 @@ class _EmployeeProfileOverviewPageState extends State<EmployeeProfileOverviewPag
                     children: [
                       _buildDataField("Full Name", _userName),
                       const SizedBox(height: 24),
-                      _buildDataField("Gender", "Not Provided"),
+                      _buildDataField("Gender", _gender),
                       const SizedBox(height: 24),
-                      _buildDataField("PAN Number", emp?.panNumber ?? "Not Provided"),
-                      const SizedBox(height: 24),
-                      _buildDataField("Salary Account Number", emp?.salaryAccount ?? "Not Provided"),
+                      _buildDataField("PAN Number", _panNumber),
                     ],
                   ),
                 ),
@@ -326,11 +343,9 @@ class _EmployeeProfileOverviewPageState extends State<EmployeeProfileOverviewPag
               children: [
                 _buildDataField("Full Name", _userName),
                 const SizedBox(height: 16),
-                _buildDataField("Gender", "Not Provided"),
+                _buildDataField("Gender", _gender),
                 const SizedBox(height: 16),
-                _buildDataField("PAN Number", emp?.panNumber ?? "Not Provided"),
-                const SizedBox(height: 16),
-                _buildDataField("Salary Account Number", emp?.salaryAccount ?? "Not Provided"),
+                _buildDataField("PAN Number", _panNumber),
                 const SizedBox(height: 16),
                 _buildDataField("Work Type", emp?.workType ?? "Physical Work", isPill: true),
                 const SizedBox(height: 16),
@@ -338,6 +353,114 @@ class _EmployeeProfileOverviewPageState extends State<EmployeeProfileOverviewPag
               ],
             ),
         ],
+      ),
+    );
+  }
+
+  ImageProvider? _getImageProvider(String? path, Uint8List? bytes) {
+    if (path != null && path.isNotEmpty) {
+      final fullPath = path.startsWith('http') ? path : 'https://managelogin.jobes24x7.com/api/$path';
+      return NetworkImage(fullPath);
+    } else if (bytes != null) {
+      return MemoryImage(bytes);
+    }
+    return null;
+  }
+
+  void _showPhotoDialog(String title, String? path, Uint8List? bytes) {
+    if (path == null && bytes == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("No photo uploaded")),
+      );
+      return;
+    }
+    
+    Widget imageWidget = const SizedBox();
+    if (path != null && path.isNotEmpty) {
+      final fullPath = path.startsWith('http') ? path : 'https://managelogin.jobes24x7.com/api/$path';
+      imageWidget = Image.network(fullPath, fit: BoxFit.contain);
+    } else if (bytes != null) {
+      imageWidget = Image.memory(bytes, fit: BoxFit.contain);
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(8),
+                  topRight: Radius.circular(8),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            imageWidget,
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showPdfDialog(String title, String? path, Uint8List? bytes) {
+    if (path == null && bytes == null) return;
+    
+    Widget pdfWidget = const SizedBox();
+    if (path != null && path.isNotEmpty) {
+      final fullPath = path.startsWith('http') ? path : 'https://managelogin.jobes24x7.com/api/$path';
+      pdfWidget = SfPdfViewer.network(fullPath);
+    } else if (bytes != null) {
+      pdfWidget = SfPdfViewer.memory(bytes);
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: Container(
+          width: 800,
+          height: 600,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: const BoxDecoration(
+                  border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: pdfWidget,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -413,32 +536,56 @@ class _EmployeeProfileOverviewPageState extends State<EmployeeProfileOverviewPag
           const SizedBox(height: 24),
           const Text("Front Photo (Passport Size)", style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
           const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            height: 150,
-            decoration: BoxDecoration(
-              color: const Color(0xFFEFF6FF),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+          GestureDetector(
+            onTap: () => _showPhotoDialog("Front Photo", emp?.frontPhotoPath, emp?.frontPhotoBytes),
+            child: Container(
+              width: double.infinity,
+              height: 150,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                image: (emp?.frontPhotoPath != null || emp?.frontPhotoBytes != null) ? DecorationImage(
+                  image: _getImageProvider(emp?.frontPhotoPath, emp?.frontPhotoBytes)!,
+                  fit: BoxFit.cover,
+                ) : null,
+              ),
+              child: (emp?.frontPhotoPath == null && emp?.frontPhotoBytes == null) ? const Center(child: Icon(Icons.person, size: 64, color: Color(0xFFBFDBFE))) : null,
             ),
-            child: const Center(child: Icon(Icons.person, size: 64, color: Color(0xFFBFDBFE))), // Dummy fallback
           ),
           const SizedBox(height: 24),
           const Text("Resume / CV", style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
           const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFEF3C7),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFFDE68A)),
-            ),
-            child: Text(
-              emp?.resumeName ?? "No resume uploaded",
-              style: const TextStyle(
-                color: Color(0xFFB45309),
-                fontWeight: FontWeight.w600,
+          GestureDetector(
+            onTap: () {
+              if (emp?.resumePath != null || emp?.resumeBytes != null) {
+                _showPdfDialog("Resume / CV", emp?.resumePath, emp?.resumeBytes);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("No resume uploaded")),
+                );
+              }
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF2563EB),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(Icons.picture_as_pdf, color: Colors.white, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    "Open Resume (PDF)",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -508,12 +655,31 @@ class _EmployeeProfileOverviewPageState extends State<EmployeeProfileOverviewPag
                         ),
                       ),
                       _buildAcademicRow(
-                        qualification: emp?.primaryStudy ?? "10th Standard",
-                        subtitle: "Primary Education",
-                        board: emp?.educationBoard ?? "CBSE",
-                        nextPath: emp?.after10thPath ?? "direct job",
-                        imageBytes: null,
+                        qualification: "10th Standard / SSLC",
+                        subtitle: emp?.primaryStudy ?? "Not Provided",
+                        board: emp?.educationBoard ?? "Not Provided",
+                        nextPath: emp?.after10thPath ?? "Not Provided",
+                        imagePath: emp?.primaryMarksheetPath,
+                        imageBytes: emp?.primaryMarksheetBytes,
                       ),
+                      if (emp?.after10thPath == 'higher_secondary')
+                        _buildAcademicRow(
+                          qualification: "12th Standard / HSC",
+                          subtitle: "Higher Secondary",
+                          board: "Passed",
+                          nextPath: "Further Studies",
+                          imagePath: emp?.hsMarksheetPath,
+                          imageBytes: emp?.hsMarksheetBytes,
+                        ),
+                      if (emp?.degrees != null)
+                        ...emp!.degrees.map((degree) => _buildAcademicRow(
+                          qualification: degree.degree ?? "Degree",
+                          subtitle: degree.institute ?? "Institution",
+                          board: degree.year ?? "Year",
+                          nextPath: "Work",
+                          imagePath: degree.certificatePath,
+                          imageBytes: degree.certificateBytes,
+                        )),
                     ],
                   ),
                 ),
@@ -530,6 +696,7 @@ class _EmployeeProfileOverviewPageState extends State<EmployeeProfileOverviewPag
     required String subtitle,
     required String board,
     required String nextPath,
+    String? imagePath,
     Uint8List? imageBytes,
   }) {
     return Container(
@@ -563,14 +730,17 @@ class _EmployeeProfileOverviewPageState extends State<EmployeeProfileOverviewPag
           ),
           Expanded(
             flex: 2,
-            child: imageBytes != null
-                ? Container(
-                    height: 48,
-                    width: 72,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                      image: DecorationImage(image: MemoryImage(imageBytes), fit: BoxFit.cover),
+            child: (imagePath != null || imageBytes != null)
+                ? GestureDetector(
+                    onTap: () => _showPhotoDialog("$qualification Certificate", imagePath, imageBytes),
+                    child: Container(
+                      height: 48,
+                      width: 72,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        image: DecorationImage(image: _getImageProvider(imagePath, imageBytes)!, fit: BoxFit.cover),
+                      ),
                     ),
                   )
                 : const Text("No file", style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),

@@ -26,7 +26,8 @@ class CommonDashboardAppBar extends StatelessWidget
   });
 
   @override
-  Size get preferredSize => Size.fromHeight((selectedSection != null && isUpgraded) ? 120 : 68);
+  Size get preferredSize =>
+      Size.fromHeight((selectedSection != null && isUpgraded) ? 120 : 68);
 
   String _getInitials(String name) {
     if (name.trim().isEmpty) return "U";
@@ -447,40 +448,39 @@ class CommonDashboardAppBar extends StatelessWidget
                         mainAxisAlignment: MainAxisAlignment.center,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                        _buildTabButton(
-                          context,
-                          title: "Career Portals",
-                          icon: Icons.work_outline_rounded,
-                          isSelected:
-                              selectedSection == DashboardSection.career,
-                          onTap: () => onSectionChanged?.call(
-                            DashboardSection.career,
+                          _buildTabButton(
+                            context,
+                            title: "Career Portals",
+                            icon: Icons.work_outline_rounded,
+                            isSelected:
+                                selectedSection == DashboardSection.career,
+                            onTap: () =>
+                                onSectionChanged?.call(DashboardSection.career),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        _buildTabButton(
-                          context,
-                          title: "User Privilege",
-                          icon: Icons.shield_outlined,
-                          isSelected:
-                              selectedSection == DashboardSection.privilege,
-                          onTap: () => onSectionChanged?.call(
-                            DashboardSection.privilege,
+                          const SizedBox(width: 12),
+                          _buildTabButton(
+                            context,
+                            title: "User Privilege",
+                            icon: Icons.shield_outlined,
+                            isSelected:
+                                selectedSection == DashboardSection.privilege,
+                            onTap: () => onSectionChanged?.call(
+                              DashboardSection.privilege,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        _buildTabButton(
-                          context,
-                          title: "Features",
-                          icon: Icons.bolt,
-                          isSelected:
-                              selectedSection == DashboardSection.activities,
-                          onTap: () => onSectionChanged?.call(
-                            DashboardSection.activities,
+                          const SizedBox(width: 12),
+                          _buildTabButton(
+                            context,
+                            title: "Features",
+                            icon: Icons.bolt,
+                            isSelected:
+                                selectedSection == DashboardSection.activities,
+                            onTap: () => onSectionChanged?.call(
+                              DashboardSection.activities,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
                     ),
                   ),
                 )

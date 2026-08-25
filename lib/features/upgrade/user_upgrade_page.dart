@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'verified_upgrade_intro_page.dart';
 import 'verified_user_profile_page.dart';
-import '../../upgrade/new_business_register_page.dart';
+import 'package:sva_business_user/upgrade/business_step3_page.dart';
 import '../../upgrade/user_overview_page.dart';
 import '../../user_service.dart' as legacy;
 
@@ -296,7 +296,7 @@ class _UserUpgradePageState extends State<UserUpgradePage> {
                     if (_isVerified) {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const NewBusinessRegisterPage()),
+                        MaterialPageRoute(builder: (context) => const BusinessStep3Page()),
                       );
                     } else {
                       _showVerificationDialog(context);

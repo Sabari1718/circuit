@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
+import 'package:sva_business_user/upgrade/employee_user_model.dart';
 import 'upgrade/new_business_register_page.dart';
+import 'upgrade/business_step3_page.dart';
 import 'upgrade/business_registration_overview_page.dart';
 import 'features/employee/employee_dashboard_page.dart';
 import 'upgrade/business_user_store.dart';
@@ -204,7 +206,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               subtitle.contains(searchLower) ||
               description.contains(searchLower);
         }).toList();
-        
+
         _filteredCareerActivities = _careerActivities.where((activity) {
           final title = activity.title.toLowerCase();
           final subtitle = activity.subtitle.toLowerCase();
@@ -220,18 +222,21 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   bool _isMainBusinessRegistered = false;
   bool _isRegisteredUpgraded = false;
-  bool _isVerified = false; 
+  bool _isVerified = false;
   bool _isDevoteeRegistered = false;
   Map<String, dynamic>? _devoteeProfileData;
 
   Future<void> _loadUserSession() async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     // Instantly update UI based on local cache before waiting for 5 seconds of API calls
     if (mounted) {
       setState(() {
-        _isDevoteeRegistered = prefs.getBool('is_devotee_registered') ?? _isDevoteeRegistered;
-        _isMainBusinessRegistered = prefs.getBool('is_main_business_registered') ?? _isMainBusinessRegistered;
+        _isDevoteeRegistered =
+            prefs.getBool('is_devotee_registered') ?? _isDevoteeRegistered;
+        _isMainBusinessRegistered =
+            prefs.getBool('is_main_business_registered') ??
+            _isMainBusinessRegistered;
       });
     }
 
@@ -254,9 +259,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         // The backend might return an empty shell record for 'verification'.
         // We only consider the user VERIFIED if they have submitted actual data.
         bool hasGovId = verificationDetails['government_id_type'] != null;
-        bool hasAddresses = verificationDetails['addresses'] != null && 
-                           (verificationDetails['addresses'] as List).isNotEmpty;
-        
+        bool hasAddresses =
+            verificationDetails['addresses'] != null &&
+            (verificationDetails['addresses'] as List).isNotEmpty;
+
         if (hasGovId || hasAddresses) {
           isVerified = true;
         }
@@ -264,10 +270,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
       // Check 2: user_register table (for REGISTERED users)
       isRegistered = await UserService().checkUserRegisterStatus(uid);
-      
+
       // Check 3: Devotee Registration API
       try {
-        final devoteeResponse = await DevoteeApiService().fetchDevoteeProfile(uid);
+        final devoteeResponse = await DevoteeApiService().fetchDevoteeProfile(
+          uid,
+        );
         if (devoteeResponse != null && devoteeResponse['status'] == true) {
           isDevotee = true;
           devoteeData = devoteeResponse['data'];
@@ -285,39 +293,56 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           if (innerData != null && innerData['id'] != null) {
             String workType = innerData['work_type'] ?? 'Physical Work';
             String? resumePath = innerData['resume_path'];
-            String? resumeName = resumePath != null ? resumePath.split('/').last : null;
-            String? panNumber = innerData['pan_number']; 
-            String? salaryAccount = innerData['salary_account_number']?.toString();
-            
+            String? frontPhotoPath = innerData['profile_photo'];
+            String? resumeName = resumePath != null
+                ? resumePath.split('/').last
+                : null;
+            String? panNumber = innerData['pan_number'];
+            String? salaryAccount = innerData['salary_account_number']
+                ?.toString();
+
             String? educationBoard;
             String? primaryStudy;
             String? after10thPath;
-            
+            String? primaryMarksheetPath;
+            String? hsMarksheetPath;
+
             List<EmployeeDegreeData> degreesList = [];
 
-            if (innerData['educations'] != null && innerData['educations'] is List) {
-                final educations = innerData['educations'] as List;
-                for (var edu in educations) {
-                   if (edu['education_type'] == 'primary') {
-                       educationBoard = edu['education_board'];
-                       primaryStudy = "10th Standard";
-                       after10thPath = edu['path_after_10th'];
-                   } else if (edu['education_type'] == 'degree') {
-                       degreesList.add(EmployeeDegreeData(
-                           stream: edu['degree_stream'],
-                           degree: edu['degree_name'],
-                           university: edu['university_name'],
-                           institute: edu['institute_name'],
-                           year: edu['year_of_passing']?.toString(),
-                       ));
-                   }
+            if (innerData['educations'] != null &&
+                innerData['educations'] is List) {
+              final educations = innerData['educations'] as List;
+              for (var edu in educations) {
+                if (edu['education_type'] == 'primary') {
+                  educationBoard = edu['education_board'];
+                  primaryStudy = "10th Standard";
+                  after10thPath = edu['path_after_10th'];
+                  primaryMarksheetPath = edu['marksheet_10th'];
+                } else if (edu['education_type'] == 'higher_secondary') {
+                  hsMarksheetPath = edu['marksheet_12th'];
+                } else if (edu['education_type'] == 'degree') {
+                  degreesList.add(
+                    EmployeeDegreeData(
+                      stream: edu['degree_stream'],
+                      degree: edu['degree_name'],
+                      university: edu['university_name'],
+                      institute: edu['institute_name'],
+                      year: edu['year_of_passing']?.toString(),
+                      certificatePath: edu['degree_certificate'],
+                    ),
+                  );
                 }
+              }
             }
-            
+
             final empUser = EmployeeUser(
               id: innerData['user_main_id']?.toString() ?? uid,
               workType: workType,
               resumeName: resumeName,
+              resumePath: resumePath,
+              frontPhotoPath: frontPhotoPath,
+              primaryMarksheetPath: primaryMarksheetPath,
+              hsMarksheetPath: hsMarksheetPath,
               panNumber: panNumber,
               salaryAccount: salaryAccount,
               educationBoard: educationBoard,
@@ -374,8 +399,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                 rawList = [innerData];
               }
             }
-          } else if (resReg['business'] != null &&
-              resReg['business'] is List) {
+          } else if (resReg['business'] != null && resReg['business'] is List) {
             rawList = resReg['business'];
           }
         }
@@ -390,33 +414,33 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       }
     }
 
-      if (mounted) {
-        setState(() {
-          // If the base registered user is deleted, everything else should also reset
-          if (!isRegistered) {
-            isVerified = false;
-            BusinessUserStore().clear();
-          }
+    if (mounted) {
+      setState(() {
+        // If the base registered user is deleted, everything else should also reset
+        if (!isRegistered) {
+          isVerified = false;
+          BusinessUserStore().clear();
+        }
 
-          _currentUserName = (data['name'] ?? widget.userName).trim().isEmpty
-              ? widget.userName
-              : data['name']!;
-          _accountType = data['accountType'] ?? widget.accountType;
-          _isMainBusinessRegistered =
-              prefs.getBool('is_main_business_registered') ?? false;
-          _isRegisteredUpgraded = isRegistered;
-          _isVerified = isVerified;
-          _isDevoteeRegistered = isDevotee;
-          _devoteeProfileData = devoteeData;
+        _currentUserName = (data['name'] ?? widget.userName).trim().isEmpty
+            ? widget.userName
+            : data['name']!;
+        _accountType = data['accountType'] ?? widget.accountType;
+        _isMainBusinessRegistered =
+            prefs.getBool('is_main_business_registered') ?? false;
+        _isRegisteredUpgraded = isRegistered;
+        _isVerified = isVerified;
+        _isDevoteeRegistered = isDevotee;
+        _devoteeProfileData = devoteeData;
 
-          // Initialize dropdown from store if business exists
-          if (BusinessUserStore().businesses.isNotEmpty &&
-              BusinessUserStore().businesses.first.businessTypes.isNotEmpty) {
-            _selectedBusinessScale =
-                BusinessUserStore().businesses.first.businessTypes.first;
-          }
-        });
-      }
+        // Initialize dropdown from store if business exists
+        if (BusinessUserStore().businesses.isNotEmpty &&
+            BusinessUserStore().businesses.first.businessTypes.isNotEmpty) {
+          _selectedBusinessScale =
+              BusinessUserStore().businesses.first.businessTypes.first;
+        }
+      });
+    }
   }
 
   bool _checkCompletion(String moduleId) {
@@ -474,48 +498,80 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       } else if (moduleId == "devotees") {
         if (_devoteeProfileData != null || _isDevoteeRegistered) {
           showDialog(
-            context: context, 
-            barrierDismissible: false, 
-            builder: (c) => const Center(child: CircularProgressIndicator())
+            context: context,
+            barrierDismissible: false,
+            builder: (c) => const Center(child: CircularProgressIndicator()),
           );
-          
+
           String? communityName;
           String? subCommunityName;
           String? kulamName;
 
           try {
-             final apiService = DevoteeApiService();
-             final prefs = await SharedPreferences.getInstance();
-             final uid = prefs.getString('user_main_id');
-             if (uid != null) {
-                final latestProfile = await apiService.fetchDevoteeProfile(uid);
-                if (latestProfile != null && latestProfile['status'] == true) {
-                   _devoteeProfileData = latestProfile['data'];
-                }
-             }
+            final apiService = DevoteeApiService();
+            final prefs = await SharedPreferences.getInstance();
+            final uid = prefs.getString('user_main_id');
+            if (uid != null) {
+              final latestProfile = await apiService.fetchDevoteeProfile(uid);
+              if (latestProfile != null && latestProfile['status'] == true) {
+                _devoteeProfileData = latestProfile['data'];
+              }
+            }
 
-             if (_devoteeProfileData != null) {
-               communityName = _devoteeProfileData!['community_name']?.toString();
-               subCommunityName = _devoteeProfileData!['sub_community_name']?.toString();
-               kulamName = _devoteeProfileData!['kulam_name']?.toString();
+            if (_devoteeProfileData != null) {
+              communityName = _devoteeProfileData!['community_name']
+                  ?.toString();
+              subCommunityName = _devoteeProfileData!['sub_community_name']
+                  ?.toString();
+              kulamName = _devoteeProfileData!['kulam_name']?.toString();
 
-               if (int.tryParse(communityName ?? '') != null) {
-                  final comms = await apiService.fetchCommunities();
-                  communityName = comms.firstWhere((c) => c.id.toString() == communityName, orElse: () => Community(id: -1, nameEnglish: communityName!, nameTamil: '')).nameEnglish;
-               }
-               if (int.tryParse(subCommunityName ?? '') != null) {
-                  final subs = await apiService.fetchSubCommunities();
-                  subCommunityName = subs.firstWhere((c) => c.id.toString() == subCommunityName, orElse: () => SubCommunity(id: -1, communityId: -1, nameEnglish: subCommunityName!, nameTamil: '')).nameEnglish;
-               }
-               if (int.tryParse(kulamName ?? '') != null) {
-                  final kulas = await apiService.fetchKulas();
-                  kulamName = kulas.firstWhere((c) => c.id.toString() == kulamName, orElse: () => Kulam(id: -1, subCommunityId: -1, nameEnglish: kulamName!, nameTamil: '', communityId: -1)).nameEnglish;
-               }
-             }
-          } catch(e) {
-             debugPrint("Error fetching names: $e");
+              if (int.tryParse(communityName ?? '') != null) {
+                final comms = await apiService.fetchCommunities();
+                communityName = comms
+                    .firstWhere(
+                      (c) => c.id.toString() == communityName,
+                      orElse: () => Community(
+                        id: -1,
+                        nameEnglish: communityName!,
+                        nameTamil: '',
+                      ),
+                    )
+                    .nameEnglish;
+              }
+              if (int.tryParse(subCommunityName ?? '') != null) {
+                final subs = await apiService.fetchSubCommunities();
+                subCommunityName = subs
+                    .firstWhere(
+                      (c) => c.id.toString() == subCommunityName,
+                      orElse: () => SubCommunity(
+                        id: -1,
+                        communityId: -1,
+                        nameEnglish: subCommunityName!,
+                        nameTamil: '',
+                      ),
+                    )
+                    .nameEnglish;
+              }
+              if (int.tryParse(kulamName ?? '') != null) {
+                final kulas = await apiService.fetchKulas();
+                kulamName = kulas
+                    .firstWhere(
+                      (c) => c.id.toString() == kulamName,
+                      orElse: () => Kulam(
+                        id: -1,
+                        subCommunityId: -1,
+                        nameEnglish: kulamName!,
+                        nameTamil: '',
+                        communityId: -1,
+                      ),
+                    )
+                    .nameEnglish;
+              }
+            }
+          } catch (e) {
+            debugPrint("Error fetching names: $e");
           }
-          
+
           if (mounted) {
             Navigator.pop(context); // close dialog
           }
@@ -526,39 +582,70 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               gender: _devoteeProfileData!['gender']?.toString(),
               age: _devoteeProfileData!['age']?.toString(),
               religion: _devoteeProfileData!['religion_name']?.toString(),
-              categories: _devoteeProfileData!['tradition_name'] != null ? {_devoteeProfileData!['tradition_name'].toString()} : {},
+              categories: _devoteeProfileData!['tradition_name'] != null
+                  ? {_devoteeProfileData!['tradition_name'].toString()}
+                  : {},
               community: communityName,
               subCommunity: subCommunityName,
               kulam: kulamName,
-              addressType: _devoteeProfileData!['address'] != null ? _devoteeProfileData!['address']['address_type']?.toString() : null,
-              propertyType: _devoteeProfileData!['address'] != null ? _devoteeProfileData!['address']['property_type']?.toString() : null,
-              doorNumber: _devoteeProfileData!['address'] != null ? _devoteeProfileData!['address']['house_no']?.toString() : null,
-              streetName: _devoteeProfileData!['address'] != null ? _devoteeProfileData!['address']['street']?.toString() : null,
-              landmark: _devoteeProfileData!['address'] != null ? _devoteeProfileData!['address']['landmark']?.toString() : null,
-              area: _devoteeProfileData!['address'] != null ? _devoteeProfileData!['address']['area']?.toString() : null,
-              city: _devoteeProfileData!['address'] != null ? _devoteeProfileData!['address']['city']?.toString() : null,
-              state: _devoteeProfileData!['address'] != null ? _devoteeProfileData!['address']['state']?.toString() : null,
-              country: _devoteeProfileData!['address'] != null ? _devoteeProfileData!['address']['country']?.toString() : null,
-              pincode: _devoteeProfileData!['address'] != null ? _devoteeProfileData!['address']['pincode']?.toString() : null,
+              addressType: _devoteeProfileData!['address'] != null
+                  ? _devoteeProfileData!['address']['address_type']?.toString()
+                  : null,
+              propertyType: _devoteeProfileData!['address'] != null
+                  ? _devoteeProfileData!['address']['property_type']?.toString()
+                  : null,
+              doorNumber: _devoteeProfileData!['address'] != null
+                  ? _devoteeProfileData!['address']['house_no']?.toString()
+                  : null,
+              streetName: _devoteeProfileData!['address'] != null
+                  ? _devoteeProfileData!['address']['street']?.toString()
+                  : null,
+              landmark: _devoteeProfileData!['address'] != null
+                  ? _devoteeProfileData!['address']['landmark']?.toString()
+                  : null,
+              area: _devoteeProfileData!['address'] != null
+                  ? _devoteeProfileData!['address']['area']?.toString()
+                  : null,
+              city: _devoteeProfileData!['address'] != null
+                  ? _devoteeProfileData!['address']['city']?.toString()
+                  : null,
+              state: _devoteeProfileData!['address'] != null
+                  ? _devoteeProfileData!['address']['state']?.toString()
+                  : null,
+              country: _devoteeProfileData!['address'] != null
+                  ? _devoteeProfileData!['address']['country']?.toString()
+                  : null,
+              pincode: _devoteeProfileData!['address'] != null
+                  ? _devoteeProfileData!['address']['pincode']?.toString()
+                  : null,
             );
 
             if (mounted) {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => DevoteeProfileOverviewPage(data: profileData),
+                  builder: (context) =>
+                      DevoteeProfileOverviewPage(data: profileData),
                 ),
               );
             }
           } else {
-             // Fallback if data is null despite being registered
-             if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Profile data not found on server. Please re-register.")));
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const DevoteeRegistrationPage()),
-                ).then((_) => _loadUserSession());
-             }
+            // Fallback if data is null despite being registered
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    "Profile data not found on server. Please re-register.",
+                  ),
+                ),
+              );
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const DevoteeRegistrationPage(),
+                ),
+              ).then((_) => _loadUserSession());
+            }
           }
         }
       } else {
@@ -571,9 +658,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         if (_isVerified) {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const NewBusinessRegisterPage(),
-            ),
+            MaterialPageRoute(builder: (context) => const BusinessStep3Page()),
           ).then((_) => setState(() {}));
         } else {
           _showVerificationDialog(context);
@@ -596,7 +681,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       } else if (moduleId == "devotees") {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const DevoteeRegistrationPage()),
+          MaterialPageRoute(
+            builder: (context) => const DevoteeRegistrationPage(),
+          ),
         ).then((_) => _loadUserSession());
       } else if (moduleId == "verified") {
         Navigator.push(
@@ -615,11 +702,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    bool isUpgraded = _checkCompletion("registered") || 
-                      _checkCompletion("verified") || 
-                      _checkCompletion("business") || 
-                      _checkCompletion("premium");
-                      
+    bool isUpgraded =
+        _checkCompletion("registered") ||
+        _checkCompletion("verified") ||
+        _checkCompletion("business") ||
+        _checkCompletion("premium");
+
     if (!isUpgraded && _selectedSection != DashboardSection.privilege) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -630,7 +718,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       });
     }
 
-    DashboardSection effectiveSection = !isUpgraded ? DashboardSection.privilege : _selectedSection;
+    DashboardSection effectiveSection = !isUpgraded
+        ? DashboardSection.privilege
+        : _selectedSection;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -646,7 +736,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFFF8FAFC), Color(0xFFEFF6FF)], // Subtle blue-ish premium background
+            colors: [
+              Color(0xFFF8FAFC),
+              Color(0xFFEFF6FF),
+            ], // Subtle blue-ish premium background
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -657,136 +750,148 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             physics: const AlwaysScrollableScrollPhysics(),
             child: Builder(
               builder: (context) {
-                String headerTitle = effectiveSection == DashboardSection.activities 
-                    ? "Features 👏" 
+                String headerTitle =
+                    effectiveSection == DashboardSection.activities
+                    ? "Features 👏"
                     : effectiveSection == DashboardSection.career
-                        ? "Career Portals 💼"
-                        : "User Privileges 👏";
-                    
-                String headerSubtitle = effectiveSection == DashboardSection.activities
+                    ? "Career Portals 💼"
+                    : "User Privileges 👏";
+
+                String headerSubtitle =
+                    effectiveSection == DashboardSection.activities
                     ? "Manage and activate platform modules for your workspace"
                     : effectiveSection == DashboardSection.career
-                        ? "Create your career profile, track achievements, and unlock new job opportunities"
-                        : "Logged in as $_accountType.\nUpgrade to unlock features.";
-                    
-                IconData headerIcon = effectiveSection == DashboardSection.activities
+                    ? "Create your career profile, track achievements, and unlock new job opportunities"
+                    : "Logged in as $_accountType.\nUpgrade to unlock features.";
+
+                IconData headerIcon =
+                    effectiveSection == DashboardSection.activities
                     ? Icons.grid_view_rounded
                     : effectiveSection == DashboardSection.career
-                        ? Icons.work_rounded
-                        : Icons.workspace_premium_rounded;
+                    ? Icons.work_rounded
+                    : Icons.workspace_premium_rounded;
 
                 return Column(
-              children: [
-              // Modern Search Bar
-              if (false) _buildSearchBar(),
-
-              // Section Header
-              // We hide this for now as requested
-              // if (false) _buildSectionHeader(),
-              
-              // We add a stunning premium header
-              Container(
-                margin: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF0F172A).withOpacity(0.25),
-                      blurRadius: 16,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                  border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.2),
-                ),
-                child: Row(
                   children: [
+                    // Modern Search Bar
+                    if (false) _buildSearchBar(),
+
+                    // Section Header
+                    // We hide this for now as requested
+                    // if (false) _buildSectionHeader(),
+
+                    // We add a stunning premium header
                     Container(
-                      padding: const EdgeInsets.all(10),
+                      margin: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF3B82F6).withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
+                            color: const Color(0xFF0F172A).withOpacity(0.25),
+                            blurRadius: 16,
+                            offset: const Offset(0, 8),
                           ),
                         ],
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.1),
+                          width: 1.2,
+                        ),
                       ),
-                      child: Icon(headerIcon, color: Colors.white, size: 24),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Row(
                         children: [
-                          Text(
-                            headerTitle,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 0.5,
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(
+                                    0xFF3B82F6,
+                                  ).withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              headerIcon,
                               color: Colors.white,
+                              size: 24,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            headerSubtitle,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF94A3B8),
-                              fontWeight: FontWeight.w500,
-                              height: 1.3,
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  headerTitle,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.5,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  headerSubtitle,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF94A3B8),
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ),
-              ),
 
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 400),
-                  transitionBuilder: (child, animation) {
-                    return FadeTransition(
-                      opacity: animation,
-                      child: SlideTransition(
-                        position: Tween<Offset>(
-                          begin: const Offset(0, 0.05),
-                          end: Offset.zero,
-                        ).animate(animation),
-                        child: child,
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 400),
+                        transitionBuilder: (child, animation) {
+                          return FadeTransition(
+                            opacity: animation,
+                            child: SlideTransition(
+                              position: Tween<Offset>(
+                                begin: const Offset(0, 0.05),
+                                end: Offset.zero,
+                              ).animate(animation),
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: effectiveSection == DashboardSection.activities
+                            ? _buildActivitiesGrid()
+                            : effectiveSection == DashboardSection.career
+                            ? _buildCareerGrid()
+                            : _buildPrivilegeGrid(),
                       ),
-                    );
-                  },
-                  child: effectiveSection == DashboardSection.activities
-                      ? _buildActivitiesGrid()
-                      : effectiveSection == DashboardSection.career
-                          ? _buildCareerGrid()
-                          : _buildPrivilegeGrid(),
-                ),
-              ),
-              const SizedBox(height: 24),
-            ],
-          );
-          }
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                );
+              },
+            ),
+          ),
         ),
-      )
       ),
-      )
     );
   }
 
@@ -959,23 +1064,23 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     final title = _selectedSection == DashboardSection.activities
         ? "Explore Features"
         : _selectedSection == DashboardSection.career
-            ? "Career Portals"
-            : "User Privileges";
+        ? "Career Portals"
+        : "User Privileges";
     final subtitle = _selectedSection == DashboardSection.activities
         ? "Discover and manage your access levels"
         : _selectedSection == DashboardSection.career
-            ? "Track and unlock career opportunities"
-            : "Manage your active roles & permissions";
+        ? "Track and unlock career opportunities"
+        : "Manage your active roles & permissions";
     final icon = _selectedSection == DashboardSection.activities
         ? Icons.explore_rounded
         : _selectedSection == DashboardSection.career
-            ? Icons.work_rounded
-            : Icons.shield_rounded;
+        ? Icons.work_rounded
+        : Icons.shield_rounded;
     final iconColor = _selectedSection == DashboardSection.activities
         ? const Color(0xFF3B82F6)
         : _selectedSection == DashboardSection.career
-            ? Colors.deepPurple
-            : const Color(0xFF7C3AED);
+        ? Colors.deepPurple
+        : const Color(0xFF7C3AED);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
@@ -1073,9 +1178,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         int crossAxisCount = constraints.maxWidth > 800
             ? 3
             : constraints.maxWidth > 600
-                ? 2
-                : 1;
-                
+            ? 2
+            : 1;
+
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -1160,66 +1265,74 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     List<Widget> cards = [];
 
     if (!isVerified && !isBusiness && !isPremium) {
-      cards.add(AccountTypeCard(
-        title: "Registered",
-        subtitle: "User",
-        description: "Full access to standard features & profile management",
-        icon: "👤",
-        color: const Color(0xFF3B82F6),
-        isCompleted: isRegistered,
-        planName: "Standard",
-        accessLevel: "Basic",
-        primaryButtonText: isRegistered ? "View" : "Upgrade",
-        onPrimaryTap: () => _handleNavigation("registered", "Registered"),
-        onReadMoreTap: () => _showReadMore("Registered"),
-      ));
+      cards.add(
+        AccountTypeCard(
+          title: "Registered",
+          subtitle: "User",
+          description: "Full access to standard features & profile management",
+          icon: "👤",
+          color: const Color(0xFF3B82F6),
+          isCompleted: isRegistered,
+          planName: "Standard",
+          accessLevel: "Basic",
+          primaryButtonText: isRegistered ? "View" : "Upgrade",
+          onPrimaryTap: () => _handleNavigation("registered", "Registered"),
+          onReadMoreTap: () => _showReadMore("Registered"),
+        ),
+      );
     }
 
     if (!isBusiness && !isPremium) {
-      cards.add(AccountTypeCard(
-        title: "Verified",
-        subtitle: "User",
-        description: "Verified badge & priority support",
-        icon: "✅",
-        color: const Color(0xFF10B981),
-        isCompleted: isVerified,
-        planName: "Verified",
-        accessLevel: "Priority",
-        primaryButtonText: isVerified ? "View" : "Upgrade",
-        onPrimaryTap: () => _handleNavigation("verified", "Verified"),
-        onReadMoreTap: () => _showReadMore("Verified"),
-      ));
+      cards.add(
+        AccountTypeCard(
+          title: "Verified",
+          subtitle: "User",
+          description: "Verified badge & priority support",
+          icon: "✅",
+          color: const Color(0xFF10B981),
+          isCompleted: isVerified,
+          planName: "Verified",
+          accessLevel: "Priority",
+          primaryButtonText: isVerified ? "View" : "Upgrade",
+          onPrimaryTap: () => _handleNavigation("verified", "Verified"),
+          onReadMoreTap: () => _showReadMore("Verified"),
+        ),
+      );
     }
 
     if (!isPremium) {
-      cards.add(AccountTypeCard(
-        title: "Business",
-        subtitle: "User",
-        description: "Access to business analytics & team management",
-        icon: "💼",
-        color: const Color(0xFF8B5CF6),
-        isCompleted: isBusiness,
-        planName: "Business",
-        accessLevel: "Enterprise",
-        primaryButtonText: isBusiness ? "View" : "Upgrade",
-        onPrimaryTap: () => _handleNavigation("business", "Business"),
-        onReadMoreTap: () => _showReadMore("Business"),
-      ));
+      cards.add(
+        AccountTypeCard(
+          title: "Business",
+          subtitle: "User",
+          description: "Access to business analytics & team management",
+          icon: "💼",
+          color: const Color(0xFF8B5CF6),
+          isCompleted: isBusiness,
+          planName: "Business",
+          accessLevel: "Enterprise",
+          primaryButtonText: isBusiness ? "View" : "Upgrade",
+          onPrimaryTap: () => _handleNavigation("business", "Business"),
+          onReadMoreTap: () => _showReadMore("Business"),
+        ),
+      );
     }
 
-    cards.add(AccountTypeCard(
-      title: "Premium",
-      subtitle: "User",
-      description: "All features + exclusive benefits",
-      icon: "⭐",
-      color: const Color(0xFFF59E0B),
-      isCompleted: isPremium,
-      planName: "Premium",
-      accessLevel: "Full",
-      primaryButtonText: isPremium ? "View" : "Upgrade",
-      onPrimaryTap: () => _handleNavigation("premium", "Premium"),
-      onReadMoreTap: () => _showReadMore("Premium"),
-    ));
+    cards.add(
+      AccountTypeCard(
+        title: "Premium",
+        subtitle: "User",
+        description: "All features + exclusive benefits",
+        icon: "⭐",
+        color: const Color(0xFFF59E0B),
+        isCompleted: isPremium,
+        planName: "Premium",
+        accessLevel: "Full",
+        primaryButtonText: isPremium ? "View" : "Upgrade",
+        onPrimaryTap: () => _handleNavigation("premium", "Premium"),
+        onReadMoreTap: () => _showReadMore("Premium"),
+      ),
+    );
 
     return GridView.count(
       shrinkWrap: true,

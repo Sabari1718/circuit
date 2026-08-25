@@ -99,7 +99,7 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
   Uint8List? _primaryMarksheetBytes;
 
   String? _after10thPath; // 'Higher Secondary', 'Diploma', 'ITI', 'Direct Job'
-  
+
   String? _higherSecondaryClass; // '11th Standard', '12th Standard'
   String? _hsStudyGroup;
   String? _hsMarksheetName;
@@ -109,7 +109,8 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
   String? _diplomaStudyGroup;
   String? _diplomaMarksheetName;
   Uint8List? _diplomaMarksheetBytes;
-  final TextEditingController _diplomaInstituteController = TextEditingController();
+  final TextEditingController _diplomaInstituteController =
+      TextEditingController();
   final TextEditingController _diplomaYearController = TextEditingController();
 
   String? _itiCourse;
@@ -415,8 +416,7 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
       }
     }
 
-    if (_primaryStudy == '10th Standard' &&
-        _after10thPath == "Diploma") {
+    if (_primaryStudy == '10th Standard' && _after10thPath == "Diploma") {
       if (_diplomaClass == null) {
         _showSnackBar("Please select Diploma class");
         return;
@@ -531,6 +531,9 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
       workType: _workType!,
       resumeName: _resumeName,
       resumeBytes: _resumeBytes,
+      frontPhotoBytes: _frontPhotoBytes,
+      primaryMarksheetBytes: _primaryMarksheetBytes,
+      hsMarksheetBytes: _hsMarksheetBytes,
       noPanCard: _noPanCard,
       panNumber: _panController.text.trim(),
       addressProofType: _addressProofType,
@@ -547,6 +550,7 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
               university: d.universityController.text.trim(),
               institute: d.instituteController.text.trim(),
               year: d.yearOfPassingController.text.trim(),
+              certificateBytes: d.certificateBytes,
             ),
           )
           .toList(),
@@ -1630,13 +1634,17 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
           LayoutBuilder(
             builder: (context, constraints) {
               bool isSmall = constraints.maxWidth < 600;
-              
+
               Widget frontPhotoField = Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
                     "FRONT PHOTO (PASSPORT SIZE) *",
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E293B),
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -1647,27 +1655,42 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                           child: Container(
                             height: 48,
                             decoration: BoxDecoration(
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                              ),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
                                   alignment: Alignment.center,
                                   decoration: const BoxDecoration(
-                                    border: Border(right: BorderSide(color: Color(0xFFE2E8F0))),
+                                    border: Border(
+                                      right: BorderSide(
+                                        color: Color(0xFFE2E8F0),
+                                      ),
+                                    ),
                                   ),
-                                  child: const Text("Choose File", style: TextStyle(color: Color(0xFF1E293B))),
+                                  child: const Text(
+                                    "Choose File",
+                                    style: TextStyle(color: Color(0xFF1E293B)),
+                                  ),
                                 ),
                                 Expanded(
                                   child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                    ),
                                     child: Text(
                                       _frontPhotoName ?? "No file chosen",
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(color: Color(0xFF64748B)),
+                                      style: const TextStyle(
+                                        color: Color(0xFF64748B),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -1679,17 +1702,25 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                       if (_frontPhotoBytes != null) ...[
                         const SizedBox(width: 8),
                         GestureDetector(
-                          onTap: () => _showDocumentPreview(_frontPhotoName!, _frontPhotoBytes!),
+                          onTap: () => _showDocumentPreview(
+                            _frontPhotoName!,
+                            _frontPhotoBytes!,
+                          ),
                           child: Container(
                             width: 48,
                             height: 48,
                             decoration: BoxDecoration(
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                              ),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(8),
-                              child: Image.memory(_frontPhotoBytes!, fit: BoxFit.cover),
+                              child: Image.memory(
+                                _frontPhotoBytes!,
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                         ),
@@ -1703,7 +1734,7 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                   ),
                 ],
               );
-              
+
               Widget bankAccountField = Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1712,10 +1743,17 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                     children: [
                       const Text(
                         "BANK ACCOUNT NUMBER",
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E293B),
+                        ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFF1F5F9),
                           borderRadius: BorderRadius.circular(12),
@@ -1723,7 +1761,10 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                         ),
                         child: const Text(
                           "Optional",
-                          style: TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Color(0xFF64748B),
+                          ),
                         ),
                       ),
                     ],
@@ -1735,14 +1776,20 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                       controller: _bankAccountController,
                       decoration: InputDecoration(
                         hintText: "12345678",
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE2E8F0),
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE2E8F0),
+                          ),
                         ),
                       ),
                     ),
@@ -1754,7 +1801,7 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                   ),
                 ],
               );
-              
+
               if (isSmall) {
                 return Column(
                   children: [
@@ -1775,7 +1822,7 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
             },
           ),
           const SizedBox(height: 24),
-          
+
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -1807,12 +1854,17 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFFEF4444), // As per screenshot 1, it says (OPTIONAL) in red
+                          color: Color(
+                            0xFFEF4444,
+                          ), // As per screenshot 1, it says (OPTIONAL) in red
                         ),
                       ),
                       Text(
                         "Add your academic history. You can add multiple qualifications.",
-                        style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF64748B),
+                        ),
                       ),
                     ],
                   ),
@@ -1928,7 +1980,11 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
               spacing: 16,
               runSpacing: 16,
               children: [
-                _buildPathBox("Higher Secondary", "Higher Secondary", "(11th & 12th)"),
+                _buildPathBox(
+                  "Higher Secondary",
+                  "Higher Secondary",
+                  "(11th & 12th)",
+                ),
                 _buildPathBox("Diploma", "Diploma", "Polytechnic / Engg"),
                 _buildPathBox("ITI", "ITI / Vocational", "Training Course"),
                 _buildPathBox("Direct Job", "Direct Job", "Or Other Paths"),
@@ -1945,7 +2001,11 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                       children: [
                         const Text(
                           "HIGHER SECONDARY STUDY (11TH - 12TH)",
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF475569),
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Container(
@@ -1957,20 +2017,33 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                           child: DropdownButtonHideUnderline(
                             child: DropdownButton<String>(
                               value: _higherSecondaryClass,
-                              hint: const Text("-- Select Class --", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
+                              hint: const Text(
+                                "-- Select Class --",
+                                style: TextStyle(
+                                  color: Color(0xFF94A3B8),
+                                  fontSize: 14,
+                                ),
+                              ),
                               isExpanded: true,
                               items: <String>['11th Standard', '12th Standard']
                                   .map<DropdownMenuItem<String>>((String val) {
-                                    return DropdownMenuItem<String>(value: val, child: Text(val));
-                                  }).toList(),
+                                    return DropdownMenuItem<String>(
+                                      value: val,
+                                      child: Text(val),
+                                    );
+                                  })
+                                  .toList(),
                               onChanged: (val) {
                                 setState(() {
                                   _higherSecondaryClass = val;
                                   _hsMarksheetName = null;
                                   _hsMarksheetBytes = null;
-                                  if (_higherSecondaryClass == '12th Standard' && _degrees.isEmpty) {
+                                  if (_higherSecondaryClass ==
+                                          '12th Standard' &&
+                                      _degrees.isEmpty) {
                                     _degrees.add(DegreeQualification());
-                                  } else if (_higherSecondaryClass != '12th Standard') {
+                                  } else if (_higherSecondaryClass !=
+                                      '12th Standard') {
                                     _degrees.clear();
                                   }
                                 });
@@ -1988,7 +2061,11 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                       children: [
                         const Text(
                           "STUDY GROUP *",
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFEF4444)),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFEF4444),
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Container(
@@ -2000,12 +2077,27 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                           child: DropdownButtonHideUnderline(
                             child: DropdownButton<String>(
                               value: _hsStudyGroup,
-                              hint: const Text("-- Select Group --", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
+                              hint: const Text(
+                                "-- Select Group --",
+                                style: TextStyle(
+                                  color: Color(0xFF94A3B8),
+                                  fontSize: 14,
+                                ),
+                              ),
                               isExpanded: true,
-                              items: _hsStudyGroupList.map<DropdownMenuItem<String>>((String val) {
-                                return DropdownMenuItem<String>(value: val, child: Text(val, style: const TextStyle(fontSize: 14)));
-                              }).toList(),
-                              onChanged: (val) => setState(() => _hsStudyGroup = val),
+                              items: _hsStudyGroupList
+                                  .map<DropdownMenuItem<String>>((String val) {
+                                    return DropdownMenuItem<String>(
+                                      value: val,
+                                      child: Text(
+                                        val,
+                                        style: const TextStyle(fontSize: 14),
+                                      ),
+                                    );
+                                  })
+                                  .toList(),
+                              onChanged: (val) =>
+                                  setState(() => _hsStudyGroup = val),
                             ),
                           ),
                         ),
@@ -2016,7 +2108,14 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
               ),
               if (_higherSecondaryClass == '12th Standard') ...[
                 const SizedBox(height: 16),
-                const Text("UPLOAD 12TH MARKSHEET", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+                const Text(
+                  "UPLOAD 12TH MARKSHEET",
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF475569),
+                  ),
+                ),
                 const SizedBox(height: 8),
                 _buildRowUpload(
                   _hsMarksheetName,
@@ -2037,18 +2136,38 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                         SizedBox(width: 8),
                         Text(
                           "College Degree Qualifications",
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E293B),
+                          ),
                         ),
                       ],
                     ),
                     ElevatedButton.icon(
-                      onPressed: () => setState(() => _degrees.add(DegreeQualification())),
-                      icon: const Icon(Icons.add, size: 16, color: Colors.white),
-                      label: const Text("Add More Degree", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      onPressed: () =>
+                          setState(() => _degrees.add(DegreeQualification())),
+                      icon: const Icon(
+                        Icons.add,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                      label: const Text(
+                        "Add More Degree",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF2563EB),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
                         elevation: 0,
                       ),
                     ),
@@ -2064,11 +2183,18 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
               LayoutBuilder(
                 builder: (context, constraints) {
                   bool isSmall = constraints.maxWidth < 600;
-                  
+
                   Widget courseField = Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("DIPLOMA COURSE *", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFEF4444))),
+                      const Text(
+                        "DIPLOMA COURSE *",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFEF4444),
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       Container(
                         height: 48,
@@ -2081,14 +2207,29 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
                             value: _diplomaStudyGroup,
-                            hint: const Text("-- Select Diploma Course --", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
+                            hint: const Text(
+                              "-- Select Diploma Course --",
+                              style: TextStyle(
+                                color: Color(0xFF94A3B8),
+                                fontSize: 14,
+                              ),
+                            ),
                             isExpanded: true,
-                            items: _diplomaStudyGroupList.map<DropdownMenuItem<String>>((String val) {
-                              return DropdownMenuItem<String>(value: val, child: Text(val, style: const TextStyle(fontSize: 14)));
-                            }).toList(),
+                            items: _diplomaStudyGroupList
+                                .map<DropdownMenuItem<String>>((String val) {
+                                  return DropdownMenuItem<String>(
+                                    value: val,
+                                    child: Text(
+                                      val,
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                  );
+                                })
+                                .toList(),
                             onChanged: (val) => setState(() {
                               _diplomaStudyGroup = val;
-                              if (_degrees.isEmpty) _degrees.add(DegreeQualification());
+                              if (_degrees.isEmpty)
+                                _degrees.add(DegreeQualification());
                             }),
                           ),
                         ),
@@ -2099,7 +2240,14 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                   Widget instituteField = Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("INSTITUTE NAME", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+                      const Text(
+                        "INSTITUTE NAME",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF475569),
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       SizedBox(
                         height: 48,
@@ -2107,21 +2255,46 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                           controller: _diplomaInstituteController,
                           decoration: InputDecoration(
                             hintText: "e.g. Government Polytechnic",
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(
+                                color: Color(0xFFE2E8F0),
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(
+                                color: Color(0xFFE2E8F0),
+                              ),
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(height: 4),
-                      const Text("Letters only - no numbers or special characters", style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                      const Text(
+                        "Letters only - no numbers or special characters",
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
                     ],
                   );
 
                   Widget yearField = Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("YEAR OF PASSING", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+                      const Text(
+                        "YEAR OF PASSING",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF475569),
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       SizedBox(
                         height: 48,
@@ -2132,9 +2305,21 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                           decoration: InputDecoration(
                             hintText: "e.g., 2026",
                             counterText: "",
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(
+                                color: Color(0xFFE2E8F0),
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(
+                                color: Color(0xFFE2E8F0),
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -2144,7 +2329,14 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                   Widget uploadField = Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("UPLOAD DIPLOMA CERTIFICATE", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+                      const Text(
+                        "UPLOAD DIPLOMA CERTIFICATE",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF475569),
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       _buildRowUpload(
                         _diplomaMarksheetName,
@@ -2159,20 +2351,37 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        courseField, const SizedBox(height: 16),
-                        instituteField, const SizedBox(height: 16),
-                        yearField, const SizedBox(height: 16),
+                        courseField,
+                        const SizedBox(height: 16),
+                        instituteField,
+                        const SizedBox(height: 16),
+                        yearField,
+                        const SizedBox(height: 16),
                         uploadField,
                       ],
                     );
                   }
-                  
+
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: courseField), const SizedBox(width: 16), Expanded(child: instituteField)]),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: courseField),
+                          const SizedBox(width: 16),
+                          Expanded(child: instituteField),
+                        ],
+                      ),
                       const SizedBox(height: 16),
-                      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: yearField), const SizedBox(width: 16), Expanded(child: uploadField)]),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: yearField),
+                          const SizedBox(width: 16),
+                          Expanded(child: uploadField),
+                        ],
+                      ),
                     ],
                   );
                 },
@@ -2191,18 +2400,34 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                       SizedBox(width: 8),
                       Text(
                         "College Degree Qualifications",
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E293B),
+                        ),
                       ),
                     ],
                   ),
                   ElevatedButton.icon(
-                    onPressed: () => setState(() => _degrees.add(DegreeQualification())),
+                    onPressed: () =>
+                        setState(() => _degrees.add(DegreeQualification())),
                     icon: const Icon(Icons.add, size: 16, color: Colors.white),
-                    label: const Text("Add More Degree", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    label: const Text(
+                      "Add More Degree",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF2563EB),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
                       elevation: 0,
                     ),
                   ),
@@ -2213,7 +2438,6 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                 _degrees.length,
                 (index) => _buildDegreeBlock(index),
               ),
-              
             ] else if (_after10thPath == "ITI") ...[
               LayoutBuilder(
                 builder: (context, constraints) {
@@ -2222,21 +2446,46 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                   Widget courseField = Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("ITI / VOCATIONAL COURSE", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+                      const Text(
+                        "ITI / VOCATIONAL COURSE",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF475569),
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       Container(
                         height: 48,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(border: Border.all(color: const Color(0xFFE2E8F0)), borderRadius: BorderRadius.circular(8)),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
                             value: _itiCourse,
-                            hint: const Text("-- Select ITI Course --", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
+                            hint: const Text(
+                              "-- Select ITI Course --",
+                              style: TextStyle(
+                                color: Color(0xFF94A3B8),
+                                fontSize: 14,
+                              ),
+                            ),
                             isExpanded: true,
-                            items: _itiCourses.map<DropdownMenuItem<String>>((String val) {
-                              return DropdownMenuItem<String>(value: val, child: Text(val, style: const TextStyle(fontSize: 14)));
+                            items: _itiCourses.map<DropdownMenuItem<String>>((
+                              String val,
+                            ) {
+                              return DropdownMenuItem<String>(
+                                value: val,
+                                child: Text(
+                                  val,
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                              );
                             }).toList(),
-                            onChanged: (val) => setState(() => _itiCourse = val),
+                            onChanged: (val) =>
+                                setState(() => _itiCourse = val),
                           ),
                         ),
                       ),
@@ -2246,7 +2495,14 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                   Widget uploadField = Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("UPLOAD ITI CERTIFICATE", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+                      const Text(
+                        "UPLOAD ITI CERTIFICATE",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF475569),
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       _buildRowUpload(
                         _itiCertificateName,
@@ -2256,12 +2512,13 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                       ),
                     ],
                   );
-                  
+
                   if (isSmall) {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        courseField, const SizedBox(height: 16),
+                        courseField,
+                        const SizedBox(height: 16),
                         uploadField,
                       ],
                     );
@@ -2269,12 +2526,23 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
 
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [Expanded(child: courseField), const SizedBox(width: 16), Expanded(child: uploadField)],
+                    children: [
+                      Expanded(child: courseField),
+                      const SizedBox(width: 16),
+                      Expanded(child: uploadField),
+                    ],
                   );
                 },
               ),
               const SizedBox(height: 24),
-              const Text("AFTER ITI, WHAT IS YOUR NEXT PLAN? *", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFEF4444))),
+              const Text(
+                "AFTER ITI, WHAT IS YOUR NEXT PLAN? *",
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFEF4444),
+                ),
+              ),
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -2289,7 +2557,13 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                         }),
                         activeColor: const Color(0xFF2563EB),
                       ),
-                      const Text("Direct Job", style: TextStyle(fontSize: 14, color: Color(0xFF1E293B))),
+                      const Text(
+                        "Direct Job",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(width: 24),
@@ -2300,11 +2574,18 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                         groupValue: _itiNextPlan,
                         onChanged: (val) => setState(() {
                           _itiNextPlan = val;
-                          if (_degrees.isEmpty) _degrees.add(DegreeQualification());
+                          if (_degrees.isEmpty)
+                            _degrees.add(DegreeQualification());
                         }),
                         activeColor: const Color(0xFF2563EB),
                       ),
-                      const Text("Higher Studies", style: TextStyle(fontSize: 14, color: Color(0xFF1E293B))),
+                      const Text(
+                        "Higher Studies",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -2324,18 +2605,38 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                         SizedBox(width: 8),
                         Text(
                           "College Degree Qualifications",
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E293B),
+                          ),
                         ),
                       ],
                     ),
                     ElevatedButton.icon(
-                      onPressed: () => setState(() => _degrees.add(DegreeQualification())),
-                      icon: const Icon(Icons.add, size: 16, color: Colors.white),
-                      label: const Text("Add More Degree", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      onPressed: () =>
+                          setState(() => _degrees.add(DegreeQualification())),
+                      icon: const Icon(
+                        Icons.add,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                      label: const Text(
+                        "Add More Degree",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF2563EB),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
                         elevation: 0,
                       ),
                     ),
@@ -2358,9 +2659,23 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
-                    Text("Direct Employment Path Selected", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 14)),
+                    Text(
+                      "Direct Employment Path Selected",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 14,
+                      ),
+                    ),
                     SizedBox(height: 8),
-                    Text("You have indicated direct job transition after secondary education. No further high school marksheet or college degrees are required to complete this step.", style: TextStyle(color: Colors.white, fontSize: 13, height: 1.4)),
+                    Text(
+                      "You have indicated direct job transition after secondary education. No further high school marksheet or college degrees are required to complete this step.",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        height: 1.4,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -2788,7 +3103,12 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildDataField("SALARY A/C NUMBER", _bankAccountController.text.isNotEmpty ? _bankAccountController.text : "N/A"),
+          _buildDataField(
+            "SALARY A/C NUMBER",
+            _bankAccountController.text.isNotEmpty
+                ? _bankAccountController.text
+                : "N/A",
+          ),
           const SizedBox(height: 24),
           if (_primaryStudy != null && _primaryStudy != '-- Select Class --')
             _buildEducationEntry(
@@ -2877,7 +3197,11 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
           if (_hsMarksheetName != null)
             _buildDocumentTile(_hsMarksheetName!, _hsMarksheetBytes, false),
           if (_diplomaMarksheetName != null)
-            _buildDocumentTile(_diplomaMarksheetName!, _diplomaMarksheetBytes, false),
+            _buildDocumentTile(
+              _diplomaMarksheetName!,
+              _diplomaMarksheetBytes,
+              false,
+            ),
           if (_itiCertificateName != null)
             _buildDocumentTile(
               _itiCertificateName!,
@@ -2915,7 +3239,10 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
               color: const Color(0xFFFEF2F2),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(isPDF ? Icons.picture_as_pdf : Icons.image, color: const Color(0xFFEF4444)),
+            child: Icon(
+              isPDF ? Icons.picture_as_pdf : Icons.image,
+              color: const Color(0xFFEF4444),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -2934,7 +3261,10 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                 ),
                 Text(
                   isPDF ? "PDF" : "Image",
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF64748B),
+                  ),
                 ),
               ],
             ),
@@ -3398,7 +3728,10 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.vertical(top: const Radius.circular(8), bottom: Radius.circular(degree.isExpanded ? 0 : 8)),
+                borderRadius: BorderRadius.vertical(
+                  top: const Radius.circular(8),
+                  bottom: Radius.circular(degree.isExpanded ? 0 : 8),
+                ),
               ),
               child: Row(
                 children: [
@@ -3412,7 +3745,11 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                     ),
                     child: Text(
                       "${index + 1}",
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2563EB),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -3429,20 +3766,26 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                   if (_degrees.length > 1)
                     IconButton(
                       onPressed: () => setState(() => _degrees.removeAt(index)),
-                      icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
+                      icon: const Icon(
+                        Icons.delete_outline_rounded,
+                        color: Colors.redAccent,
+                        size: 20,
+                      ),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                     ),
                   const SizedBox(width: 16),
                   Icon(
-                    degree.isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    degree.isExpanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
                     color: const Color(0xFF64748B),
                   ),
                 ],
               ),
             ),
           ),
-          
+
           // Body
           if (degree.isExpanded)
             Padding(
@@ -3453,11 +3796,18 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                   LayoutBuilder(
                     builder: (context, constraints) {
                       bool isSmall = constraints.maxWidth < 600;
-                      
+
                       Widget streamField = Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text("DEGREE STREAM *", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+                          const Text(
+                            "DEGREE STREAM *",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF475569),
+                            ),
+                          ),
                           const SizedBox(height: 8),
                           Container(
                             height: 48,
@@ -3465,15 +3815,28 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                              ),
                             ),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
                                 value: degree.stream,
-                                hint: const Text("Select Stream", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
+                                hint: const Text(
+                                  "Select Stream",
+                                  style: TextStyle(
+                                    color: Color(0xFF94A3B8),
+                                    fontSize: 14,
+                                  ),
+                                ),
                                 isExpanded: true,
-                                items: streams.map<DropdownMenuItem<String>>((String val) {
-                                  return DropdownMenuItem<String>(value: val, child: Text(val));
+                                items: streams.map<DropdownMenuItem<String>>((
+                                  String val,
+                                ) {
+                                  return DropdownMenuItem<String>(
+                                    value: val,
+                                    child: Text(val),
+                                  );
                                 }).toList(),
                                 onChanged: (val) => setState(() {
                                   degree.stream = val;
@@ -3484,28 +3847,49 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                           ),
                         ],
                       );
-                      
+
                       Widget degreeField = Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text("SELECT DEGREE *", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+                          const Text(
+                            "SELECT DEGREE *",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF475569),
+                            ),
+                          ),
                           const SizedBox(height: 8),
                           Container(
                             height: 48,
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             decoration: BoxDecoration(
-                              color: degree.stream == null ? const Color(0xFFF8FAFC) : Colors.white,
+                              color: degree.stream == null
+                                  ? const Color(0xFFF8FAFC)
+                                  : Colors.white,
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                              ),
                             ),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
                                 value: degree.degree,
-                                hint: const Text('Select Degree', style: TextStyle(color: Color(0xFF94A3B8))),
+                                hint: const Text(
+                                  'Select Degree',
+                                  style: TextStyle(color: Color(0xFF94A3B8)),
+                                ),
                                 isExpanded: true,
-                                items: degreeOptions.map<DropdownMenuItem<String>>((String val) {
-                                  return DropdownMenuItem<String>(value: val, child: Text(val));
-                                }).toList(),
+                                items: degreeOptions
+                                    .map<DropdownMenuItem<String>>((
+                                      String val,
+                                    ) {
+                                      return DropdownMenuItem<String>(
+                                        value: val,
+                                        child: Text(val),
+                                      );
+                                    })
+                                    .toList(),
                                 onChanged: degree.stream == null
                                     ? null
                                     : (String? val) {
@@ -3518,11 +3902,18 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                           ),
                         ],
                       );
-                      
+
                       Widget universityField = Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text("UNIVERSITY NAME *", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+                          const Text(
+                            "UNIVERSITY NAME *",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF475569),
+                            ),
+                          ),
                           const SizedBox(height: 8),
                           SizedBox(
                             height: 48,
@@ -3530,21 +3921,46 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                               controller: degree.universityController,
                               decoration: InputDecoration(
                                 hintText: "e.g. University of Mumbai",
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFFE2E8F0),
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFFE2E8F0),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                           const SizedBox(height: 4),
-                          const Text("Letters only - no numbers or special characters", style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                          const Text(
+                            "Letters only - no numbers or special characters",
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
                         ],
                       );
-                      
+
                       Widget instituteField = Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text("INSTITUTE NAME *", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+                          const Text(
+                            "INSTITUTE NAME *",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF475569),
+                            ),
+                          ),
                           const SizedBox(height: 8),
                           SizedBox(
                             height: 48,
@@ -3552,21 +3968,46 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                               controller: degree.instituteController,
                               decoration: InputDecoration(
                                 hintText: "e.g. IIT Bombay",
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFFE2E8F0),
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFFE2E8F0),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                           const SizedBox(height: 4),
-                          const Text("Letters only - no numbers or special characters", style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                          const Text(
+                            "Letters only - no numbers or special characters",
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
                         ],
                       );
-                      
+
                       Widget yearField = Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text("YEAR OF PASSING *", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+                          const Text(
+                            "YEAR OF PASSING *",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF475569),
+                            ),
+                          ),
                           const SizedBox(height: 8),
                           SizedBox(
                             height: 48,
@@ -3577,19 +4018,38 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                               decoration: InputDecoration(
                                 hintText: "e.g., 2026",
                                 counterText: "",
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFFE2E8F0),
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFFE2E8F0),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ],
                       );
-                      
+
                       Widget uploadField = Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text("UPLOAD DEGREE CERTIFICATE", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+                          const Text(
+                            "UPLOAD DEGREE CERTIFICATE",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF475569),
+                            ),
+                          ),
                           const SizedBox(height: 8),
                           _buildRowUpload(
                             degree.certificateName,
@@ -3603,26 +4063,59 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            streamField, const SizedBox(height: 16),
-                            degreeField, const SizedBox(height: 16),
-                            universityField, const SizedBox(height: 16),
-                            instituteField, const SizedBox(height: 16),
-                            yearField, const SizedBox(height: 16),
+                            streamField,
+                            const SizedBox(height: 16),
+                            degreeField,
+                            const SizedBox(height: 16),
+                            universityField,
+                            const SizedBox(height: 16),
+                            instituteField,
+                            const SizedBox(height: 16),
+                            yearField,
+                            const SizedBox(height: 16),
                             uploadField,
                           ],
                         );
                       }
-                      
+
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: streamField), const SizedBox(width: 16), Expanded(child: degreeField)]),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: streamField),
+                              const SizedBox(width: 16),
+                              Expanded(child: degreeField),
+                            ],
+                          ),
                           const SizedBox(height: 16),
-                          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: universityField), const SizedBox(width: 16), Expanded(child: instituteField)]),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: universityField),
+                              const SizedBox(width: 16),
+                              Expanded(child: instituteField),
+                            ],
+                          ),
                           const SizedBox(height: 16),
-                          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: yearField), const SizedBox(width: 16), Expanded(child: const SizedBox())]),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: yearField),
+                              const SizedBox(width: 16),
+                              Expanded(child: const SizedBox()),
+                            ],
+                          ),
                           const SizedBox(height: 16),
-                          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: uploadField), const SizedBox(width: 16), Expanded(child: const SizedBox())]),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: uploadField),
+                              const SizedBox(width: 16),
+                              Expanded(child: const SizedBox()),
+                            ],
+                          ),
                         ],
                       );
                     },
@@ -3642,24 +4135,24 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
         setState(() {
           _after10thPath = path;
           if (path != 'Higher Secondary') {
-             _higherSecondaryClass = null;
-             _hsStudyGroup = null;
-             _hsMarksheetName = null;
-             _hsMarksheetBytes = null;
+            _higherSecondaryClass = null;
+            _hsStudyGroup = null;
+            _hsMarksheetName = null;
+            _hsMarksheetBytes = null;
           }
           if (path != 'Diploma') {
-             _diplomaClass = null;
-             _diplomaStudyGroup = null;
-             _diplomaMarksheetName = null;
-             _diplomaMarksheetBytes = null;
+            _diplomaClass = null;
+            _diplomaStudyGroup = null;
+            _diplomaMarksheetName = null;
+            _diplomaMarksheetBytes = null;
           }
           if (path != 'ITI') {
-             _itiCourse = null;
-             _itiCertificateName = null;
-             _itiCertificateBytes = null;
+            _itiCourse = null;
+            _itiCertificateName = null;
+            _itiCertificateBytes = null;
           }
           if (path != 'Higher Secondary' && path != 'Diploma') {
-             _degrees.clear();
+            _degrees.clear();
           }
         });
       },
@@ -3670,7 +4163,9 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+            color: isSelected
+                ? const Color(0xFF2563EB)
+                : const Color(0xFFE2E8F0),
             width: isSelected ? 1.5 : 1,
           ),
         ),
@@ -3687,24 +4182,24 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                   setState(() {
                     _after10thPath = val;
                     if (val != 'Higher Secondary') {
-                       _higherSecondaryClass = null;
-                       _hsStudyGroup = null;
-                       _hsMarksheetName = null;
-                       _hsMarksheetBytes = null;
+                      _higherSecondaryClass = null;
+                      _hsStudyGroup = null;
+                      _hsMarksheetName = null;
+                      _hsMarksheetBytes = null;
                     }
                     if (val != 'Diploma') {
-                       _diplomaClass = null;
-                       _diplomaStudyGroup = null;
-                       _diplomaMarksheetName = null;
-                       _diplomaMarksheetBytes = null;
+                      _diplomaClass = null;
+                      _diplomaStudyGroup = null;
+                      _diplomaMarksheetName = null;
+                      _diplomaMarksheetBytes = null;
                     }
                     if (val != 'ITI') {
-                       _itiCourse = null;
-                       _itiCertificateName = null;
-                       _itiCertificateBytes = null;
+                      _itiCourse = null;
+                      _itiCertificateName = null;
+                      _itiCertificateBytes = null;
                     }
                     if (val != 'Higher Secondary' && val != 'Diploma') {
-                       _degrees.clear();
+                      _degrees.clear();
                     }
                   });
                 },
@@ -3721,13 +4216,18 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
-                      color: isSelected ? const Color(0xFF2563EB) : const Color(0xFF475569),
+                      color: isSelected
+                          ? const Color(0xFF2563EB)
+                          : const Color(0xFF475569),
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF64748B),
+                    ),
                   ),
                 ],
               ),
@@ -3738,7 +4238,12 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
     );
   }
 
-  Widget _buildRowUpload(String? fileName, Uint8List? fileBytes, VoidCallback onTap, {String helperText = "Upload PDF, JPG or PNG (Max 5MB)"}) {
+  Widget _buildRowUpload(
+    String? fileName,
+    Uint8List? fileBytes,
+    VoidCallback onTap, {
+    String helperText = "Upload PDF, JPG or PNG (Max 5MB)",
+  }) {
     return LayoutBuilder(
       builder: (context, constraints) {
         bool isSmall = constraints.maxWidth < 600;
@@ -3752,57 +4257,100 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
               InkWell(
                 onTap: onTap,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: const BoxDecoration(
                     border: Border(right: BorderSide(color: Color(0xFFE2E8F0))),
                   ),
-                  child: const Text("Choose File", style: TextStyle(color: Color(0xFF1E293B))),
+                  child: const Text(
+                    "Choose File",
+                    style: TextStyle(color: Color(0xFF1E293B)),
+                  ),
                 ),
               ),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(fileName ?? "No file chosen", maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF64748B))),
+                  child: Text(
+                    fileName ?? "No file chosen",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Color(0xFF64748B)),
+                  ),
                 ),
               ),
             ],
           ),
         );
 
-        final previewField = (fileName != null && fileBytes != null) ? GestureDetector(
-          onTap: () => _showDocumentPreview(fileName, fileBytes),
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: Image.memory(fileBytes, width: 40, height: 40, fit: BoxFit.cover, errorBuilder: (_,__,___) => const Icon(Icons.insert_drive_file, color: Color(0xFF64748B))),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+        final previewField = (fileName != null && fileBytes != null)
+            ? GestureDetector(
+                onTap: () => _showDocumentPreview(fileName, fileBytes),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: const Color(0xFF10B981).withOpacity(0.3),
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
                     children: [
-                      Row(
-                        children: const [
-                          Icon(Icons.check, color: Color(0xFF10B981), size: 16),
-                          SizedBox(width: 4),
-                          Text("Uploaded", style: TextStyle(color: Color(0xFF10B981), fontSize: 12, fontWeight: FontWeight.bold)),
-                        ],
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: Image.memory(
+                          fileBytes,
+                          width: 40,
+                          height: 40,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const Icon(
+                            Icons.insert_drive_file,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
                       ),
-                      Text(fileName, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: const [
+                                Icon(
+                                  Icons.check,
+                                  color: Color(0xFF10B981),
+                                  size: 16,
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  "Uploaded",
+                                  style: TextStyle(
+                                    color: Color(0xFF10B981),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              fileName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Color(0xFF64748B),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
-        ) : const SizedBox();
+              )
+            : const SizedBox();
 
         if (isSmall) {
           return Column(
@@ -3810,8 +4358,14 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
             children: [
               uploadField,
               const SizedBox(height: 4),
-              Text(helperText, style: const TextStyle(fontSize: 10, color: Color(0xFF64748B))),
-              if (fileName != null) ...[const SizedBox(height: 12), previewField],
+              Text(
+                helperText,
+                style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+              ),
+              if (fileName != null) ...[
+                const SizedBox(height: 12),
+                previewField,
+              ],
             ],
           );
         }
@@ -3825,11 +4379,20 @@ class _EmployeeUpgradePageState extends State<EmployeeUpgradePage> {
                 children: [
                   uploadField,
                   const SizedBox(height: 4),
-                  Text(helperText, style: const TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                  Text(
+                    helperText,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
                 ],
               ),
             ),
-            if (fileName != null) ...[const SizedBox(width: 16), Expanded(child: previewField)],
+            if (fileName != null) ...[
+              const SizedBox(width: 16),
+              Expanded(child: previewField),
+            ],
           ],
         );
       },
