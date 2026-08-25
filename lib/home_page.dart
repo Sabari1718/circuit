@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
+import 'package:sva_business_user/upgrade/employee_user_model.dart';
 import 'upgrade/new_business_register_page.dart';
 import 'upgrade/business_registration_overview_page.dart';
 import 'features/employee/employee_dashboard_page.dart';
@@ -285,6 +286,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           if (innerData != null && innerData['id'] != null) {
             String workType = innerData['work_type'] ?? 'Physical Work';
             String? resumePath = innerData['resume_path'];
+            String? frontPhotoPath = innerData['profile_photo'];
             String? resumeName = resumePath != null ? resumePath.split('/').last : null;
             String? panNumber = innerData['pan_number']; 
             String? salaryAccount = innerData['salary_account_number']?.toString();
@@ -292,6 +294,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             String? educationBoard;
             String? primaryStudy;
             String? after10thPath;
+            String? primaryMarksheetPath;
+            String? hsMarksheetPath;
             
             List<EmployeeDegreeData> degreesList = [];
 
@@ -302,6 +306,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                        educationBoard = edu['education_board'];
                        primaryStudy = "10th Standard";
                        after10thPath = edu['path_after_10th'];
+                       primaryMarksheetPath = edu['marksheet_10th'];
+                   } else if (edu['education_type'] == 'higher_secondary') {
+                       hsMarksheetPath = edu['marksheet_12th'];
                    } else if (edu['education_type'] == 'degree') {
                        degreesList.add(EmployeeDegreeData(
                            stream: edu['degree_stream'],
@@ -309,6 +316,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                            university: edu['university_name'],
                            institute: edu['institute_name'],
                            year: edu['year_of_passing']?.toString(),
+                           certificatePath: edu['degree_certificate'],
                        ));
                    }
                 }
@@ -318,6 +326,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               id: innerData['user_main_id']?.toString() ?? uid,
               workType: workType,
               resumeName: resumeName,
+              resumePath: resumePath,
+              frontPhotoPath: frontPhotoPath,
+              primaryMarksheetPath: primaryMarksheetPath,
+              hsMarksheetPath: hsMarksheetPath,
               panNumber: panNumber,
               salaryAccount: salaryAccount,
               educationBoard: educationBoard,
