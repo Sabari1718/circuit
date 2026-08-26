@@ -23,9 +23,10 @@ class GridCardService {
 
     try {
       final userData = await UserService().getUserData();
-      final userMainId = userData['user_main_id'] ?? '';
-      
-      final String endpoint = 'https://user.jobes24x7.com/api/grid-card/$userMainId';
+      final userMainId = userData['user_main_id']?.toString() ?? '';
+
+      // Hardcoding ID 2761846435 for testing as requested by the user
+      final String endpoint = 'https://user.jobes24x7.com/api/grid-card/2761846435';
 
       print("===== GRID CARD API DEBUG =====");
       print("GRID API URL: $endpoint");
