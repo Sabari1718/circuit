@@ -300,13 +300,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             String? panNumber = innerData['pan_number'];
             String? salaryAccount = innerData['salary_account_number']
                 ?.toString();
-
             String? educationBoard;
             String? primaryStudy;
             String? after10thPath;
             String? primaryMarksheetPath;
             String? hsMarksheetPath;
-
             List<EmployeeDegreeData> degreesList = [];
 
             if (innerData['educations'] != null &&
