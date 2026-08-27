@@ -7,6 +7,8 @@ import '../login_page.dart';
 import '../home_page.dart';
 import '../settings_page.dart';
 import '../profile_dropdown.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers.dart';
 
 class CommonDashboardAppBar extends StatelessWidget
     implements PreferredSizeWidget {
@@ -109,7 +111,7 @@ class CommonDashboardAppBar extends StatelessWidget
             builder: (context, _) {
               final photoBytes = UserService().profilePhotoBytes;
               return Container(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(20),
@@ -132,7 +134,7 @@ class CommonDashboardAppBar extends StatelessWidget
                           child: photoBytes == null
                               ? Text(
                                   _getInitials(userData['name']!),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
@@ -140,7 +142,7 @@ class CommonDashboardAppBar extends StatelessWidget
                                 )
                               : null,
                         ),
-                        const SizedBox(width: 16),
+                        SizedBox(width: 16),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,12 +151,12 @@ class CommonDashboardAppBar extends StatelessWidget
                                 userData['name']!,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
-                              const SizedBox(height: 2),
+                              SizedBox(height: 2),
                               Text(
                                 userData['email']!,
                                 maxLines: 1,
@@ -164,9 +166,9 @@ class CommonDashboardAppBar extends StatelessWidget
                                   fontSize: 12,
                                 ),
                               ),
-                              const SizedBox(height: 6),
+                              SizedBox(height: 6),
                               Container(
-                                padding: const EdgeInsets.symmetric(
+                                padding: EdgeInsets.symmetric(
                                   horizontal: 8,
                                   vertical: 4,
                                 ),
@@ -178,7 +180,7 @@ class CommonDashboardAppBar extends StatelessWidget
                                 ),
                                 child: Text(
                                   "ID: ${(userData['user_main_id'] != null && userData['user_main_id']!.isNotEmpty) ? userData['user_main_id']! : (userData['userId'] ?? '')}",
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: Color(0xFF10B981),
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
@@ -257,14 +259,14 @@ class CommonDashboardAppBar extends StatelessWidget
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: iconColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: iconColor, size: 22),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -278,7 +280,7 @@ class CommonDashboardAppBar extends StatelessWidget
                     fontSize: 14,
                   ),
                 ),
-                const SizedBox(height: 2),
+                SizedBox(height: 2),
                 Text(
                   subtitle,
                   style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
@@ -316,6 +318,8 @@ class CommonDashboardAppBar extends StatelessWidget
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return FutureBuilder<Map<String, String>>(
       future: UserService().getUserData(),
       builder: (context, snapshot) {
@@ -329,7 +333,20 @@ class CommonDashboardAppBar extends StatelessWidget
             };
 
         return AppBar(
-          backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+          backgroundColor: isDark
+              ? const Color(0xFF0F172A)
+              : Colors.transparent,
+          flexibleSpace: isDark
+              ? null
+              : Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)], // Premium deep blue to vibrant blue
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                ),
           elevation: 0,
           toolbarHeight: 68,
           automaticallyImplyLeading: automaticallyImplyLeading,
@@ -348,25 +365,26 @@ class CommonDashboardAppBar extends StatelessWidget
             softWrap: false,
           ),
           actions: [
-            // Settings Icon
-            IconButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SettingsPage()),
+            // Theme Toggle Icon
+            Consumer(
+              builder: (context, ref, child) {
+                return IconButton(
+                  onPressed: () {
+                    ref.read(themeProviderState).toggleTheme();
+                  },
+                  icon: Icon(
+                    isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                    color: isDark ? Colors.amber : Colors.white70,
+                    size: 24,
+                  ),
+                  tooltip: 'Toggle Theme',
                 );
               },
-              icon: const Icon(
-                Icons.settings_outlined,
-                color: Colors.white70,
-                size: 24,
-              ),
-              tooltip: 'Settings',
             ),
-            const SizedBox(width: 4),
+            SizedBox(width: 4),
             // Profile Avatar with Dropdown
             Padding(
-              padding: const EdgeInsets.only(right: 16, left: 4),
+              padding: EdgeInsets.only(right: 16, left: 4),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -386,7 +404,7 @@ class CommonDashboardAppBar extends StatelessWidget
                             child: photoBytes == null
                                 ? Text(
                                     _getInitials(userData['name']!),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
@@ -404,7 +422,9 @@ class CommonDashboardAppBar extends StatelessWidget
                                 color: const Color(0xFF10B981),
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: const Color(0xFF1E293B),
+                                  color: isDark
+                                      ? const Color(0xFF1E293B)
+                                      : const Color(0xFF1E40AF),
                                   width: 2,
                                 ),
                               ),
@@ -414,7 +434,7 @@ class CommonDashboardAppBar extends StatelessWidget
                       );
                     },
                   ),
-                  const SizedBox(width: 4),
+                  SizedBox(width: 4),
                   // Dropdown Icon (Trigger)
                   Builder(
                     builder: (buttonContext) {
@@ -424,7 +444,7 @@ class CommonDashboardAppBar extends StatelessWidget
                           buttonContext,
                           userData,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.keyboard_arrow_down_rounded,
                           color: Colors.white70,
                           size: 18,
@@ -440,10 +460,10 @@ class CommonDashboardAppBar extends StatelessWidget
               ? PreferredSize(
                   preferredSize: const Size.fromHeight(52),
                   child: Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
+                    padding: EdgeInsets.only(bottom: 12),
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: EdgeInsets.symmetric(horizontal: 16),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         mainAxisSize: MainAxisSize.min,
@@ -457,7 +477,7 @@ class CommonDashboardAppBar extends StatelessWidget
                             onTap: () =>
                                 onSectionChanged?.call(DashboardSection.career),
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12),
                           _buildTabButton(
                             context,
                             title: "User Privilege",
@@ -468,7 +488,7 @@ class CommonDashboardAppBar extends StatelessWidget
                               DashboardSection.privilege,
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12),
                           _buildTabButton(
                             context,
                             title: "Features",
@@ -497,15 +517,20 @@ class CommonDashboardAppBar extends StatelessWidget
     required bool isSelected,
     required VoidCallback onTap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF334155) : Colors.transparent,
+          color: isSelected
+              ? (isDark
+                    ? const Color(0xFF334155)
+                    : Colors.white.withOpacity(0.2))
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           border: isSelected
-              ? Border.all(color: Colors.white.withOpacity(0.1), width: 1)
+              ? Border.all(color: Colors.white.withOpacity(0.15), width: 1)
               : null,
         ),
         child: Row(
@@ -513,14 +538,14 @@ class CommonDashboardAppBar extends StatelessWidget
           children: [
             Icon(
               icon,
-              color: isSelected ? Colors.white : Colors.white54,
+              color: isSelected ? Colors.white : Colors.white70,
               size: 16,
             ),
-            const SizedBox(width: 6),
+            SizedBox(width: 6),
             Text(
               title,
               style: TextStyle(
-                color: isSelected ? Colors.white : Colors.white54,
+                color: isSelected ? Colors.white : Colors.white70,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 fontSize: 12,
               ),

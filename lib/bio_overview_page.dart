@@ -155,120 +155,109 @@ class _BioOverviewPageState extends State<BioOverviewPage> {
     }
   }
 
-  Widget _buildBioOverview() {
+  Widget _buildPremiumCard({required Key key, required String title, required IconData titleIcon, required List<Widget> children}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Container(
-      key: const ValueKey('bio_overview'),
-      padding: const EdgeInsets.all(24),
+      key: key,
+      padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F5F9), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
+            color: isDark ? Colors.black.withOpacity(0.4) : const Color(0xFF2563EB).withOpacity(0.04),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
         ],
+        gradient: isDark ? const RadialGradient(
+          center: Alignment.topLeft,
+          radius: 1.5,
+          colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+        ) : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "Bio Overview",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFF0F172A),
-            ),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(color: const Color(0xFF3B82F6).withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))
+                  ],
+                ),
+                child: Icon(titleIcon, color: Colors.white, size: 26),
+              ),
+              const SizedBox(width: 18),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  letterSpacing: -0.5,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          const Divider(),
-          const SizedBox(height: 16),
-          _buildDetailItem(Icons.person_outline_rounded, "Full Name", _userData['name'] ?? 'Sabari'),
-          _buildDetailItem(Icons.email_outlined, "Email Address", _userData['email'] ?? 'sabari@example.com'),
-          _buildDetailItem(Icons.phone_iphone_rounded, "Phone Number", _userData['phone'] ?? '8012107626'),
-          _buildDetailItem(Icons.location_on_outlined, "Residential Address", _userData['address'] ?? 'Not Provided'),
+          const SizedBox(height: 24),
+          Divider(color: isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFF1F5F9), thickness: 1.5),
+          const SizedBox(height: 24),
+          ...children,
         ],
       ),
+    );
+  }
+
+  Widget _buildBioOverview() {
+    return _buildPremiumCard(
+      key: const ValueKey('bio_overview'),
+      title: "Bio Overview",
+      titleIcon: Icons.badge_rounded,
+      children: [
+        _buildDetailItem(Icons.person_rounded, "Full Name", _userData['name'] ?? 'Sabari'),
+        _buildDetailItem(Icons.email_rounded, "Email Address", _userData['email'] ?? 'sabari@example.com'),
+        _buildDetailItem(Icons.phone_iphone_rounded, "Phone Number", _userData['phone'] ?? '8012107626'),
+        _buildDetailItem(Icons.location_on_rounded, "Residential Address", _userData['address'] ?? 'Not Provided'),
+      ],
     );
   }
 
   Widget _buildAuthentication() {
-    return Container(
+    return _buildPremiumCard(
       key: const ValueKey('authentication'),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "Authentication",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFF0F172A),
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Divider(),
-          const SizedBox(height: 16),
-          _buildDetailItem(Icons.security_outlined, "Authentication Level", "2-Factor Authentication Active"),
-          _buildDetailItem(Icons.fingerprint_rounded, "Biometrics Lock", "Face ID & Pin Configured"),
-          _buildDetailItem(Icons.phonelink_setup_rounded, "Registered Device", "Android Device (Pixel 7 Pro)"),
-          _buildDetailItem(Icons.history_rounded, "Last Security Sync", "Today at 11:45 AM"),
-        ],
-      ),
+      title: "Authentication",
+      titleIcon: Icons.shield_rounded,
+      children: [
+        _buildDetailItem(Icons.security_rounded, "Authentication Level", "2-Factor Authentication Active"),
+        _buildDetailItem(Icons.fingerprint_rounded, "Biometrics Lock", "Face ID & Pin Configured"),
+        _buildDetailItem(Icons.phonelink_setup_rounded, "Registered Device", "Android Device (Pixel 7 Pro)"),
+        _buildDetailItem(Icons.history_rounded, "Last Security Sync", "Today at 11:45 AM"),
+      ],
     );
   }
 
   Widget _buildSTab() {
-    return Container(
+    return _buildPremiumCard(
       key: const ValueKey('s_tab'),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "S-Tab Settings",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFF0F172A),
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Divider(),
-          const SizedBox(height: 16),
-          _buildDetailItem(Icons.vpn_key_outlined, "S-Tab Security Key", "STAB-9508-3830-27XX"),
-          _buildDetailItem(Icons.swap_horiz_rounded, "Connection Protocol", "TLS 1.3 Encryption Active"),
-          _buildDetailItem(Icons.dns_outlined, "Gateway Server", "Secure UserPortal Node 4"),
-          _buildDetailItem(Icons.verified_user_outlined, "Token Integrity", "Signature matches valid authority"),
-        ],
-      ),
+      title: "S-Tab Settings",
+      titleIcon: Icons.settings_rounded,
+      children: [
+        _buildDetailItem(Icons.vpn_key_rounded, "S-Tab Security Key", "STAB-9508-3830-27XX"),
+        _buildDetailItem(Icons.swap_horiz_rounded, "Connection Protocol", "TLS 1.3 Encryption Active"),
+        _buildDetailItem(Icons.dns_rounded, "Gateway Server", "Secure UserPortal Node 4"),
+        _buildDetailItem(Icons.verified_user_rounded, "Token Integrity", "Signature matches valid authority"),
+      ],
     );
   }
 
@@ -277,47 +266,78 @@ class _BioOverviewPageState extends State<BioOverviewPage> {
   }
 
   Widget _buildDetailItem(IconData icon, String label, String value) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, size: 20, color: const Color(0xFF2563EB)),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    color: Color(0xFF94A3B8),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.2,
-                  ),
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? Colors.white.withOpacity(0.03) : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFE2E8F0).withOpacity(0.6)),
+          boxShadow: isDark ? [] : [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.01),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            )
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isDark 
+                    ? [Colors.white.withOpacity(0.1), Colors.white.withOpacity(0.05)]
+                    : [Colors.white, const Color(0xFFF1F5F9)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    color: Color(0xFF1E293B),
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    height: 1.4,
-                  ),
-                ),
-              ],
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFE2E8F0)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  )
+                ],
+              ),
+              child: Icon(icon, size: 24, color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF3B82F6)),
             ),
-          ),
-        ],
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    value,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : const Color(0xFF1E293B),
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -443,165 +463,174 @@ class _VerifySectionState extends State<_VerifySection> {
 
     return Container(
       width: double.infinity,
-
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius:
-        BorderRadius.circular(16),
-
-        border: Border.all(
-          color:
-          const Color(0xFFE2E8F0),
+        color: const Color(0xFF0F172A),
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF10B981).withOpacity(0.15),
+            blurRadius: 40,
+            offset: const Offset(0, 10),
+          ),
+        ],
+        gradient: const RadialGradient(
+          center: Alignment.topLeft,
+          radius: 1.5,
+          colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
         ),
       ),
-
-      child: Padding(
-        padding:
-        const EdgeInsets.all(24),
-
-        child: Column(
-          crossAxisAlignment:
-          CrossAxisAlignment.start,
-
-          children: [
-
-            const Text(
-              "Verification Step",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight:
-                FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(
-              height: 10,
-            ),
-
-            const Text(
-              "Select the correct answer below to test your authentication",
-            ),
-
-            const SizedBox(
-              height: 25,
-            ),
-
-            Row(
-              mainAxisAlignment:
-              MainAxisAlignment
-                  .spaceEvenly,
-
-              children:
-              options.map((opt) {
-
-                bool isSelected =
-                    selectedAnswer ==
-                        opt;
-
-                return GestureDetector(
-
-                  onTap: () {
-                    selectAnswer(
-                        opt);
-                  },
-
-                  child: Container(
-
-                    width: 56,
-                    height: 48,
-
-                    decoration:
-                    BoxDecoration(
-
-                      color:
-                      isSelected
-                          ? const Color(
-                          0xFF6B5FD6)
-                          : Colors.white,
-
-                      borderRadius:
-                      BorderRadius
-                          .circular(
-                          8),
-
-                      border:
-                      Border.all(
-                        color: const Color(
-                            0xFFE2E8F0),
-                      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(32),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF10B981), Color(0xFF047857)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-
-                    child: Center(
-                      child: Text(
-                        opt.toString(),
-
-                        style:
-                        TextStyle(
-
-                          fontSize:
-                          18,
-
-                          fontWeight:
-                          FontWeight
-                              .bold,
-
-                          color:
-                          isSelected
-                              ? Colors
-                              .white
-                              : Colors
-                              .black,
-                        ),
-                      ),
-                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(color: const Color(0xFF10B981).withOpacity(0.4), blurRadius: 15)
+                    ],
                   ),
-                );
-
-              }).toList(),
-            ),
-
-            if (showWrong)
-              const Padding(
-                padding:
-                EdgeInsets.only(
-                    top: 20),
-                child: Text(
-                  "Incorrect option selected!",
+                  child: const Icon(Icons.verified_user_rounded, color: Colors.white, size: 28),
+                ),
+                const SizedBox(width: 20),
+                const Text(
+                  "Verification Step",
                   style: TextStyle(
-                    color:
-                    Colors.red,
-                    fontWeight:
-                    FontWeight
-                        .bold,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    letterSpacing: 0.5,
                   ),
                 ),
-              ),
-
-            if (showFormula)
-              Padding(
-                padding: const EdgeInsets.only(top: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
+              ],
+            ),
+          ),
+          Divider(color: Colors.white.withOpacity(0.1), thickness: 1.5, height: 1),
+          Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Select the correct answer below to test your authentication",
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: options.map((opt) {
+                    bool isSelected = selectedAnswer == opt;
+                    return Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          selectAnswer(opt);
+                        },
+                        child: AnimatedContainer(
+                          margin: const EdgeInsets.symmetric(horizontal: 6),
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.fastOutSlowIn,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: isSelected ? const Color(0xFF10B981) : Colors.white.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isSelected ? const Color(0xFF34D399) : Colors.white.withOpacity(0.1),
+                              width: 2,
+                            ),
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      color: const Color(0xFF10B981).withOpacity(0.5),
+                                      blurRadius: 20,
+                                      spreadRadius: 2,
+                                    )
+                                  ]
+                                : [],
+                          ),
+                          child: Center(
+                            child: Text(
+                              opt.toString(),
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w900,
+                                color: isSelected ? Colors.white : Colors.white70,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                if (showWrong)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 32),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF4444).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: const [
+                          Icon(Icons.error_outline_rounded, color: Color(0xFFF87171), size: 24),
+                          SizedBox(width: 12),
+                          Text(
+                            "Incorrect option selected!",
+                            style: TextStyle(
+                              color: Color(0xFFFCA5A5),
+                              fontWeight: FontWeight.w800,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                if (showFormula)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 32),
+                    child: Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF4F5F7),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        color: Colors.white.withOpacity(0.03),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: Colors.white.withOpacity(0.1)),
                       ),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            "Formula Verification",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1E293B),
-                            ),
+                          Row(
+                            children: const [
+                              Icon(Icons.functions_rounded, color: Color(0xFF3B82F6), size: 24),
+                              SizedBox(width: 12),
+                              Text(
+                                "Formula Verification",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 32),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -609,21 +638,23 @@ class _VerifySectionState extends State<_VerifySection> {
                                 children: [
                                   Container(
                                     width: 80,
-                                    height: 60,
+                                    height: 64,
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                                      color: Colors.white.withOpacity(0.05),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(color: Colors.white.withOpacity(0.1)),
                                     ),
                                     child: Center(
                                       child: DropdownButtonHideUnderline(
                                         child: DropdownButton<String>(
                                           value: selectedOpValue,
-                                          icon: const Icon(Icons.keyboard_arrow_down, size: 20),
+                                          dropdownColor: const Color(0xFF1E293B),
+                                          borderRadius: BorderRadius.circular(16),
+                                          icon: const Icon(Icons.keyboard_arrow_down, size: 20, color: Colors.white54),
                                           style: const TextStyle(
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF1E293B),
+                                            fontSize: 28,
+                                            fontWeight: FontWeight.w900,
+                                            color: Colors.white,
                                           ),
                                           onChanged: (String? newValue) {
                                             if (newValue != null) {
@@ -635,44 +666,49 @@ class _VerifySectionState extends State<_VerifySection> {
                                           items: <String>['?', '+', '-'].map<DropdownMenuItem<String>>((String value) {
                                             return DropdownMenuItem<String>(
                                               value: value,
-                                              child: Text(value),
+                                              child: Text(
+                                                value,
+                                                style: const TextStyle(color: Colors.white),
+                                              ),
                                             );
                                           }).toList(),
                                         ),
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: 12),
                                   const Text(
                                     "Operation",
                                     style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFF64748B),
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white54,
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(width: 20),
+                              const SizedBox(width: 32),
                               Column(
                                 children: [
                                   Container(
                                     width: 80,
-                                    height: 60,
+                                    height: 64,
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                                      color: Colors.white.withOpacity(0.05),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(color: Colors.white.withOpacity(0.1)),
                                     ),
                                     child: Center(
                                       child: DropdownButtonHideUnderline(
                                         child: DropdownButton<String>(
                                           value: selectedNumberValue,
+                                          dropdownColor: const Color(0xFF1E293B),
+                                          borderRadius: BorderRadius.circular(16),
                                           icon: const SizedBox.shrink(),
                                           style: const TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF1E293B),
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.w900,
+                                            color: Colors.white,
                                           ),
                                           onChanged: (String? newValue) {
                                             if (newValue != null) {
@@ -685,55 +721,54 @@ class _VerifySectionState extends State<_VerifySection> {
                                               .map<DropdownMenuItem<String>>((String value) {
                                             return DropdownMenuItem<String>(
                                               value: value,
-                                              child: Text(value),
+                                              child: Text(
+                                                value,
+                                                style: const TextStyle(color: Colors.white),
+                                              ),
                                             );
                                           }).toList(),
                                         ),
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: 12),
                                   const Text(
                                     "Number",
                                     style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFF64748B),
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white54,
                                     ),
                                   ),
                                 ],
                               ),
                             ],
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 40),
                           SizedBox(
                             width: double.infinity,
-                            height: 48,
+                            height: 60,
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF9086F9),
+                                backgroundColor: const Color(0xFF2563EB),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
                                 elevation: 0,
+                                shadowColor: const Color(0xFF2563EB).withOpacity(0.4),
                               ),
                               onPressed: () async {
                                 if (selectedOpValue == '?' || selectedNumberValue == '1-9') {
-                                  // Do nothing if not fully selected
                                   return;
                                 }
-
                                 int calculatedResult = 0;
                                 int userNum = int.parse(selectedNumberValue);
-                                
                                 if (selectedOpValue == '+') {
                                   calculatedResult = correctAnswer + userNum;
                                 } else if (selectedOpValue == '-') {
                                   calculatedResult = correctAnswer - userNum;
                                 }
-
                                 int currentAuthId = StabService.savedAuthId;
-
                                 setState(() {
                                   showResult = true;
                                   if (calculatedResult == StabService.savedSessionCode) {
@@ -745,7 +780,6 @@ class _VerifySectionState extends State<_VerifySection> {
                                     StabService.clearSession();
                                   }
                                 });
-
                                 try {
                                   await StabService().verifyAuth(
                                     authId: currentAuthId,
@@ -758,11 +792,12 @@ class _VerifySectionState extends State<_VerifySection> {
                                 }
                               },
                               child: const Text(
-                                "APPLY",
+                                "APPLY CONFIGURATION",
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1.0,
                                 ),
                               ),
                             ),
@@ -770,22 +805,46 @@ class _VerifySectionState extends State<_VerifySection> {
                         ],
                       ),
                     ),
-                    if (showResult)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 20),
-                        child: Text(
-                          isSuccess ? "Authentication Success" : "Authentication Failed",
-                          style: TextStyle(
-                            color: isSuccess ? Colors.green : Colors.red,
-                            fontWeight: FontWeight.bold,
-                          ),
+                  ),
+                if (showResult)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 32),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: isSuccess ? const Color(0xFF10B981).withOpacity(0.1) : const Color(0xFFEF4444).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isSuccess ? const Color(0xFF10B981).withOpacity(0.3) : const Color(0xFFEF4444).withOpacity(0.3),
+                          width: 2,
                         ),
                       ),
-                  ],
-                ),
-              ),
-          ],
-        ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            isSuccess ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                            color: isSuccess ? const Color(0xFF34D399) : const Color(0xFFF87171),
+                            size: 28,
+                          ),
+                          const SizedBox(width: 16),
+                          Text(
+                            isSuccess ? "Authentication Success" : "Authentication Failed",
+                            style: TextStyle(
+                              color: isSuccess ? const Color(0xFF34D399) : const Color(0xFFF87171),
+                              fontWeight: FontWeight.w800,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

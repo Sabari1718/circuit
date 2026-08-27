@@ -192,178 +192,157 @@ class _GridCardPageState
     );
   }
 
-  Widget _buildGridCardContent(
-      GridCardModel grid,
-      ) {
-    final columns = [
-      'A',
-      'B',
-      'C',
-      'D',
-      'E',
-      'F',
-      'G'
-    ];
-
+  Widget _buildGridCardContent(GridCardModel grid) {
+    final columns = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
     final rows = [1, 2, 3, 4, 5];
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-
-        borderRadius:
-        BorderRadius.circular(16),
-
-        border: Border.all(
-          color: const Color(0xFFE2E8F0),
-          width: 1.2,
-        ),
-
+        color: const Color(0xFF0F172A),
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black
-                .withOpacity(0.02),
-
-            blurRadius: 10,
-
-            offset: const Offset(0, 4),
+            color: const Color(0xFF3B82F6).withOpacity(0.15),
+            blurRadius: 40,
+            offset: const Offset(0, 20),
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.4),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
+        gradient: const RadialGradient(
+          center: Alignment.topLeft,
+          radius: 2.0,
+          colors: [Color(0xFF1E293B), Color(0xFF020617)],
+        ),
       ),
-
-      child: Column(
-        crossAxisAlignment:
-        CrossAxisAlignment.stretch,
-
+      child: Stack(
         children: [
-          Padding(
-            padding:
-            const EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: 16,
-            ),
-
-            child: Row(
-              children: [
-                Container(
-                  padding:
-                  const EdgeInsets.all(8),
-
-                  decoration:
-                  const BoxDecoration(
-                    color: Color(0xFFE11D48),
-                    shape: BoxShape.circle,
-                  ),
-
-                  child: const Icon(
-                    Icons.grid_on_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-
-                const SizedBox(width: 12),
-
-                const Text(
-                  "Security Grid Card",
-
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight:
-                    FontWeight.bold,
-                    color:
-                    Color(0xFF0F172A),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const Divider(
-            height: 1,
-            thickness: 1,
-            color: Color(0xFFE2E8F0),
-          ),
-
-          Padding(
-            padding:
-            const EdgeInsets.all(16),
-
+          // Glass shine overlay
+          Positioned(
+            top: -50,
+            right: -50,
             child: Container(
-              padding:
-              const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
-
+              width: 200,
+              height: 200,
               decoration: BoxDecoration(
-                color:
-                const Color(0xFF2E3B4E),
-
-                borderRadius:
-                BorderRadius.circular(
-                  8,
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [Colors.white.withOpacity(0.1), Colors.transparent],
+                  stops: const [0.0, 1.0],
                 ),
               ),
-
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.shield_outlined,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-
-                  const SizedBox(width: 10),
-
-                  const Text(
-                    "AUTHENTICATION GRID CARD",
-
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight:
-                      FontWeight.bold,
-                      fontSize: 12,
-                      letterSpacing: 0.5,
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(32),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFEAB308), Color(0xFFB45309)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(color: const Color(0xFFEAB308).withOpacity(0.4), blurRadius: 15, spreadRadius: 2)
+                        ],
+                      ),
+                      child: const Icon(Icons.grid_on_rounded, color: Colors.white, size: 28),
                     ),
-                  ),
-
-                  const Spacer(),
-
-                  Container(
-                    width: 32,
-                    height: 22,
-
-                    decoration:
-                    BoxDecoration(
-                      color:
-                      const Color(
-                          0xFFFBBF24),
-
-                      borderRadius:
-                      BorderRadius
-                          .circular(
-                        4,
+                    const SizedBox(width: 20),
+                    const Expanded(
+                      child: Text(
+                        "SECURE GRID",
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: 2.0,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-
+                    // Hologram chip
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFCD34D), Color(0xFFD97706), Color(0xFFFDE68A)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(color: const Color(0xFFF59E0B).withOpacity(0.3), blurRadius: 10)
+                        ],
+                      ),
+                      child: const Icon(Icons.sim_card_rounded, color: Colors.black54, size: 24),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.shield_rounded, color: Color(0xFF34D399), size: 24),
+                  ),
+                  const SizedBox(width: 16),
+                  const Expanded(
+                    child: Text(
+                      "AUTHENTICATION MATRIX",
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                        letterSpacing: 1.5,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Container(
+                    width: 44,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFCD34D), Color(0xFFD97706)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(color: const Color(0xFFF59E0B).withOpacity(0.3), blurRadius: 8)
+                      ],
+                    ),
                     child: Column(
-                      mainAxisAlignment:
-                      MainAxisAlignment
-                          .spaceEvenly,
-
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        Container(
-                          height: 1,
-                          color:
-                          Colors.black12,
-                        ),
-
-                        Container(
-                          height: 1,
-                          color:
-                          Colors.black12,
-                        ),
+                        Container(height: 2, width: double.infinity, color: Colors.black.withOpacity(0.2)),
+                        Container(height: 2, width: double.infinity, color: Colors.black.withOpacity(0.2)),
+                        Container(height: 2, width: double.infinity, color: Colors.black.withOpacity(0.2)),
                       ],
                     ),
                   ),
@@ -371,198 +350,107 @@ class _GridCardPageState
               ),
             ),
           ),
-
+          const SizedBox(height: 32),
           Padding(
-            padding:
-            const EdgeInsets.symmetric(
-              horizontal: 16,
-            ),
-
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             child: SingleChildScrollView(
-              scrollDirection:
-              Axis.horizontal,
-
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
               child: Container(
-                width: 520,
-
-                padding:
-                const EdgeInsets
-                    .symmetric(
-                  vertical: 8,
-                ),
-
+                width: 580,
+                padding: const EdgeInsets.only(bottom: 24),
                 child: Table(
                   border: TableBorder.all(
-                    color:
-                    const Color(
-                        0xFFCBD5E1),
-
-                    width: 1,
-
-                    borderRadius:
-                    BorderRadius
-                        .circular(
-                      8,
-                    ),
+                    color: Colors.white.withOpacity(0.1),
+                    width: 1.5,
+                    borderRadius: BorderRadius.circular(16),
                   ),
-
-                  columnWidths: const {
-                    0: FixedColumnWidth(50),
-                  },
-
+                  columnWidths: const {0: FixedColumnWidth(55)},
                   children: [
                     TableRow(
-                      decoration:
-                      const BoxDecoration(
-                        color:
-                        Color(0xFFF8FAFC),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.03),
+                        borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
                       ),
-
                       children: [
-                        const TableCell(
-                          child: SizedBox(
-                            height: 45,
-
-                            child: Center(
-                              child: Text(""),
-                            ),
-                          ),
-                        ),
-
-                        ...columns.map(
-                              (col) => TableCell(
-                            child: SizedBox(
-                              height: 45,
-
-                              child: Center(
-                                child: Text(
-                                  col,
-
-                                  style:
-                                  const TextStyle(
-                                    fontWeight:
-                                    FontWeight
-                                        .bold,
-                                    color: Color(
-                                        0xFF2563EB),
-                                    fontSize: 16,
+                        const TableCell(child: SizedBox(height: 50, child: Center(child: Text("")))),
+                        ...columns.map((col) => TableCell(
+                              child: SizedBox(
+                                height: 50,
+                                child: Center(
+                                  child: Text(
+                                    col,
+                                    style: const TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF93C5FD), fontSize: 18),
                                   ),
                                 ),
                               ),
-                            ),
-                          ),
-                        ),
+                            )),
                       ],
                     ),
-
                     ...rows.map(
-                          (rowNum) => TableRow(
+                      (rowNum) => TableRow(
                         children: [
                           TableCell(
                             child: Container(
-                              height: 55,
-
-                              color:
-                              const Color(
-                                  0xFFF8FAFC),
-
+                              height: 64,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.03),
+                                border: Border(right: BorderSide(color: Colors.white.withOpacity(0.1), width: 1.5)),
+                              ),
                               child: Center(
                                 child: Text(
-                                  rowNum
-                                      .toString(),
-
-                                  style:
-                                  const TextStyle(
-                                    fontWeight:
-                                    FontWeight
-                                        .bold,
-                                    color: Color(
-                                        0xFF2563EB),
-                                    fontSize: 16,
-                                  ),
+                                  rowNum.toString(),
+                                  style: const TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF93C5FD), fontSize: 18),
                                 ),
                               ),
                             ),
                           ),
-
-                          ...columns.map(
-                                (col) {
-                              final cellVal =
-                                  grid.gridData[
-                                  '$col$rowNum'] ??
-                                      '000';
-
-                              return TableCell(
-                                child: Padding(
-                                  padding:
-                                  const EdgeInsets
-                                      .all(4),
-
-                                  child: Container(
-                                    height: 47,
-
-                                    decoration:
-                                    BoxDecoration(
-                                      border:
-                                      Border.all(
-                                        color:
-                                        const Color(
-                                            0xFFE2E8F0),
-                                      ),
-
-                                      borderRadius:
-                                      BorderRadius
-                                          .circular(
-                                        6,
-                                      ),
+                          ...columns.map((col) {
+                            final cellVal = grid.gridData['$col$rowNum'] ?? '000';
+                            return TableCell(
+                              child: Padding(
+                                padding: const EdgeInsets.all(6),
+                                child: Container(
+                                  height: 52,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [Colors.white.withOpacity(0.1), Colors.white.withOpacity(0.05)],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
                                     ),
-
-                                    child: Column(
-                                      mainAxisAlignment:
-                                      MainAxisAlignment
-                                          .center,
-
-                                      children: [
-                                        Text(
-                                          '$col$rowNum',
-
-                                          style:
-                                          const TextStyle(
-                                            fontSize:
-                                            9,
-                                            color: Color(
-                                                0xFF94A3B8),
-                                            fontWeight:
-                                            FontWeight
-                                                .bold,
-                                          ),
+                                    border: Border.all(color: Colors.white.withOpacity(0.15)),
+                                    borderRadius: BorderRadius.circular(10),
+                                    boxShadow: [
+                                      BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))
+                                    ],
+                                  ),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        '$col$rowNum',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.white.withOpacity(0.5),
+                                          fontWeight: FontWeight.bold,
                                         ),
-
-                                        const SizedBox(
-                                            height:
-                                            2),
-
-                                        Text(
-                                          cellVal,
-
-                                          style:
-                                          const TextStyle(
-                                            fontWeight:
-                                            FontWeight
-                                                .bold,
-                                            color: Color(
-                                                0xFF1E293B),
-                                            fontSize:
-                                            14,
-                                          ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        cellVal,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w900,
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          letterSpacing: 1.0,
                                         ),
-                                      ],
-                                    ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              );
-                            },
-                          ),
+                              ),
+                            );
+                          }),
                         ],
                       ),
                     ),
@@ -571,57 +459,50 @@ class _GridCardPageState
               ),
             ),
           ),
-
-          const SizedBox(height: 16),
-
           Container(
-            padding:
-            const EdgeInsets.all(16),
-
-            decoration:
-            const BoxDecoration(
-              color: Color(0xFFF8FAFC),
-
-              borderRadius:
-              BorderRadius.only(
-                bottomLeft:
-                Radius.circular(16),
-
-                bottomRight:
-                Radius.circular(16),
-              ),
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.2),
+              borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(32), bottomRight: Radius.circular(32)),
+              border: Border(top: BorderSide(color: Colors.white.withOpacity(0.1))),
             ),
-
-            child: Column(
-              crossAxisAlignment:
-              CrossAxisAlignment.start,
-
+            child: Row(
               children: [
-                const Text(
-                  "SERIAL NUMBER",
-
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF64748B),
-                    fontWeight:
-                    FontWeight.bold,
-                    letterSpacing: 0.5,
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  child: const Icon(Icons.qr_code_rounded, color: Colors.white70, size: 24),
                 ),
-
-                const SizedBox(height: 4),
-
-                Text(
-                  grid.serialNumber,
-
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight:
-                    FontWeight.bold,
-                    color:
-                    Color(0xFF0F172A),
-                    fontFamily:
-                    'monospace',
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "SERIAL NUMBER",
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.white54,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        grid.serialNumber,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          fontFamily: 'monospace',
+                          letterSpacing: 2.0,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -629,6 +510,8 @@ class _GridCardPageState
           ),
         ],
       ),
-    );
+    ],
+  ),
+);
   }
 }

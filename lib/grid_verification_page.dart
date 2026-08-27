@@ -257,56 +257,46 @@ class _GridVerificationPageState
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-      backgroundColor:
-      const Color(0xFFF5F7FB),
-
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-
+        surfaceTintColor: Colors.transparent,
+        shadowColor: const Color(0xFF2563EB).withOpacity(0.04),
+        scrolledUnderElevation: 4,
         leading: IconButton(
           icon: const Icon(
-            Icons.arrow_back,
-            color: Colors.black,
+            Icons.arrow_back_ios_new_rounded,
+            color: Color(0xFF0F172A),
+            size: 20,
           ),
-
           onPressed: () {
-
             Navigator.pop(
               context,
               true,
             );
           },
         ),
-
         title: const Text(
-          "Grid Verification Demo",
-
+          "Grid Verification",
           style: TextStyle(
             color: Color(0xFF0F172A),
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w800,
+            fontSize: 18,
           ),
         ),
       ),
-
       body: FutureBuilder<GridCardModel>(
         future: _future,
-
         builder: (context, snapshot) {
-
-          if (snapshot.connectionState ==
-              ConnectionState.waiting) {
-
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
-              child:
-              CircularProgressIndicator(),
+              child: CircularProgressIndicator(color: Color(0xFF2563EB)),
             );
           }
 
           if (snapshot.hasError) {
-
             return Center(
               child: Text(
                 snapshot.error.toString(),
@@ -315,260 +305,252 @@ class _GridVerificationPageState
           }
 
           return SingleChildScrollView(
-            padding:
-            const EdgeInsets.all(20),
-
+            padding: const EdgeInsets.all(24),
             child: Container(
               width: double.infinity,
-
-              padding:
-              const EdgeInsets.all(20),
-
+              padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
-                color: Colors.white,
-
-                borderRadius:
-                BorderRadius.circular(20),
-
-                border: Border.all(
-                  color:
-                  Colors.grey.shade300,
+                color: const Color(0xFF0F172A),
+                borderRadius: BorderRadius.circular(32),
+                border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF2563EB).withOpacity(0.2),
+                    blurRadius: 40,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+                gradient: const RadialGradient(
+                  center: Alignment.topLeft,
+                  radius: 1.5,
+                  colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
                 ),
               ),
-
               child: Column(
                 children: [
-
-                  const SizedBox(height: 10),
-
                   Row(
                     children: [
-
                       Container(
-                        width: 52,
-                        height: 52,
-
-                        decoration:
-                        const BoxDecoration(
-                          color:
-                          Color(0xFFE11D48),
-
-                          shape:
-                          BoxShape.circle,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF10B981), Color(0xFF047857)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(color: const Color(0xFF10B981).withOpacity(0.5), blurRadius: 15)
+                          ],
                         ),
-
                         child: const Icon(
-                          Icons.shield,
+                          Icons.grid_on_rounded,
                           color: Colors.white,
+                          size: 28,
                         ),
                       ),
-
-                      const SizedBox(width: 14),
-
+                      const SizedBox(width: 20),
                       const Expanded(
                         child: Text(
-                          "Grid Verification Demo",
-
+                          "Grid Challenge",
                           style: TextStyle(
-                            fontSize: 28,
-                            fontWeight:
-                            FontWeight.bold,
+                            fontSize: 26,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            letterSpacing: 0.5,
                           ),
                         ),
                       ),
                     ],
                   ),
-
-                  const SizedBox(height: 30),
-
+                  const SizedBox(height: 32),
                   Container(
                     width: double.infinity,
-
-                    padding:
-                    const EdgeInsets.all(18),
-
+                    padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      borderRadius:
-                      BorderRadius.circular(
-                          16),
-
-                      border: Border.all(
-                        color:
-                        Colors.grey.shade300,
-                      ),
+                      color: Colors.white.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withOpacity(0.1)),
                     ),
-
                     child: Column(
-                      crossAxisAlignment:
-                      CrossAxisAlignment.start,
-
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-
                         Row(
-                          mainAxisAlignment:
-                          MainAxisAlignment.spaceBetween,
-
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-
-                            const Expanded(
-                              child: Text(
-                                "Security Coordinates Required",
-
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight:
-                                  FontWeight.bold,
-                                ),
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF3B82F6).withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Icon(
+                                      Icons.shield_rounded,
+                                      color: Color(0xFF60A5FA),
+                                      size: 20,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  const Expanded(
+                                    child: Text(
+                                      "AUTHENTICATION",
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.white70,
+                                        letterSpacing: 1.5,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-
-                            TextButton.icon(
-                              onPressed:
-                              _generateNewChallenge,
-
-                              icon: const Icon(
-                                Icons.refresh,
-                              ),
-
-                              label: const Text(
-                                "New Challenge",
+                            const SizedBox(width: 8),
+                            Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: _generateNewChallenge,
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(color: const Color(0xFF3B82F6).withOpacity(0.4), blurRadius: 8)
+                                    ],
+                                  ),
+                                  child: Row(
+                                    children: const [
+                                      Icon(Icons.refresh_rounded, color: Colors.white, size: 16),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        "Refresh",
+                                        style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
                           ],
                         ),
-
-                        const SizedBox(height: 6),
-
-                        Text(
-                          "Serial: ${_gridData!.serialNumber}",
-
-                          style: TextStyle(
-                            color:
-                            Colors.grey.shade600,
+                        const SizedBox(height: 20),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white.withOpacity(0.05)),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.qr_code_rounded, color: Colors.white.withOpacity(0.6), size: 20),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  "Serial: ${_gridData!.serialNumber}",
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.9),
+                                    fontFamily: 'monospace',
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 16,
+                                    letterSpacing: 1.5,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
-
-                  const SizedBox(height: 30),
-
+                  const SizedBox(height: 32),
                   const Text(
-                    "To complete this transaction, enter the corresponding 3-digit values from your static Security Grid Card below:",
-
+                    "Enter the 3-digit values from your Grid Card",
                     textAlign: TextAlign.center,
-
                     style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white70,
                     ),
                   ),
-
-                  const SizedBox(height: 30),
-
+                  const SizedBox(height: 32),
                   Row(
-                    mainAxisAlignment:
-                    MainAxisAlignment.spaceEvenly,
-
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: List.generate(
                       3,
-                          (index) {
-
+                      (index) {
                         return Expanded(
                           child: Padding(
-                            padding:
-                            const EdgeInsets.symmetric(
-                              horizontal: 6,
-                            ),
-
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
                             child: Column(
                               children: [
-
                                 Container(
-                                  height: 52,
-
-                                  decoration:
-                                  BoxDecoration(
-                                    color:
-                                    const Color(
-                                        0xFFE11D48),
-
-                                    borderRadius:
-                                    BorderRadius.circular(
-                                        10),
+                                  height: 48,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [Colors.white.withOpacity(0.1), Colors.white.withOpacity(0.05)],
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.white.withOpacity(0.1)),
                                   ),
-
-                                  alignment:
-                                  Alignment.center,
-
+                                  alignment: Alignment.center,
                                   child: Text(
                                     _challenges[index],
-
-                                    style:
-                                    const TextStyle(
-                                      color:
-                                      Colors.white,
-
-                                      fontWeight:
-                                      FontWeight.bold,
-
-                                      fontSize: 22,
+                                    style: const TextStyle(
+                                      color: Color(0xFF60A5FA),
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 20,
                                     ),
                                   ),
                                 ),
-
-                                const SizedBox(
-                                    height: 14),
-
+                                const SizedBox(height: 16),
                                 Container(
-                                  height: 65,
-
-                                  decoration:
-                                  BoxDecoration(
-                                    color:
-                                    const Color(
-                                        0xFF1E293B),
-
-                                    borderRadius:
-                                    BorderRadius.circular(
-                                        12),
+                                  height: 64,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.4),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(color: const Color(0xFF3B82F6).withOpacity(0.5), width: 2),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF3B82F6).withOpacity(0.2),
+                                        blurRadius: 10,
+                                        spreadRadius: 2,
+                                      )
+                                    ],
                                   ),
-
-                                  child:
-                                  TextField(
-
-                                    key: ValueKey(
-                                      "${_challenges[index]}_${DateTime.now().millisecondsSinceEpoch}",
-                                    ),
-
-                                    controller:
-                                    _controllers[index],
-
-                                    keyboardType:
-                                    TextInputType.number,
-
-                                    textAlign:
-                                    TextAlign.center,
-
-                                    maxLength: 3,
-
-                                    style:
-                                    const TextStyle(
-                                      color:
-                                      Colors.white,
-
-                                      fontSize: 24,
-
-                                      fontWeight:
-                                      FontWeight.bold,
-                                    ),
-
-                                    decoration:
-                                    const InputDecoration(
-                                      border:
-                                      InputBorder.none,
-
-                                      counterText: "",
+                                  child: Center(
+                                    child: TextField(
+                                      key: ValueKey(
+                                        "${_challenges[index]}_${DateTime.now().millisecondsSinceEpoch}",
+                                      ),
+                                      controller: _controllers[index],
+                                      keyboardType: TextInputType.number,
+                                      textAlign: TextAlign.center,
+                                      maxLength: 3,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: 4.0,
+                                      ),
+                                      decoration: InputDecoration(
+                                        border: InputBorder.none,
+                                        counterText: "",
+                                        hintText: "•••",
+                                        hintStyle: TextStyle(
+                                          color: Colors.white.withOpacity(0.2),
+                                          letterSpacing: 4.0,
+                                        )
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -579,39 +561,27 @@ class _GridVerificationPageState
                       },
                     ),
                   ),
-
-                  const SizedBox(height: 40),
-
+                  const SizedBox(height: 48),
                   SizedBox(
-                    width: 240,
-                    height: 58,
-
+                    width: double.infinity,
+                    height: 64,
                     child: ElevatedButton(
-                      onPressed:
-                      _verifyGrid,
-
-                      style:
-                      ElevatedButton.styleFrom(
-                        backgroundColor:
-                        const Color(
-                            0xFF2563EB),
-
-                        shape:
-                        RoundedRectangleBorder(
-                          borderRadius:
-                          BorderRadius.circular(
-                              12),
+                      onPressed: _verifyGrid,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
                         ),
+                        elevation: 0,
+                        shadowColor: const Color(0xFF10B981).withOpacity(0.5),
                       ),
-
                       child: const Text(
-                        "Submit and Verify",
-
+                        "SUBMIT AND VERIFY",
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 18,
-                          fontWeight:
-                          FontWeight.bold,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.5,
                         ),
                       ),
                     ),
@@ -626,121 +596,100 @@ class _GridVerificationPageState
   }
 }
 
-class VerificationSuccessPage
-    extends StatelessWidget {
-
-  const VerificationSuccessPage({
-    super.key,
-  });
+class VerificationSuccessPage extends StatelessWidget {
+  const VerificationSuccessPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-      backgroundColor:
-      const Color(0xFFF5F7FB),
-
+      backgroundColor: const Color(0xFFF8FAFC),
       body: Center(
         child: Container(
-          margin:
-          const EdgeInsets.all(24),
-
-          padding:
-          const EdgeInsets.all(32),
-
+          margin: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(40),
           decoration: BoxDecoration(
             color: Colors.white,
-
-            borderRadius:
-            BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(color: const Color(0xFFF1F5F9), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF10B981).withOpacity(0.08),
+                blurRadius: 32,
+                offset: const Offset(0, 12),
+              ),
+            ],
           ),
-
           child: Column(
-            mainAxisSize:
-            MainAxisSize.min,
-
+            mainAxisSize: MainAxisSize.min,
             children: [
-
               Container(
-                width: 100,
-                height: 100,
-
-                decoration:
-                BoxDecoration(
-                  color:
-                  Colors.green.withOpacity(0.15),
-
-                  shape:
-                  BoxShape.circle,
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withOpacity(0.1),
+                  shape: BoxShape.circle,
                 ),
-
-                child: const Icon(
-                  Icons.check,
-                  color: Colors.green,
-                  size: 50,
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              const Text(
-                "Verification Success!",
-
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight:
-                  FontWeight.bold,
-                  color:
-                  Color(0xFFE11D48),
-                ),
-              ),
-
-              const SizedBox(height: 18),
-
-              const Text(
-                "All coordinates matched perfectly. You are authorized to complete the action.",
-
-                textAlign: TextAlign.center,
-
-                style: TextStyle(
-                  fontSize: 16,
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              ElevatedButton.icon(
-
-                onPressed: () {
-
-                  Navigator.pop(
-                    context,
-                    true,
-                  );
-                },
-
-                icon: const Icon(
-                  Icons.refresh,
-                  color: Colors.white,
-                ),
-
-                label: const Text(
-                  "Verify Again",
-
-                  style: TextStyle(
-                    color: Colors.white,
+                child: Center(
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF10B981),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check_rounded,
+                      color: Colors.white,
+                      size: 48,
+                    ),
                   ),
                 ),
-
-                style:
-                ElevatedButton.styleFrom(
-                  backgroundColor:
-                  const Color(0xFF2563EB),
-
-                  padding:
-                  const EdgeInsets.symmetric(
-                    horizontal: 30,
-                    vertical: 16,
+              ),
+              const SizedBox(height: 32),
+              const Text(
+                "Verification Success!",
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF0F172A),
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "All coordinates matched perfectly. You are authorized to complete the action.",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Color(0xFF64748B),
+                  fontWeight: FontWeight.w500,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 40),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context, true);
+                  },
+                  icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+                  label: const Text(
+                    "VERIFY AGAIN",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
                   ),
                 ),
               ),

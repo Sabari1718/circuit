@@ -498,7 +498,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           showDialog(
             context: context,
             barrierDismissible: false,
-            builder: (c) => const Center(child: CircularProgressIndicator()),
+            builder: (c) => Center(child: CircularProgressIndicator()),
           );
 
           String? communityName;
@@ -700,6 +700,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     bool isUpgraded =
         _checkCompletion("registered") ||
         _checkCompletion("verified") ||
@@ -732,12 +733,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         isUpgraded: isUpgraded,
       ),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFFF8FAFC),
-              Color(0xFFEFF6FF),
-            ], // Subtle blue-ish premium background
+            colors: isDark
+                ? [const Color(0xFF0F172A), const Color(0xFF0B1120)]
+                : [const Color(0xFFF8FAFC), const Color(0xFFEFF6FF)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -780,10 +780,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
                     // We add a stunning premium header
                     Container(
-                      margin: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-                      padding: const EdgeInsets.all(16),
+                      margin: EdgeInsets.fromLTRB(16, 12, 16, 8),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
+                        gradient: LinearGradient(
                           colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -804,9 +807,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                       child: Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(10),
+                            padding: EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              gradient: const LinearGradient(
+                              gradient: LinearGradient(
                                 colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
@@ -825,31 +828,31 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                             child: Icon(
                               headerIcon,
                               color: Colors.white,
-                              size: 24,
+                              size: 20,
                             ),
                           ),
-                          const SizedBox(width: 14),
+                          SizedBox(width: 12),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   headerTitle,
-                                  style: const TextStyle(
-                                    fontSize: 18,
+                                  style: TextStyle(
+                                    fontSize: 16,
                                     fontWeight: FontWeight.w900,
                                     letterSpacing: 0.5,
                                     color: Colors.white,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
+                                SizedBox(height: 4),
                                 Text(
                                   headerSubtitle,
-                                  style: const TextStyle(
-                                    fontSize: 12,
+                                  style: TextStyle(
+                                    fontSize: 11,
                                     color: Color(0xFF94A3B8),
                                     fontWeight: FontWeight.w500,
-                                    height: 1.3,
+                                    height: 1.2,
                                   ),
                                 ),
                               ],
@@ -860,7 +863,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                     ),
 
                     Padding(
-                      padding: const EdgeInsets.all(16.0),
+                      padding: EdgeInsets.all(16.0),
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 400),
                         transitionBuilder: (child, animation) {
@@ -882,7 +885,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                             : _buildPrivilegeGrid(),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
                   ],
                 );
               },
@@ -899,24 +902,20 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       builder: (context) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
-          padding: const EdgeInsets.all(32.0),
+          padding: EdgeInsets.all(32.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.all(16),
-                decoration: const BoxDecoration(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
                   color: Color(0xFFFEF3C7),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.shield,
-                  color: Color(0xFFD97706),
-                  size: 48,
-                ),
+                child: Icon(Icons.shield, color: Color(0xFFD97706), size: 48),
               ),
-              const SizedBox(height: 24),
-              const Text(
+              SizedBox(height: 24),
+              Text(
                 "Verification Required",
                 style: TextStyle(
                   fontSize: 22,
@@ -924,8 +923,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   color: Color(0xFF1E293B),
                 ),
               ),
-              const SizedBox(height: 16),
-              const Text(
+              SizedBox(height: 16),
+              Text(
                 "To register as a Business User, you must first complete your Verified User Registration (Identity & PAN verification).\nPlease verify your identity before accessing the Business portal.",
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -934,7 +933,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   height: 1.6,
                 ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
               ElevatedButton(
                 onPressed: () {
                   Navigator.pop(context); // close dialog
@@ -954,7 +953,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   ),
                   elevation: 0,
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Flexible(
@@ -969,7 +968,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 style: TextButton.styleFrom(
@@ -979,7 +978,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                     side: const BorderSide(color: Color(0xFFE2E8F0)),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   "Back to Dashboard",
                   style: TextStyle(
                     color: Color(0xFF475569),
@@ -996,7 +995,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+      padding: EdgeInsets.fromLTRB(16, 24, 16, 8),
       child: Container(
         height: 56,
         decoration: BoxDecoration(
@@ -1014,7 +1013,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         child: TextField(
           controller: _searchController,
           onChanged: _filterActivities,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w500,
             color: Color(0xFF1E293B),
           ),
@@ -1025,7 +1024,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
-            prefixIcon: const Icon(
+            prefixIcon: Icon(
               Icons.search_rounded,
               color: Color(0xFF3B82F6),
               size: 22,
@@ -1033,12 +1032,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             suffixIcon: _searchController.text.isNotEmpty
                 ? IconButton(
                     icon: Container(
-                      padding: const EdgeInsets.all(4),
+                      padding: EdgeInsets.all(4),
                       decoration: BoxDecoration(
                         color: Colors.grey.shade200,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.close_rounded,
                         size: 14,
                         color: Colors.grey,
@@ -1051,7 +1050,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   )
                 : null,
             border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(vertical: 16),
+            contentPadding: EdgeInsets.symmetric(vertical: 16),
           ),
         ),
       ),
@@ -1081,11 +1080,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         : const Color(0xFF7C3AED);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
+      padding: EdgeInsets.fromLTRB(20, 28, 20, 16),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: EdgeInsets.all(10),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -1100,24 +1099,24 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             ),
             child: Icon(icon, color: iconColor, size: 24),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0.5,
                     color: Color(0xFF0F172A),
                   ),
                 ),
-                const SizedBox(height: 2),
+                SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     color: Color(0xFF64748B),
                     fontWeight: FontWeight.w500,
@@ -1134,13 +1133,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   Widget _buildEmptyState() {
     return Container(
       key: const ValueKey('empty_state'),
-      padding: const EdgeInsets.symmetric(vertical: 60),
+      padding: EdgeInsets.symmetric(vertical: 60),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.search_off_rounded, size: 80, color: Colors.grey.shade300),
-          const SizedBox(height: 16),
-          const Text(
+          SizedBox(height: 16),
+          Text(
             "No activities found",
             style: TextStyle(
               fontSize: 18,
@@ -1148,7 +1147,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               color: Color(0xFF1E293B),
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             "Try a different search term",
             style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
@@ -1160,7 +1159,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   Widget _buildCareerGrid() {
     if (_filteredCareerActivities.isEmpty) {
-      return const SizedBox(
+      return SizedBox(
         height: 200,
         child: Center(
           child: Text(
@@ -1171,28 +1170,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       );
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        int crossAxisCount = constraints.maxWidth > 800
-            ? 3
-            : constraints.maxWidth > 600
-            ? 2
-            : 1;
-
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            childAspectRatio: crossAxisCount == 1 ? 1.5 : 0.85,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-          ),
-          itemCount: _filteredCareerActivities.length,
-          itemBuilder: (context, index) {
-            return _buildActivityCard(_filteredCareerActivities[index]);
-          },
-        );
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 16,
+        childAspectRatio: 0.65, // Adjusted to remove excess vertical space
+      ),
+      itemCount: _filteredCareerActivities.length,
+      itemBuilder: (context, index) {
+        return _buildActivityCard(_filteredCareerActivities[index]);
       },
     );
   }
@@ -1203,9 +1192,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: 2,
-      mainAxisSpacing: 20,
-      crossAxisSpacing: 20,
-      childAspectRatio: 0.65, // Give more height to prevent bottom overflow
+      mainAxisSpacing: 16,
+      crossAxisSpacing: 16,
+      childAspectRatio: 0.65, // Adjusted to fix excessive height while avoiding overflow
       onReorder: (oldIndex, newIndex) {
         setState(() {
           final element = _filteredActivities.removeAt(oldIndex);
@@ -1336,9 +1325,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: 2,
-      mainAxisSpacing: 20,
-      crossAxisSpacing: 20,
-      childAspectRatio: 0.65,
+      mainAxisSpacing: 16,
+      crossAxisSpacing: 16,
+      childAspectRatio: 0.65, // Adjusted for correct size without excess space
       children: cards,
     );
   }
@@ -1350,25 +1339,25 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               "About $module",
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text(
               "This module provides comprehensive tools for $module management. Upgrade to unlock all features including advanced analytics, team collaboration, and priority support.",
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: Color(0xFF64748B),
                 height: 1.5,
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -1380,7 +1369,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   "CLOSE",
                   style: TextStyle(
                     color: Colors.white,
@@ -1440,7 +1429,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   Widget _buildBusinessDropdown(BuildContext context) {
     return Container(
       height: 38,
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
@@ -1449,7 +1438,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           width: 1,
         ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: EdgeInsets.symmetric(horizontal: 10),
       child: Row(
         children: [
           Expanded(
@@ -1457,7 +1446,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               child: DropdownButton<String>(
                 value: _selectedBusinessScale,
                 icon: const SizedBox.shrink(), // Hide default icon
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF6366F1),
@@ -1488,26 +1477,26 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               ),
             ),
           ),
-          const SizedBox(width: 4),
+          SizedBox(width: 4),
           // Eye Icon
           GestureDetector(
             onTap: () => openBusinessViewPage(context),
             child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: const BoxDecoration(
+              padding: EdgeInsets.all(4),
+              decoration: BoxDecoration(
                 color: Color(0xFF6366F1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.visibility_outlined,
                 size: 12,
                 color: Colors.white,
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           // Dropdown Arrow
-          const Icon(
+          Icon(
             Icons.keyboard_arrow_down_rounded,
             size: 16,
             color: Color(0xFF94A3B8),

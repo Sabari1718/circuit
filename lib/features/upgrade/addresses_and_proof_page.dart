@@ -322,16 +322,24 @@ class _AddressesAndProofPageState extends State<AddressesAndProofPage> {
                 ),
                 const SizedBox(height: 32),
                 
-                // Stepper mockup
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildStepIndicator("1", "Registered User", true, isCompleted: true),
-                      Container(width: 40, height: 1, color: const Color(0xFFE2E8F0)),
-                      _buildStepIndicator("2", "Verified User", true),
-                    ],
+                // Premium Stepper UI
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFE2E8F0).withOpacity(0.5)),
+                  ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildStepIndicator("1", "Registered User", true, isCompleted: true),
+                        _buildStepConnector(isActive: true),
+                        _buildStepIndicator("2", "Verified User", true, isCompleted: false),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 48),
@@ -791,40 +799,87 @@ class _AddressesAndProofPageState extends State<AddressesAndProofPage> {
     );
   }
 
+  Widget _buildStepConnector({required bool isActive}) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      width: 40,
+      height: 3,
+      decoration: BoxDecoration(
+        color: isActive ? const Color(0xFF10B981) : const Color(0xFFE2E8F0),
+        borderRadius: BorderRadius.circular(2),
+      ),
+    );
+  }
+
   Widget _buildStepIndicator(String number, String title, bool isActive, {bool isCompleted = false}) {
+    final bool isHighlighted = isActive || isCompleted;
     return Row(
       children: [
         Container(
-          width: 32,
-          height: 32,
+          width: 40,
+          height: 40,
           decoration: BoxDecoration(
-            color: isCompleted ? const Color(0xFF10B981) : (isActive ? const Color(0xFF2563EB) : Colors.white),
+            gradient: isCompleted
+                ? const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)])
+                : isActive
+                    ? const LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF2563EB)])
+                    : null,
+            color: isHighlighted ? null : Colors.white,
             shape: BoxShape.circle,
             border: Border.all(
-              color: isCompleted ? const Color(0xFF10B981) : (isActive ? const Color(0xFF2563EB) : const Color(0xFFCBD5E1)),
+              color: isHighlighted ? Colors.transparent : const Color(0xFFCBD5E1),
               width: 1.5,
             ),
+            boxShadow: isHighlighted ? [
+              BoxShadow(
+                color: (isCompleted ? const Color(0xFF10B981) : const Color(0xFF3B82F6)).withOpacity(0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              )
+            ] : null,
           ),
           child: Center(
-            child: isCompleted 
-                ? const Icon(Icons.check, color: Colors.white, size: 16)
+            child: isCompleted
+                ? const Icon(Icons.check_rounded, color: Colors.white, size: 20)
                 : Text(
                     number,
                     style: TextStyle(
                       color: isActive ? Colors.white : const Color(0xFF64748B),
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
                     ),
                   ),
           ),
         ),
         const SizedBox(width: 12),
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: isActive ? const Color(0xFF0F172A) : const Color(0xFF64748B),
-          ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              "Step $number",
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: isCompleted 
+                    ? const Color(0xFF10B981) 
+                    : isActive 
+                        ? const Color(0xFF2563EB) 
+                        : const Color(0xFF94A3B8),
+                letterSpacing: 0.5,
+                height: 1.2,
+              ),
+            ),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: isHighlighted ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+                height: 1.2,
+              ),
+            ),
+          ],
         ),
       ],
     );

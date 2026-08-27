@@ -121,59 +121,80 @@ class _SidebarMenuState extends State<SidebarMenu> with SingleTickerProviderStat
     final isMobile = MediaQuery.of(context).size.width < 768;
 
     return Container(
-      width: isMobile ? double.infinity : 250,
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      width: isMobile ? double.infinity : 280,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: isMobile
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 20,
+                  offset: const Offset(4, 0),
+                )
+              ],
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const Padding(
+            padding: EdgeInsets.only(left: 8, bottom: 16),
+            child: Text(
+              "MENU",
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF94A3B8),
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
           _buildMenuItem(
-            icon: Icons.badge_outlined,
+            icon: Icons.badge_rounded,
             title: "Bio Overview",
             isActive: widget.activeItem == 'bio_overview',
             onTap: () => _navigateTo(context, 'bio_overview'),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           _buildMenuItem(
-            icon: Icons.shield_outlined,
+            icon: Icons.shield_rounded,
             title: "Authentication",
             isActive: widget.activeItem == 'authentication',
             onTap: () => _navigateTo(context, 'authentication'),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           _buildExpandableSecurityHeader(primaryColor),
           SizeTransition(
             sizeFactor: _expandAnimation,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 12, top: 4, bottom: 4),
-              child: Container(
-                decoration: const BoxDecoration(
-                  border: Border(
-                    left: BorderSide(color: Color(0xFFE2E8F0), width: 1.5),
+            child: Container(
+              margin: const EdgeInsets.only(left: 22, top: 8, bottom: 8),
+              decoration: const BoxDecoration(
+                border: Border(
+                  left: BorderSide(color: Color(0xFFE2E8F0), width: 2),
+                ),
+              ),
+              padding: const EdgeInsets.only(left: 12),
+              child: Column(
+                children: [
+                  _buildSubMenuItem(
+                    icon: Icons.settings_rounded,
+                    title: "S-Tab Settings",
+                    isActive: widget.activeItem == 's_tab',
+                    onTap: () => _navigateTo(context, 's_tab'),
                   ),
-                ),
-                padding: const EdgeInsets.only(left: 16),
-                child: Column(
-                  children: [
-                    _buildSubMenuItem(
-                      icon: Icons.settings_outlined,
-                      title: "S-Tab",
-                      isActive: widget.activeItem == 's_tab',
-                      onTap: () => _navigateTo(context, 's_tab'),
-                    ),
-                    const SizedBox(height: 8),
-                    _buildSubMenuItem(
-                      icon: Icons.check_circle_outline_rounded,
-                      title: "Verify",
-                      isActive: widget.activeItem == 'verify',
-                      onTap: () => _navigateTo(context, 'verify'),
-                    ),
-                  ],
-                ),
+                  const SizedBox(height: 4),
+                  _buildSubMenuItem(
+                    icon: Icons.verified_rounded,
+                    title: "Verification Status",
+                    isActive: widget.activeItem == 'verify',
+                    onTap: () => _navigateTo(context, 'verify'),
+                  ),
+                ],
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           _buildMenuItem(
             icon: Icons.grid_view_rounded,
             title: "Grid Card",
@@ -181,29 +202,57 @@ class _SidebarMenuState extends State<SidebarMenu> with SingleTickerProviderStat
             onTap: () => _navigateTo(context, 'grid_card'),
           ),
           const Spacer(),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              onPressed: () => _navigateTo(context, 'grid_verification'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                "Grid Verification",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-            ),
+          _buildPremiumButton(context, primaryColor),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPremiumButton(BuildContext context, Color primaryColor) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: primaryColor.withOpacity(0.3),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _navigateTo(context, 'grid_verification'),
+          borderRadius: BorderRadius.circular(16),
+          splashColor: Colors.white.withOpacity(0.2),
+          highlightColor: Colors.transparent,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Icon(Icons.verified_user_rounded, color: Colors.white, size: 22),
+                SizedBox(width: 12),
+                Text(
+                  "Grid Verification",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -214,33 +263,67 @@ class _SidebarMenuState extends State<SidebarMenu> with SingleTickerProviderStat
     required bool isActive,
     required VoidCallback onTap,
   }) {
-    final primaryColor = const Color(0xFF2563EB);
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-        decoration: BoxDecoration(
-          color: isActive ? primaryColor.withOpacity(0.08) : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+    final activeColor = const Color(0xFF2563EB);
+    final inactiveColor = const Color(0xFF64748B);
+    final activeBgColor = const Color(0xFFEFF6FF);
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      decoration: BoxDecoration(
+        color: isActive ? activeBgColor : Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isActive ? activeColor.withOpacity(0.15) : Colors.transparent,
+          width: 1.5,
         ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              color: primaryColor,
-              size: 22,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          splashColor: activeColor.withOpacity(0.1),
+          highlightColor: activeColor.withOpacity(0.05),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+            child: Row(
+              children: [
+                Icon(
+                  icon,
+                  color: isActive ? activeColor : inactiveColor,
+                  size: 24,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      color: isActive ? const Color(0xFF1E3A8A) : const Color(0xFF334155),
+                      fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+                if (isActive)
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: activeColor,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: activeColor.withOpacity(0.4),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        )
+                      ],
+                    ),
+                  ),
+              ],
             ),
-            const SizedBox(width: 14),
-            Text(
-              title,
-              style: TextStyle(
-                color: const Color(0xFF1E293B),
-                fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-                fontSize: 14,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -248,47 +331,60 @@ class _SidebarMenuState extends State<SidebarMenu> with SingleTickerProviderStat
 
   Widget _buildExpandableSecurityHeader(Color primaryColor) {
     final isAnySubItemActive = widget.activeItem == 's_tab' || widget.activeItem == 'verify';
-    return InkWell(
-      onTap: _toggleSecurity,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-        decoration: BoxDecoration(
-          color: isAnySubItemActive ? primaryColor.withOpacity(0.04) : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+    final inactiveColor = const Color(0xFF64748B);
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      decoration: BoxDecoration(
+        color: isAnySubItemActive ? const Color(0xFFEFF6FF) : Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isAnySubItemActive ? primaryColor.withOpacity(0.15) : Colors.transparent,
+          width: 1.5,
         ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.admin_panel_settings_outlined,
-              color: primaryColor,
-              size: 22,
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                "Security",
-                style: TextStyle(
-                  color: const Color(0xFF1E293B),
-                  fontWeight: isAnySubItemActive ? FontWeight.bold : FontWeight.w500,
-                  fontSize: 14,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _toggleSecurity,
+          borderRadius: BorderRadius.circular(14),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.admin_panel_settings_rounded,
+                  color: isAnySubItemActive ? primaryColor : inactiveColor,
+                  size: 24,
                 ),
-              ),
-            ),
-            RotationTransition(
-              turns: Tween<double>(begin: 0.0, end: 0.5).animate(
-                CurvedAnimation(
-                  parent: _animationController,
-                  curve: Curves.easeInOut,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    "Security",
+                    style: TextStyle(
+                      color: isAnySubItemActive ? const Color(0xFF1E3A8A) : const Color(0xFF334155),
+                      fontWeight: isAnySubItemActive ? FontWeight.bold : FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                  ),
                 ),
-              ),
-              child: const Icon(
-                Icons.keyboard_arrow_down_rounded,
-                color: Color(0xFF94A3B8),
-                size: 20,
-              ),
+                RotationTransition(
+                  turns: Tween<double>(begin: 0.0, end: 0.5).animate(
+                    CurvedAnimation(
+                      parent: _animationController,
+                      curve: Curves.easeInOut,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: isAnySubItemActive ? primaryColor : inactiveColor,
+                    size: 22,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -300,33 +396,36 @@ class _SidebarMenuState extends State<SidebarMenu> with SingleTickerProviderStat
     required bool isActive,
     required VoidCallback onTap,
   }) {
-    final Color itemColor = isActive ? const Color(0xFF2563EB) : const Color(0xFF64748B);
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF2563EB).withOpacity(0.08) : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              color: itemColor,
-              size: 18,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              title,
-              style: TextStyle(
-                color: itemColor,
-                fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-                fontSize: 13,
+    final activeColor = const Color(0xFF2563EB);
+    final inactiveColor = const Color(0xFF64748B);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        splashColor: activeColor.withOpacity(0.1),
+        highlightColor: activeColor.withOpacity(0.05),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                color: isActive ? activeColor : inactiveColor,
+                size: 20,
               ),
-            ),
-          ],
+              const SizedBox(width: 14),
+              Text(
+                title,
+                style: TextStyle(
+                  color: isActive ? activeColor : inactiveColor,
+                  fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
