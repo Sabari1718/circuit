@@ -350,7 +350,7 @@ class _SecretImageSetupPageState extends ConsumerState<SecretImageSetupPage> {
                           Icon(Icons.security, size: 48, color: Colors.white),
                           SizedBox(height: 16),
                           Text(
-                            "Web Login",
+                            "SVA Business",
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 24,

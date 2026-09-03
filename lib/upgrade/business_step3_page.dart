@@ -159,6 +159,12 @@ class _BusinessStep3PageState extends State<BusinessStep3Page> {
         body: jsonEncode(payload),
       );
 
+      print('=== BUSINESS REGISTRATION REQUEST PAYLOAD ===');
+      print(jsonEncode(payload));
+      print('=== BUSINESS REGISTRATION API RESPONSE ===');
+      print('Status: ${response.statusCode}');
+      print('Body: ${response.body}');
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         http.get(Uri.parse('https://managelogin.jobes24x7.com/api/login/$userMainId')).catchError((_) => http.Response('', 200));
         http.get(Uri.parse('https://managelogin.jobes24x7.com/api/business-reg/user/$userMainId')).catchError((_) => http.Response('', 200));

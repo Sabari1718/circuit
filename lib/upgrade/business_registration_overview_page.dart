@@ -447,7 +447,7 @@ class _BusinessRegistrationOverviewPageState extends State<BusinessRegistrationO
                             borderRadius: BorderRadius.circular(8),
                             child: InteractiveViewer(
                               child: Image.network(
-                                imagePath.startsWith('http') ? imagePath : 'https://managelogin.jobes24x7.com/$imagePath',
+                                imagePath.startsWith('http') ? imagePath : 'https://managelogin.jobes24x7.com/api/$imagePath',
                                 fit: BoxFit.contain,
                                 errorBuilder: (context, error, stackTrace) => const Center(
                                   child: Column(

@@ -2869,7 +2869,7 @@ class _ApplyJobPageState extends State<ApplyJobPage> {
                       ),
                       child: InteractiveViewer(
                         child: Image.network(
-                          'https://managelogin.jobes24x7.com/$filePath',
+                          filePath.startsWith('http') ? filePath : 'https://managelogin.jobes24x7.com/api/$filePath',
                           fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) => Container(
                             width: double.infinity,
